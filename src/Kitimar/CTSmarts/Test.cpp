@@ -354,9 +354,9 @@ TEST(TestCTSmarts, BondPrimitive)
 
 TEST(TestCTSmarts, BondExpr)
 {
-    using Single = BondOrder<1>;
-    using Double = BondOrder<2>;
-    using Ring = RingBond;
+    //using Single = BondOrder<1>;
+    //using Double = BondOrder<2>;
+    //using Ring = RingBond;
 
     /* FIXME
     test_bond_expr<"*-,=*", Or<Single, Double> >();
@@ -383,8 +383,8 @@ constexpr void test_bond()
 
 TEST(TestCTSmarts, RingBond)
 {
-    using Single = BondOrder<1>;
-    using Double = BondOrder<2>;
+    //using Single = BondOrder<1>;
+    //using Double = BondOrder<2>;
 
     //test_bond<"*1***1", Bond<3, 0, Single> >();
 }
@@ -665,7 +665,7 @@ TEST(TestCTSmarts, ValidateOpenBabel)
     if (!VALIDATE_OPENBABEL)
         return;
 
-    readMolecules(chembl_smi_filename(), [] (auto &mol) {
+    readMoleculesOpenBabel(chembl_smi_filename(), [] (auto &mol) {
         EXPECT_TRUE(test_match<"C">(mol));
 
         EXPECT_TRUE(test_match<"*1~*~*~*~*~*~1">(mol));

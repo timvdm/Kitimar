@@ -30,8 +30,8 @@ namespace Kitimar {
 
 
     template<typename R, typename AtomBond>
-    concept AtomBondRange = std::ranges::forward_range<R> &&
-                        std::convertible_to<std::ranges::range_value_t<R>, AtomBond>;
+    concept AtomBondRange = std::ranges::input_range<R> &&
+                        std::convertible_to<std::remove_cvref_t<std::ranges::range_value_t<R>>, AtomBond>;
 
 
     template<typename Mol>

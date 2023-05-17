@@ -1,14 +1,10 @@
 #pragma once
 
 #include <Kitimar/Molecule/Molecule.hpp>
-#include <Kitimar/CTLayout/CTLayout.hpp>
+#include <Kitimar/CTLayout/Serialize.hpp>
 
-#include <mio/mmap.hpp>
 
-#include <vector>
-#include <fstream>
-
-namespace Kitimar {
+namespace Kitimar::CTLayout {
 
     struct NumAtoms : ArraySize {};
     struct NumBonds : ArraySize {};
@@ -78,12 +74,6 @@ namespace Kitimar {
                                                   SourceArray, TargetArray, OrderArray,
                                                   IncidentBeginArray, IncidentArray,
                                                   AdjacentBeginArray, AdjacentArray> {};
-
-    template<typename Layout>
-    constexpr auto moleculeSize(SizeT numAtoms, SizeT numBonds) noexcept
-    {
-        return Layout::size({numAtoms, numBonds});
-    }
 
     //
     // Molecule
@@ -208,8 +198,6 @@ namespace Kitimar {
         }
     }
 
-
-
     //
     // Bond
     //
@@ -254,7 +242,7 @@ namespace Kitimar {
 
 
     template<typename Layout>
-    void serialize(Molecule auto &mol, std::byte *data)
+    void serializeMolecule(Molecule auto &mol, std::byte *data)
     {
         auto obj = EditableObject<Layout>{data};
         obj.setSize(NumAtoms{}, num_atoms(mol));
@@ -301,65 +289,29 @@ namespace Kitimar {
         }
     }
 
-    /**
-     * @brief Serialize molecule to buffer.
-     */
     template<typename Layout>
-    void serialize(Molecule auto &mol, std::vector<std::byte> &data)
+    constexpr auto moleculeSize(SizeT numAtoms, SizeT numBonds) noexcept
     {
-        data.resize(moleculeSize<Layout>(num_atoms(mol), num_bonds(mol)));
-        serialize<Layout>(mol, data.data());
-    }
-
-    /**
-     * @brief Serialize molecule to output file stream using existing buffer.
-     */
-    template<typename Layout>
-    void serialize(Molecule auto &mol, std::ofstream &ofs, std::vector<std::byte> &data)
-    {
-        serialize<Layout>(mol, data);
-        ofs.write(reinterpret_cast<char*>(data.data()), data.size());
-    }
-
-    /**
-     * @brief Serialize molecule to output file stream.
-     */
-    template<typename Layout>
-    void serialize(Molecule auto &mol, std::ofstream &ofs)
-    {
-        std::vector<std::byte> data;
-        serialize<Layout>(mol, data);
-        ofs.write(reinterpret_cast<char*>(data.data()), data.size());
+        return Layout::size({numAtoms, numBonds});
     }
 
     template<typename Layout>
-    auto deserialize(std::ifstream &ifs, std::vector<std::byte> &data)
+    class MoleculeSink : public FileStreamSink
     {
-        if (!ifs)
-            return std::make_tuple(false, Object<Layout>{});
-        data.resize(LayoutSize::size());
-        ifs.read(reinterpret_cast<char*>(data.data()), data.size());
-        if (!ifs)
-            return std::make_tuple(false, Object<Layout>{});
-        auto size = *reinterpret_cast<LayoutSize::Type*>(data.data());        
-        data.resize(size);
-        ifs.read(reinterpret_cast<char*>(data.data() + LayoutSize::size()), size - LayoutSize::size());        
-        if (!ifs)
-            return std::make_tuple(false, Object<Layout>{});
-        return std::make_tuple(true, Object<Layout>{data.data()});
-    }
+        public:
+            MoleculeSink(std::string_view filename) : FileStreamSink(filename)
+            {
+            }
 
-    using MemMapSource = mio::basic_mmap_source<std::byte>;
+            auto write(Molecule auto &mol)
+            {
+                m_buffer.resize(moleculeSize<Layout>(num_atoms(mol), num_bonds(mol)));
+                serializeMolecule<Layout>(mol, m_buffer.data());
+                FileStreamSink::write(m_buffer);
+            }
 
-    template<typename Layout>
-    auto deserialize(const MemMapSource &source, std::size_t &offset)
-    {
-        using Ptr = decltype(source.begin());
-        auto data = source.begin() + offset;
-        auto size = *reinterpret_cast<const LayoutSize::Type*>(data);
-        offset += size;
-        return Object<Layout, Ptr>{data};        
-    }
+        private:
+            std::vector<std::byte> m_buffer;
+    };
 
-
-} // namespace Kitimar
+} // namespace Kitimar::CTLayout

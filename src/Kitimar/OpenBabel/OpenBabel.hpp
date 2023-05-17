@@ -28,7 +28,8 @@ namespace Kitimar {
     } // namespace detail
 
 
-    inline void readMolecules(const std::string &filename, std::function<bool (OpenBabel::OBMol&)> callback)
+    inline void readMoleculesOpenBabel(const std::string &filename,
+                              std::function<bool (OpenBabel::OBMol&)> callback)
     {
         OpenBabel::OBMol mol;
         auto conv = detail::makeOBConversion(filename);
@@ -42,12 +43,12 @@ namespace Kitimar {
         }
     }
 
-    inline OpenBabel::OBMol readSmiles(const std::string &smiles)
+    inline OpenBabel::OBMol readSmilesOpenBabel(std::string_view smiles)
     {
         OpenBabel::OBConversion conv;
         conv.SetInFormat("smi");
         OpenBabel::OBMol mol;
-        conv.ReadString(&mol, smiles);
+        conv.ReadString(&mol, smiles.data());
         return mol;
     }
 
@@ -193,13 +194,5 @@ namespace OpenBabel {
     {
         return bond->IsInRing();
     }
-
-
-
-
-
-
-
-
 
 } // namespace OpenBabel

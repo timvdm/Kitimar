@@ -5,6 +5,7 @@
 #include <cmath>
 
 using namespace Kitimar;
+using namespace Kitimar::CTLayout;
 
 // Value
 struct BoolValue : Value<bool> {};

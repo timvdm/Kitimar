@@ -1,75 +1,100 @@
-#include <Kitimar/Serialize/Serialize.hpp>
 #include <Kitimar/OpenBabel/OpenBabel.hpp>
+#include <Kitimar/RDKit/RDKit.hpp>
 #include <Kitimar/CTSmarts/CTSmarts.hpp>
 #include <Kitimar/Util/Test.hpp>
 #include <Kitimar/Util/Util.hpp>
 
 #include <openbabel/parsmart.h>
 
+#include <GraphMol/Substruct/SubstructMatch.h>
+
+
 using namespace Kitimar;
+using namespace Kitimar::CTLayout;
 using namespace Kitimar::CTSmarts;
 
 
-
-template<ctll::fixed_string SMARTS>
-auto countOBMatches()
+template<ctll::fixed_string SMARTS, typename Callback>
+auto matchesOpenBabel(Callback callback)
 {
     OpenBabel::OBSmartsPattern smarts;
     smarts.Init(Util::toString(SMARTS));
 
-    auto n = 0;
-    readMolecules(chembl_smi_filename(), [&] (auto &mol) {
-        if (smarts.Match(mol))
-            ++n;
+    readMoleculesOpenBabel(chembl_smi_filename(), [&] (auto &mol) {
+        callback(mol, smarts.Match(mol));
         return true;
     });
+}
 
+template<ctll::fixed_string SMARTS, typename Callback>
+auto matchesRDKit(Callback callback)
+{
+    std::unique_ptr<RDKit::RWMol> smarts{RDKit::SmartsToMol(Util::toString(SMARTS))};
+    RDKit::MatchVectType res;
+
+    readMoleculesRDKit(chembl_smi_filename(), [&] (auto mol) {
+        callback(mol, RDKit::SubstructMatch(*mol, *smarts, res));
+        return true;
+    });
+}
+
+
+template<ctll::fixed_string SMARTS, typename Layout, typename Callback>
+auto matchesFileStream(Callback callback)
+{
+    FileStreamSource<Layout> source{chembl_serialized_filename(Layout{})};
+    SingleIsomorphism<SMARTS> smarts{};
+
+    for (auto [ok, mol] : source.objects()) {
+        if (!ok)
+            break;
+        callback(mol, smarts.match(mol));
+
+    }
+}
+
+template<ctll::fixed_string SMARTS, typename Layout, typename Callback>
+auto matchesMemoryMapped(Callback callback)
+{
+    MemoryMappedSource<Layout> source{chembl_serialized_filename(Layout{})};
+    SingleIsomorphism<SMARTS> smarts{};
+
+    for (auto mol : source.objects())
+        callback(mol, smarts.match(mol));
+}
+
+
+
+template<ctll::fixed_string SMARTS>
+auto countMatchesOpenBabel()
+{
+    auto n = 0;
+    matchesOpenBabel<SMARTS>([&n] (auto &mol, bool match) { if (match) ++n; });
     return n;
 }
+
+template<ctll::fixed_string SMARTS>
+auto countRDKitMatches()
+{
+    auto n = 0;
+    matchesRDKit<SMARTS>([&n] (auto &mol, bool match) { if (match) ++n; });
+    return n;
+}
+
 
 template<ctll::fixed_string SMARTS, typename Layout>
 auto countCTMatchesFileStream()
 {
-    SingleIsomorphism<SMARTS> smarts{};
-
-
-    std::ifstream ifs(chembl_serialized_filename(Layout{}), std::ios_base::binary | std::ios_base::in);
-    LayoutSize::Type numMolecules;
-    ifs.read(reinterpret_cast<char*>(&numMolecules), LayoutSize::size());
-
     auto n = 0;
-    std::vector<std::byte> data;
-    for (auto i = 0UL; i < numMolecules; ++i) {
-        auto [ok, mol] = deserialize<Layout>(ifs, data);
-        if (!ok)
-            break;
-        if (smarts.match(mol))
-            ++n;
-    }
-
+    matchesFileStream<SMARTS, Layout>([&n] (auto &mol, bool match) { if (match) ++n; });
     return n;
 }
 
 template<ctll::fixed_string SMARTS, typename Layout>
 auto countCTMatchesMemoryMapped()
 {
-    SingleIsomorphism<SMARTS> smarts{};
-
-
-
-    auto source = MemMapSource{chembl_serialized_filename(Layout{})};
-    auto numMolecules = *reinterpret_cast<const LayoutSize::Type*>(source.begin());
-
-    std::cout << "# molecules: " << numMolecules << std::endl;
-
     auto n = 0;
-    std::size_t offset = LayoutSize::size();
-    for (auto i = 0UL; i < numMolecules; ++i) {
-        auto mol = deserialize<Layout>(source, offset);        
-        if (smarts.match(mol))
-            ++n;
-    }
-
+    matchesMemoryMapped<SMARTS, Layout>([&n] (auto &mol, bool match) { if (match) ++n; });
     return n;
 }
 
@@ -77,40 +102,23 @@ auto countCTMatchesMemoryMapped()
 template<ctll::fixed_string SMARTS>
 auto benchmark()
 {
-    //auto [obCount, obElapsed] = std::make_pair(0, 0);
-    auto [obCount, obElapsed] = benchmark(&countOBMatches<SMARTS>);
+    //auto [obCount, obElapsed] = benchmark(&countMatchesOpenBabel<SMARTS>);
+    auto [obCount, obElapsed] = std::make_pair(0, 0);
+    //auto [rdkitCount, rdkitElapsed] = benchmark(&countRDKitMatches<SMARTS>);
+    auto [rdkitCount, rdkitElapsed] = std::make_pair(0, 0);
     auto [ifsCount, ifsElapsed] = benchmark(&countCTMatchesFileStream<SMARTS, StructMoleculeIncident>);
     auto [mmapCount, mmapElapsed] = benchmark(&countCTMatchesMemoryMapped<SMARTS, StructMoleculeIncident>);
 
 
     std::cout << Util::toString(SMARTS) << '\n';
     std::cout << "    OpenBabel       " << obCount << "    " << obElapsed << '\n';
+    std::cout << "    RDKit           " << rdkitCount << "    " << rdkitElapsed << '\n';
     std::cout << "    FileStream      " << ifsCount << "    " << ifsElapsed << '\n';
     std::cout << "    MemoryMapped    " << mmapCount << "    " << mmapElapsed << '\n';
 }
 
 
 
-void test_mio()
-{
-    auto filename = "test_mio.bin";
-
-    std::ofstream ofs{filename, std::ios_base::binary | std::ios_base::out};
-    for (int i = 0; i < 10; ++i)
-        ofs.write(reinterpret_cast<char*>(&i), sizeof(int));
-    ofs.close();
-
-
-    MemMapSource source{filename};
-
-    for (int i = 0; i < 10; ++i)
-        std::cout << *reinterpret_cast<const int*>(source.begin() + i * sizeof(i)) << std::endl;
-
-    //auto *data = reinterpret_cast<const int*>(source.begin());
-    //for (int i = 0; i < 10; ++i)
-    //    std::cout << *(data + i * sizeof(i)) << std::endl;
-
-}
 
 
 
@@ -118,7 +126,6 @@ int main()
 {
     //serialize_chembl<StructMoleculeIncident>();
 
-    //test_mio();
     benchmark<"c1ccccc1-c2ccccc2">();
 }
 

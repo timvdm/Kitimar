@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Kitimar/Serialize/Serialize.hpp>
+#include <Kitimar/CTLayout/Molecule.hpp>
 #include <Kitimar/Util/Timer.hpp>
 
 namespace Kitimar {
@@ -10,12 +10,12 @@ namespace Kitimar {
         return std::string(KITIMAR_DATA_DIR) + "/chembl_32.smi";
     }
 
-    inline auto chembl_serialized_filename(StructMolecule)
+    inline auto chembl_serialized_filename(CTLayout::StructMolecule)
     {
         return std::string(KITIMAR_DATA_DIR) + "/chembl_32.StructMolecule";
     }
 
-    inline auto chembl_serialized_filename(StructMoleculeIncident)
+    inline auto chembl_serialized_filename(CTLayout::StructMoleculeIncident)
     {
         return std::string(KITIMAR_DATA_DIR) + "/chembl_32.StructMoleculeIncident";
     }
@@ -23,25 +23,12 @@ namespace Kitimar {
     template<typename Layout>
     void serialize_chembl()
     {
-        auto filename = chembl_smi_filename();
-        std::ofstream ofs(chembl_serialized_filename(Layout{}), std::ios_base::binary | std::ios_base::out);
-        assert(ofs);
-
-        ofs.seekp(LayoutSize::size());
-
-        LayoutSize::Type n = 0;
-        std::vector<std::byte> data;
-        readMolecules(filename, [&n, &ofs, &data] (auto &mol) {
-            ++n;
-            if (n % 1000 == 0) std::cout << n << std::endl;
-            serialize<Layout>(mol, ofs, data);
+        CTLayout::MoleculeSink<Layout> sink{chembl_serialized_filename(Layout{})};
+        readMolecules(chembl_smi_filename(), [&sink] (auto &mol) {
+            sink.write(mol);
+            if (sink.size() % 1000 == 0) std::cout << sink.size() << std::endl;
             return true;
         });
-
-        //std::cout << "# molecules: " << n << '\n'; // 2327928
-
-        ofs.seekp(0);
-        ofs.write(reinterpret_cast<const char*>(&n), LayoutSize::size());
     }
 
     /*

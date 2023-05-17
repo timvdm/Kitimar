@@ -1,4 +1,4 @@
-#include <Kitimar/Serialize/Serialize.hpp>
+#include <Kitimar/CTLayout/Molecule.hpp>
 #include <Kitimar/OpenBabel/OpenBabel.hpp>
 #include <Kitimar/CTSmarts/Isomorphism.hpp>
 #include <Kitimar/Util/Test.hpp>
@@ -8,7 +8,15 @@
 #include <gtest/gtest.h>
 
 using namespace Kitimar;
+using namespace Kitimar::CTLayout;
 using namespace Kitimar::CTSmarts;
+
+template<typename Layout>
+void serialize(Molecule auto &mol, std::vector<std::byte> &data)
+{
+    data.resize(moleculeSize<Layout>(num_atoms(mol), num_bonds(mol)));
+    serializeMolecule<Layout>(mol, data.data());
+}
 
 
 
@@ -108,7 +116,7 @@ void compare(auto &mol, auto &ref)
 template<typename Layout>
 void test_serialize(const std::string &smiles)
 {
-    auto obmol = readSmiles(smiles);
+    auto obmol = readSmilesOpenBabel(smiles);
 
     std::vector<std::byte> data;
     serialize<Layout>(obmol, data);
@@ -133,7 +141,7 @@ TEST(TestSerialize, SerializeMemoryMap)
 
     // Read SMILES
     auto smiles = "CC(=O)[O-]";
-    auto obmol = readSmiles(smiles);
+    auto obmol = readSmilesOpenBabel(smiles);
 
     // Serialize SMILES
     std::vector<std::byte> data;
@@ -144,14 +152,17 @@ TEST(TestSerialize, SerializeMemoryMap)
 
     // Write to file
     std::ofstream ofs(filename, std::ios_base::binary | std::ios_base::out);
-    ofs.write(reinterpret_cast<char*>(data.data()), data.size());    
+    LayoutSize::Type size = 1;
+    ofs.write(reinterpret_cast<char*>(&size), sizeof(size));
+    ofs.write(reinterpret_cast<char*>(data.data()), data.size());
     ofs.close();
 
     // Deserialize using mmap
-    std::size_t offset = 0;
-    MemMapSource source{filename};
-    auto mol = deserialize<Layout>(source, offset);
-    EXPECT_EQ(offset, Layout::size({num_atoms(ref), num_bonds(ref)}));
+    MemoryMappedSource<Layout> source{filename};
+    EXPECT_EQ(source.size(), 1);
+    EXPECT_EQ(source.offset(), LayoutSize::size());
+    auto mol = source.read();
+    EXPECT_EQ(source.offset(), LayoutSize::size() + Layout::size({num_atoms(ref), num_bonds(ref)}));
 
     // Compare
     compare(mol, ref);
@@ -166,7 +177,7 @@ auto findOBMatches(const std::string &SMARTS, const std::string &filename = chem
     smarts.Init(SMARTS);
 
     std::vector<bool> matches;
-    readMolecules(filename, [&] (auto &mol) {
+    readMoleculesOpenBabel(filename, [&] (auto &mol) {
         matches.push_back(smarts.Match(mol));
         return true;
     });
@@ -177,13 +188,11 @@ auto findOBMatches(const std::string &SMARTS, const std::string &filename = chem
 template<ctll::fixed_string SMARTS, typename Layout>
 auto findCTMatches()
 {
+    FileStreamSource<Layout> source{chembl_serialized_filename(Layout{})};
     SingleIsomorphism<SMARTS> smarts{};
 
     std::vector<bool> matches;
-    std::vector<std::byte> data;
-    std::ifstream ifs(chembl_serialized_filename(Layout{}), std::ios_base::binary | std::ios_base::in);
-    while (ifs) {
-        auto [ok, mol] = deserialize<Layout>(ifs, data);
+    for (auto [ok, mol] : source.objects()) {
         if (!ok)
             break;
         matches.push_back(smarts.match(mol));
@@ -253,7 +262,7 @@ TEST(TestSerialize, ValidateOpenBabel)
 
 void test_phenol()
 {
-    auto obmol = readSmiles("c1ccccc1O");
+    auto obmol = readSmilesOpenBabel("c1ccccc1O");
     std::vector<std::byte> data;
     serialize<StructMolecule>(obmol, data);
 
