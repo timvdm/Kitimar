@@ -171,7 +171,9 @@ TEST(TestSerialize, SerializeInMemory)
     ASSERT_EQ(source.size(), 1);
     ASSERT_EQ(source.offset(), LayoutSize::size());
     auto mol = source.read();
-    ASSERT_EQ(source.offset(), LayoutSize::size() + Layout::size({num_atoms(ref), num_bonds(ref)}));
+    SizeT numAtoms = num_atoms(ref);
+    SizeT numBonds = num_bonds(ref);
+    ASSERT_EQ(source.offset(), LayoutSize::size() + Layout::size({numAtoms, numBonds}));
 
     // Compare
     compare(mol, ref);

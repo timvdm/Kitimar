@@ -152,13 +152,14 @@ Benchmark countMatchesKitimarMemoryMapped()
 template<ctll::fixed_string SMARTS, ctll::fixed_string ...Tail>
 void countMatches(std::vector<BenchmarkGroup> &groups)
 {
+    std::cout << "Count matches: " << Util::toString(SMARTS) << std::endl;
     groups.push_back({ Util::toString(SMARTS), {
         //countMatchesOpenBabelSmiles<SMARTS>(),
         //countMatchesRDKitSmiles<SMARTS>(),
-        //countMatchesRDKitPickle<SMARTS>(),
-        Benchmark{"OpenBabel SMILES"},
-        Benchmark{"RDKit SMILES"},
-        Benchmark{"RDKit Pickle"},
+        countMatchesRDKitPickle<SMARTS>(),
+        //Benchmark{"OpenBabel SMILES"},
+        //Benchmark{"RDKit SMILES"},
+        //Benchmark{"RDKit Pickle"},
         countMatchesKitimarFileStream<SMARTS, StructMoleculeIncident>(),
         countMatchesKitimarInMemory<SMARTS, StructMoleculeIncident>(),
         countMatchesKitimarMemoryMapped<SMARTS, StructMoleculeIncident>()
@@ -207,235 +208,28 @@ auto deserializeKitimar()
 
 int main()
 {
-
-
-
-
     //auto benchmark1 = deserializeKitimar<StructMoleculeIncident>();
     //std::cout << benchmark1.toString() << std::endl;
 
 
 
-
-    //auto groups = countMatches<"*1~*~*~*~*~*~1", "BrCCCCCCCCC">();
-    auto groups = countMatches<"*1~*~*~*~*~*~1">();
-    //auto groups = countMatches<"*">();
+    auto groups = countMatches<
+        "*1~*~*~*~*~*~1",
+        "c1ccccc1-c2ccccc2",
+        "c1ccccc1CCCCc1ccccc1",
+        "c1cc2c(cc1)cccc2",
+        "Clc1ccccc1",
+        "BrCCCCCCCCC",
+        "O1CCOC12CCNCC2"
+    >();
     std::cout << groups.toString() << std::endl;
 
-
-
-//    FileStream      : 17.6198s
-//    MemoryMapped    : 16.0925s
-//    OpenBabel       : 612.724s    10.21m
-//    RDKit           : 1394.68s    23.24m
-
-    //std::vector<Benchmark> benchmarks;
-
-
-
-    /*
-    benchmark<"*1~*~*~*~*~*~1">(benchmarks);
-    benchmark<"c1ccccc1-c2ccccc2">(benchmarks);
-    benchmark<"c1ccccc1CCCCc1ccccc1">(benchmarks);
-    benchmark<"c1cc2c(cc1)cccc2">(benchmarks);
-    benchmark<"Clc1ccccc1">(benchmarks);
-    benchmark<"BrCCCCCCCCC">(benchmarks);
-    benchmark<"O1CCOC12CCNCC2">(benchmarks);
-    */
-
-
-
-    for (auto &[name, total] : groups.totalElapsed())
-        std::cout << Util::pad(name) << total << '\n';
-
-
-    /*
-    std::map<std::string, std::vector<Benchmark>> byName;
-    for (auto &benchmark : benchmarks)
-        byName[benchmark.name].push_back(benchmark);
-
-
-    for (auto &[name, nameBenchmarks] : byName) {
-        Util::Timer::Duration total = {};
-        for (auto &benchmark : nameBenchmarks)
-            total += benchmark.elapsed;
-
-        std::cout << Util::pad(name) << total << '\n';
-    }
-    */
-
-    std::cout << std::endl;
-
-}
-
-
-
-
-
-
-
-
-/*
-template<typename F>
-auto benchmark_OpenBabel(const std::string &filename, F f)
-{
-    auto i = 0;
-    readMolecules(filename, [&i, &f] (auto &mol) {
-        if (++i % 10000 == 0) std::cout << i << std::endl;
-        f(mol);
-        return true;
-    });
-}
-*/
-
-/* RECENT
-template<typename Layout, typename F>
-auto benchmark_Kitimar(F f)
-{
-    auto filename = chembl_serialized_filename(Layout{});
-    std::vector<std::byte> data;
-    std::ifstream ifs(filename, std::ios_base::binary | std::ios_base::out); // FIXME : in??
-    auto i = 0;
-    while (ifs) {
-        //if (++i % 1000 == 0) std::cout << i << std::endl;
-        auto [ok, mol] = deserialize<Layout>(ifs, data);
-        if (!ok)
-            break;
-        f(mol);
-    }
-}
-*/
-
-/*
-auto numAtoms_OpenBabel(const std::string &filename)
-{
-    std::size_t numAtoms = 0;
-    benchmark_OpenBabel(filename, [&numAtoms] (auto &mol) {
-        numAtoms += num_atoms(mol);
-    });
-    std::cout << "# atoms: " << numAtoms << std::endl;
-}
-
-
-auto numAtoms_OpenBabel_Sdf()
-{
-    numAtoms_OpenBabel(chembl_sdf_filename());
-}
-
-auto numAtoms_OpenBabel_Smi()
-{
-    numAtoms_OpenBabel(chembl_smi_filename());
-}
-*/
-
-/* RECENT
-template<typename Layout>
-auto numAtoms_Kitimar()
-{
-    std::size_t n = 0;
-    benchmark_Kitimar<Layout>([&n] (auto &mol) {
-        n += num_atoms(mol);
-    });
-    std::cout << "# atoms: " << n << std::endl;
-}
-
-template<typename Layout>
-auto numNitrogens_Kitimar()
-{
-    std::size_t n = 0;
-    benchmark_Kitimar<Layout>([&n] (auto &mol) {
-        for (auto atom : get_atoms(mol))
-            if (get_element(mol, atom) == 7)
-                ++n;
-    });
-    std::cout << "# nitrogens: " << n << std::endl;
-}
-
-
-
-template<typename Layout, ctll::fixed_string SMARTS>
-auto singleMatch_Kitimar()
-{
-    std::size_t n = 0;
-    SingleIsomorphism<SMARTS> iso;
-    benchmark_Kitimar<Layout>([&n, &iso] (auto &mol) {
-        if (iso.match(mol))
-            ++n;
-    });
-    std::cout << "# macthes: " << n << std::endl;
-    return n;
-}
-
-
-
-
-
-
-
-
-#define STRINGIFY(s) #s
-#define BENCHMARK(function) benchmark(STRINGIFY(function), &function)
-
-
-int main()
-{
-    serialize_chembl<StructMoleculeIncident>();
-    //serialize_chembl<StructMolecule, StructMoleculeIncident>();
-
-    //BENCHMARK(numAtoms_OpenBabel_Sdf);                          // 71233387     650 seconds ~ 11 minutes
-    //BENCHMARK(numAtoms_OpenBabel_Smi);                          // 70820782     139 seconds ~ 2.3 minutes
-    //BENCHMARK(numAtoms_Kitimar<StructMolecule>);                // 71233387     0.344 seconds
-    //BENCHMARK(numNitrogens_Kitimar<StructMolecule>);            // 8141624      0.479 seconds
-    //BENCHMARK(numRing6_Kitimar<StructMolecule>);                // 18-19 seconds
-
-
-
-    auto smarts = Smarts<"**1*2**12">{};
-    auto bonds = smarts.bonds;
-    auto dfsBonds = getDfsBonds(smarts);
-
-    auto dfsAtoms = getDfsAtoms(smarts);
-    //std::cout << bonds << std::endl;
-    auto adj = adjacencyList<smarts.numAtoms, smarts.numBonds>(smarts.bonds);
-    //std::cout << adj << std::endl;
-    //std::cout << dfsBonds << std::endl;
-
-    auto cycleMembership = getCycleMembership(smarts);
-
-    //std::cout << cycleMembership << std::endl;
-
-    //std::cout << dfsBonds << std::endl;
-
-
-
-    //std::cout << dfsAtoms << std::endl;
-
-
-
-
-
-
-    //BENCHMARK((singleMatch_Kitimar<StructMoleculeIncident, "*1*2*1*2">));        //
-
-
-
-    BENCHMARK((singleMatch_Kitimar<StructMoleculeIncident, "*1~*~*~*~*~*~1">));        // 3.7 seconds
-    BENCHMARK((singleMatch_Kitimar<StructMoleculeIncident, "c1ccccc1-c2ccccc2">));        // 2.54 seconds
-    BENCHMARK((singleMatch_Kitimar<StructMoleculeIncident, "c1ccccc1CCCCc1ccccc1">));        // 2.79 seconds
-    BENCHMARK((singleMatch_Kitimar<StructMoleculeIncident, "c1cc2c(cc1)cccc2">));        //
-    BENCHMARK((singleMatch_Kitimar<StructMoleculeIncident, "Clc1ccccc1">));        //
-    BENCHMARK((singleMatch_Kitimar<StructMoleculeIncident, "BrCCCCCCCCC">));        //
     //BENCHMARK((singleMatch_Kitimar<StructMoleculeIncident, "[nH]1ccc2c1cccc2">));        //
     //BENCHMARK((singleMatch_Kitimar<StructMoleculeIncident, "[nH]">));        //
     //BENCHMARK((singleMatch_Kitimar<StructMoleculeIncident, "c1cc(=O)cc[nH]1">));        //
-    BENCHMARK((singleMatch_Kitimar<StructMoleculeIncident, "O1CCOC12CCNCC2">));        //
 
-
-
-
-    //BENCHMARK((singleMatch_Kitimar<StructMoleculeIncident, "">));        //
-
-
+    for (auto &[name, total] : groups.totalElapsed())
+        std::cout << Util::pad(name) << total << '\n';
+    std::cout << std::endl;
 
 }
-*/
