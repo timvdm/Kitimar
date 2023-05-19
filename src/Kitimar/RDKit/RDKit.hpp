@@ -7,27 +7,133 @@
 #include <GraphMol/FileParsers/MolSupplier.h>
 #include <GraphMol/AtomIterators.h>
 #include <GraphMol/MolOps.h>
+#include <GraphMol/MolPickler.h>
 
 #include <ranges>
 
 namespace Kitimar {
 
-    inline void readMoleculesRDKit(const std::string_view &filename,
-                                   std::function<bool (std::shared_ptr<RDKit::ROMol>)> callback)
-    {
-
-        RDKit::SmilesMolSupplier supplier{filename.data()};
-        while (!supplier.atEnd()) {
-            std::shared_ptr<RDKit::ROMol> mol{supplier.next()};
-            if (!callback(mol))
-                break;
-        }
-    }
-
     inline std::shared_ptr<RDKit::ROMol> readSmilesRDKit(std::string_view smiles)
     {
         return std::shared_ptr<RDKit::ROMol>{RDKit::SmilesToMol(smiles.data())};
     }
+
+    class RDKitSmilesMolSource
+    {
+        public:
+            RDKitSmilesMolSource(const std::string_view &filename) : m_supplier{filename.data(), "\t", 0, 1, false}
+            {
+            }
+
+            operator bool()
+            {
+                return m_atEnd;
+            }
+
+            auto index() const noexcept
+            {
+                return m_index;
+            }
+
+            RDKit::SmilesMolSupplier& supplier()
+            {
+                return m_supplier;
+            }
+
+            std::shared_ptr<RDKit::ROMol> read()
+            {
+                if (m_supplier.atEnd()) {
+                    m_atEnd = true;
+                    return nullptr;
+                }
+                ++m_index;
+
+                auto mol = std::shared_ptr<RDKit::ROMol>{m_supplier.next()};
+                m_atEnd = m_supplier.atEnd();
+                return mol;
+
+            }
+
+            auto molecules()
+            {
+                return std::views::iota(0) |
+                        std::views::take_while([this] (auto i) {
+                            return !m_atEnd;
+                        }) |
+                        std::views::transform([this] (auto i) {
+                            return read();
+                        });
+            }
+
+        private:
+            RDKit::SmilesMolSupplier m_supplier;
+            std::size_t m_index = 0;
+            bool m_atEnd = false;
+    };
+
+    class RDKitPickleMolSource
+    {
+        public:
+            RDKitPickleMolSource(const std::string_view &filename) : m_ifs{filename.data(), std::ios_base::binary}
+            {                
+                m_atEnd = m_ifs.eof();
+                if (!m_atEnd) {
+                    m_mol.reset(new RDKit::ROMol);
+                    RDKit::MolPickler::molFromPickle(m_ifs, *m_mol);
+                }
+            }
+
+            operator bool()
+            {
+                return m_atEnd;
+            }
+
+            auto index() const noexcept
+            {
+                return m_index;
+            }
+
+            auto& ifs()
+            {
+                return m_ifs;
+            }
+
+            std::shared_ptr<RDKit::ROMol> read()
+            {
+                if (m_atEnd)
+                    return nullptr;
+
+                auto mol = m_mol;
+                try {
+                    m_mol.reset(new RDKit::ROMol);
+                    RDKit::MolPickler::molFromPickle(m_ifs, *m_mol);
+                } catch( RDKit::MolPicklerException &e ) {
+                    m_atEnd = true;
+                }
+
+                ++m_index;
+                return mol;
+
+            }
+
+            auto molecules()
+            {
+                return std::views::iota(0) |
+                        std::views::take_while([this] (auto i) {
+                            return !m_atEnd;
+                        }) |
+                        std::views::transform([this] (auto i) {
+                            return read();
+                        });
+            }
+
+        private:
+            std::shared_ptr<RDKit::ROMol> m_mol;
+            std::ifstream m_ifs;
+            std::size_t m_index = 0;
+            bool m_atEnd = false;
+    };
+
 
 } // namespace Kitimar
 

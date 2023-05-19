@@ -16,6 +16,14 @@ OpenBabel       Molecule interface for OpenBabel            Molecule, openbabel
 
 
 
+- readMoleculesOpenBabel -> OpenBabelSmilesMolSource
+- remove readMoleculesOpenBabel
+- modify serializeChemblKitimar(source)
+- add RDKit
+
+
+- add MolSource concept to Molecule
+
 
 
 

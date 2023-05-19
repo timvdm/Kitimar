@@ -665,7 +665,8 @@ TEST(TestCTSmarts, ValidateOpenBabel)
     if (!VALIDATE_OPENBABEL)
         return;
 
-    readMoleculesOpenBabel(chembl_smi_filename(), [] (auto &mol) {
+    OpenBabelSmilesMolSource source{chembl_smi_filename()};
+    for (auto mol : source.molecules()) {
         EXPECT_TRUE(test_match<"C">(mol));
 
         EXPECT_TRUE(test_match<"*1~*~*~*~*~*~1">(mol));
@@ -678,9 +679,8 @@ TEST(TestCTSmarts, ValidateOpenBabel)
         //EXPECT_TRUE(test_match<"[nH]">(mol));
         //EXPECT_TRUE(test_match<"c1cc(=O)cc[nH]1">(mol));
         EXPECT_TRUE(test_match<"O1CCOC12CCNCC2">(mol));
+    }
 
-        return true;
-    });
 }
 
 

@@ -3,7 +3,6 @@
 #include <Kitimar/Molecule/Molecule.hpp>
 #include <Kitimar/CTLayout/Serialize.hpp>
 
-
 namespace Kitimar::CTLayout {
 
     struct NumAtoms : ArraySize {};

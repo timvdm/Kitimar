@@ -1,7 +1,6 @@
 add_subdirectory(Util)
 add_subdirectory(Molecule)
 add_subdirectory(CTLayout)
-add_subdirectory(Serialize)
 add_subdirectory(CTSmarts)
 add_subdirectory(OpenBabel)
 add_subdirectory(RDKit)

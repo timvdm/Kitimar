@@ -12,45 +12,65 @@
 
 namespace Kitimar {
 
-    namespace detail {
-
-        inline OpenBabel::OBConversion makeOBConversion(const std::string &filename)
-        {
-            OpenBabel::OBConversion conv;
-            auto *format = conv.FormatFromExt(filename);
-            if (!format)
-                throw std::runtime_error("Could not determine format");
-            if (!conv.SetInFormat(format))
-                throw std::runtime_error("Could not set input format");
-            return conv;
-        }
-
-    } // namespace detail
-
-
-    inline void readMoleculesOpenBabel(const std::string &filename,
-                              std::function<bool (OpenBabel::OBMol&)> callback)
-    {
-        OpenBabel::OBMol mol;
-        auto conv = detail::makeOBConversion(filename);
-        auto notAtEnd = conv.ReadFile(&mol, filename);
-        if (!notAtEnd)
-            throw std::runtime_error("Could not read molecule");
-        while (notAtEnd) {
-            if (!callback(mol))
-                break;
-            notAtEnd = conv.Read(&mol);
-        }
-    }
-
     inline OpenBabel::OBMol readSmilesOpenBabel(std::string_view smiles)
     {
+        OpenBabel::OBMol mol;
         OpenBabel::OBConversion conv;
         conv.SetInFormat("smi");
-        OpenBabel::OBMol mol;
         conv.ReadString(&mol, smiles.data());
         return mol;
     }
+
+    class OpenBabelSmilesMolSource
+    {
+        public:
+            OpenBabelSmilesMolSource(const std::string_view &filename)
+            {
+                m_atEnd = !m_conv.ReadFile(&m_mol, filename.data());
+            }
+
+            operator bool()
+            {
+                return !m_atEnd;
+            }
+
+            auto index() const noexcept
+            {
+                return m_index;
+            }
+
+            OpenBabel::OBConversion& obConversion()
+            {
+                return m_conv;
+            }
+
+            OpenBabel::OBMol read()
+            {
+                if (m_atEnd)
+                    return {};
+                auto mol = m_mol; // FIXME use shared_ptr
+                m_atEnd = !m_conv.Read(&m_mol);
+                ++m_index;
+                return mol;
+            }
+
+            auto molecules()
+            {
+                return std::views::iota(0) |
+                        std::views::take_while([this] (auto) {
+                            return !m_atEnd;
+                        }) |
+                        std::views::transform([this] (auto) {
+                            return read();
+                        });
+            }
+
+        private:
+            OpenBabel::OBMol m_mol;
+            OpenBabel::OBConversion m_conv;
+            std::size_t m_index = 0;
+            bool m_atEnd = false;
+    };
 
 } // namespace Kitimar
 

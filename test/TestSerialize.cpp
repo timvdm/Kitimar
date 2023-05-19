@@ -1,7 +1,9 @@
 #include <Kitimar/CTLayout/Molecule.hpp>
 #include <Kitimar/OpenBabel/OpenBabel.hpp>
 #include <Kitimar/CTSmarts/Isomorphism.hpp>
-#include <Kitimar/Util/Test.hpp>
+
+#include "TestData.hpp"
+//#include "Test.hpp"
 
 #include <openbabel/parsmart.h>
 
@@ -52,31 +54,31 @@ TEST(TestSerialize, Molecule)
 
 void compare(auto &mol, auto &ref)
 {
-    EXPECT_EQ(num_atoms(mol), num_atoms(ref));
-    EXPECT_EQ(num_bonds(mol), num_bonds(ref));
+    ASSERT_EQ(num_atoms(mol), num_atoms(ref));
+    ASSERT_EQ(num_bonds(mol), num_bonds(ref));
 
     for (auto i = 0; i < num_atoms(ref); ++i) {
         auto refAtom = get_atom(ref, i);
-        auto atom = get_atom(mol, i);
-        EXPECT_EQ(get_index(mol, atom), get_index(ref, refAtom));
-        EXPECT_EQ(get_element(mol, atom), get_element(ref, refAtom));
-        EXPECT_EQ(get_isotope(mol, atom), get_isotope(ref, refAtom));
-        EXPECT_EQ(get_charge(mol, atom), get_charge(ref, refAtom));
-        EXPECT_EQ(get_implicit_hydrogens(mol, atom), get_implicit_hydrogens(ref, refAtom));
-        EXPECT_EQ(get_degree(mol, atom), get_degree(ref, refAtom));
-        EXPECT_EQ(is_aromatic_atom(mol, atom), is_aromatic_atom(ref, refAtom));
+        auto atom = get_atom(mol, i);        
+        ASSERT_EQ(get_index(mol, atom), get_index(ref, refAtom));
+        ASSERT_EQ(get_element(mol, atom), get_element(ref, refAtom));
+        ASSERT_EQ(get_isotope(mol, atom), get_isotope(ref, refAtom));
+        ASSERT_EQ(get_charge(mol, atom), get_charge(ref, refAtom));
+        ASSERT_EQ(get_implicit_hydrogens(mol, atom), get_implicit_hydrogens(ref, refAtom));
+        ASSERT_EQ(get_degree(mol, atom), get_degree(ref, refAtom));
+        ASSERT_EQ(is_aromatic_atom(mol, atom), is_aromatic_atom(ref, refAtom));
     }
 
     for (auto i = 0; i < num_bonds(ref); ++i) {
         auto refBond = get_bond(ref, i);
         auto bond = get_bond(mol, i);
-        EXPECT_EQ(get_index(mol, bond), get_index(ref, refBond));
-        EXPECT_EQ(get_index(mol, get_source(mol, bond)),
+        ASSERT_EQ(get_index(mol, bond), get_index(ref, refBond));
+        ASSERT_EQ(get_index(mol, get_source(mol, bond)),
                   get_index(ref, get_source(ref, refBond)));
-        EXPECT_EQ(get_index(mol, get_target(mol, bond)),
+        ASSERT_EQ(get_index(mol, get_target(mol, bond)),
                   get_index(ref, get_target(ref, refBond)));
-        EXPECT_EQ(get_order(mol, bond), get_order(ref, refBond));
-        EXPECT_EQ(is_aromatic_bond(mol, bond), is_aromatic_bond(ref, refBond));
+        ASSERT_EQ(get_order(mol, bond), get_order(ref, refBond));
+        ASSERT_EQ(is_aromatic_bond(mol, bond), is_aromatic_bond(ref, refBond));
     }
 
     for (auto i = 0; i < num_atoms(ref); ++i) {
@@ -88,8 +90,8 @@ void compare(auto &mol, auto &ref)
         auto bonds = get_bonds(mol, atom);
         auto nbrs = get_nbrs(mol, atom);
 
-        EXPECT_EQ(std::ranges::distance(bonds), std::ranges::distance(refBonds));
-        EXPECT_EQ(std::ranges::distance(nbrs), std::ranges::distance(refNbrs));
+        ASSERT_EQ(std::ranges::distance(bonds), std::ranges::distance(refBonds));
+        ASSERT_EQ(std::ranges::distance(nbrs), std::ranges::distance(refNbrs));
 
         // not sorted...
         /*
@@ -135,6 +137,65 @@ TEST(TestSerialize, Serialize)
     test_serialize<StructMolecule>("c1ccccc1");
 }
 
+template<typename Layout>
+auto serializeSmiles(const std::string &SMILES, const std::string &filename)
+{
+    // Read SMILES
+    auto obmol = readSmilesOpenBabel(SMILES);
+
+    // Serialize SMILES
+    std::vector<std::byte> data;
+    serialize<Layout>(obmol, data);
+    auto ref = Object<Layout>(data.data());
+
+    // Write to file
+    std::ofstream ofs(filename, std::ios_base::binary | std::ios_base::out);
+    LayoutSize::Type size = 1;
+    ofs.write(reinterpret_cast<char*>(&size), sizeof(size));
+    ofs.write(reinterpret_cast<char*>(data.data()), data.size());
+    ofs.close();
+
+    return obmol;
+}
+
+
+TEST(TestSerialize, SerializeInMemory)
+{
+    using Layout = StructMoleculeIncident;
+
+    auto filename = "test_mmap.bin";
+    auto ref = serializeSmiles<Layout>("CC(=O)[O-]", filename);
+
+    // Deserialize using mmap
+    InMemorySource<Layout> source{filename};
+    ASSERT_EQ(source.size(), 1);
+    ASSERT_EQ(source.offset(), LayoutSize::size());
+    auto mol = source.read();
+    ASSERT_EQ(source.offset(), LayoutSize::size() + Layout::size({num_atoms(ref), num_bonds(ref)}));
+
+    // Compare
+    compare(mol, ref);
+
+}
+
+
+TEST(TestSerialize, CompareMemoryMappedInMemory)
+{
+    using Layout = StructMoleculeIncident;
+
+    MemoryMappedSource<Layout> mmap{chembl_serialized_filename(Layout{})};
+    InMemorySource<Layout> mem{chembl_serialized_filename(Layout{})};
+
+    ASSERT_EQ(mem.size(), mmap.size());
+
+    for (auto i = 0; i < mmap.size(); ++i) {
+        auto memMol = mem.read();
+        auto mmapMol = mmap.read();
+        compare(memMol, mmapMol);
+    }
+}
+
+
 TEST(TestSerialize, SerializeMemoryMap)
 {
     using Layout = StructMoleculeIncident;
@@ -159,14 +220,13 @@ TEST(TestSerialize, SerializeMemoryMap)
 
     // Deserialize using mmap
     MemoryMappedSource<Layout> source{filename};
-    EXPECT_EQ(source.size(), 1);
-    EXPECT_EQ(source.offset(), LayoutSize::size());
+    ASSERT_EQ(source.size(), 1);
+    ASSERT_EQ(source.offset(), LayoutSize::size());
     auto mol = source.read();
-    EXPECT_EQ(source.offset(), LayoutSize::size() + Layout::size({num_atoms(ref), num_bonds(ref)}));
+    ASSERT_EQ(source.offset(), LayoutSize::size() + Layout::size({num_atoms(ref), num_bonds(ref)}));
 
     // Compare
     compare(mol, ref);
-
 }
 
 
@@ -177,10 +237,9 @@ auto findOBMatches(const std::string &SMARTS, const std::string &filename = chem
     smarts.Init(SMARTS);
 
     std::vector<bool> matches;
-    readMoleculesOpenBabel(filename, [&] (auto &mol) {
+    OpenBabelSmilesMolSource source{filename};
+    for (auto mol : source.molecules())
         matches.push_back(smarts.Match(mol));
-        return true;
-    });
 
     return matches;
 }
@@ -192,9 +251,7 @@ auto findCTMatches()
     SingleIsomorphism<SMARTS> smarts{};
 
     std::vector<bool> matches;
-    for (auto [ok, mol] : source.objects()) {
-        if (!ok)
-            break;
+    for (auto mol : source.objects()) {
         matches.push_back(smarts.match(mol));
     }
 
@@ -208,12 +265,11 @@ auto validateOpenBabel()
     auto obMatches = findOBMatches(std::string{SMARTS.begin(), SMARTS.end()});
 
 
-    EXPECT_EQ(ctMatches.size(), obMatches.size());
+    ASSERT_EQ(ctMatches.size(), obMatches.size());
 
-    EXPECT_EQ(std::ranges::count(ctMatches, true),
+    ASSERT_EQ(std::ranges::count(ctMatches, true),
               std::ranges::count(obMatches, true));
 
-    return true;
 }
 
 
