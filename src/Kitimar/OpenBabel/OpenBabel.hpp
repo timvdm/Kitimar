@@ -65,6 +65,12 @@ namespace Kitimar {
                         });
             }
 
+            void reset()
+            {
+                m_index = 0;
+                m_atEnd = !m_conv.ReadFile(&m_mol, m_conv.GetInFilename());
+            }
+
         private:
             OpenBabel::OBMol m_mol;
             OpenBabel::OBConversion m_conv;

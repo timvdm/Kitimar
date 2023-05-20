@@ -49,13 +49,23 @@ namespace Kitimar::CTLayout {
 
             auto write(const std::byte *data, auto size)
             {
-                m_ofs.write(reinterpret_cast<const char*>(data), size);
-                ++m_size;
+                m_ofs.write(reinterpret_cast<const char*>(data), size);             
             }
 
             auto write(const std::vector<std::byte> &data)
             {
-                m_ofs.write(reinterpret_cast<const char*>(data.data()), data.size());
+                m_ofs.write(reinterpret_cast<const char*>(data.data()), data.size());                
+            }
+
+            auto writeObject(const std::byte *data, auto size)
+            {
+                write(data, size);
+                ++m_size;
+            }
+
+            auto writeObject(const std::vector<std::byte> &data)
+            {
+                write(data);
                 ++m_size;
             }
 

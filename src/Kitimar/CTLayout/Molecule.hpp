@@ -39,12 +39,47 @@ namespace Kitimar::CTLayout {
     struct OrderArray : Array<OrderValue, NumBonds> {};
     struct AromaticBondArray : BitArray<NumBonds> {};
 
+    // Type-Oriented design
+    struct NumAtomTypes : ArraySize {};
+    struct NumBondTypes : ArraySize {};
+
+    struct AtomTypeMap : Array<AtomStruct, NumAtomTypes> {};
+    struct AtomTypeIndex : Value<uint16_t> {};
+    struct AtomTypeArray : Array<AtomTypeIndex, NumAtoms> {};
+
+    struct BondTypeMap : Array<BondStruct, NumBondTypes> {};
+    struct BondTypeIndex : Value<uint8_t> {};
+    struct BondTypeArray : Array<BondTypeIndex, NumBonds> {};
+
+    struct AtomType
+    {
+        uint8_t element;
+        uint8_t isotope;
+        int8_t charge;
+        uint8_t degree;
+        uint8_t implicitHydrogens;
+        bool aromatic;
+
+        friend auto operator<=>(const AtomType&, const AtomType&) = default;
+    };
+
+    struct BondType
+    {
+        uint8_t order;
+        bool cyclic;
+        bool aromatic;
+
+        friend auto operator<=>(const BondType&, const BondType&) = default;
+    };
+
+
+
     // incident list (i.e. bonds for atom)
     struct IncidentBegin : Value<SizeT> {};
     struct IncidentBeginArray : Array<IncidentBegin, NumAtoms> {};
     struct IncidentIndex : Value<SizeT> {};
     struct IncidentArray : Array<IncidentIndex, NumBonds, 2> {};
-
+    // FIXME IncidentStruct
 
     // adjacent list (i.e. nbrs of atom)
     struct AdjacentBegin : Value<SizeT> {};
@@ -73,6 +108,11 @@ namespace Kitimar::CTLayout {
                                                   SourceArray, TargetArray, OrderArray,
                                                   IncidentBeginArray, IncidentArray,
                                                   AdjacentBeginArray, AdjacentArray> {};
+
+
+    struct AtomTypeLayout : Layout<AtomTypeMap> {};
+    struct AtomTypeMolecule : Layout<AtomTypeArray, BondArray, IncidentBeginArray, IncidentArray> {};
+
 
     //
     // Molecule
@@ -239,36 +279,12 @@ namespace Kitimar::CTLayout {
         return source != atom ? source : get_target(mol, bond);
     }
 
-
     template<typename Layout>
-    void serializeMolecule(Molecule auto &mol, std::byte *data)
+    void serializeIncident(Molecule auto &mol, std::byte *data)
     {
-        auto obj = EditableObject<Layout>{data};
-        obj.setSize(NumAtoms{}, num_atoms(mol));
-        obj.setSize(NumBonds{}, num_bonds(mol));
-        obj.setSize(obj.size());
-
-        for (auto atom : get_atoms(mol)) {
-            auto index = get_index(mol, atom);
-            obj.setValue(ElementValue{}, index, get_element(mol, atom));
-            obj.setValue(IsotopeValue{}, index, get_isotope(mol, atom));
-            obj.setValue(ChargeValue{}, index, get_charge(mol, atom));
-            obj.setValue(DegreeValue{}, index, get_degree(mol, atom));
-            obj.setValue(ImplicitHydrogensValue{}, index, get_implicit_hydrogens(mol, atom));
-            obj.setValue(AromaticAtomValue{}, index, is_aromatic_atom(mol, atom));
-        }
-
-        for (auto bond : get_bonds(mol)) {
-            auto index = get_index(mol, bond);
-            obj.setValue(SourceValue{}, index, get_index(mol, get_source(mol, bond)));
-            obj.setValue(TargetValue{}, index, get_index(mol, get_target(mol, bond)));
-            obj.setValue(OrderValue{}, index, get_order(mol, bond));
-            obj.setValue(CyclicBondValue{}, index, is_cyclic_bond(mol, bond));
-            obj.setValue(AromaticBondValue{}, index, is_aromatic_bond(mol, bond));
-        }
-
         if constexpr (ctll::exists_in(IncidentArray{}, Layout::type)) {
             static_assert(ctll::exists_in(IncidentBeginArray{}, Layout::type));
+            auto obj = EditableObject<Layout>{data};
             SizeT index = 0;
             for (auto atom : get_atoms(mol)) {
                 obj.setValue(IncidentBegin{}, get_index(mol, atom), index);
@@ -276,9 +292,14 @@ namespace Kitimar::CTLayout {
                     obj.setValue(IncidentIndex{}, index++, get_index(mol, bond));
             }
         }
+    }
 
+    template<typename Layout>
+    void serializeAdjacent(Molecule auto &mol, std::byte *data)
+    {
         if constexpr (ctll::exists_in(AdjacentArray{}, Layout::type)) {
             static_assert(ctll::exists_in(AdjacentBeginArray{}, Layout::type));
+            auto obj = EditableObject<Layout>{data};
             SizeT index = 0;
             for (auto atom : get_atoms(mol)) {
                 obj.setValue(AdjacentBegin{}, get_index(mol, atom), index);
@@ -289,28 +310,184 @@ namespace Kitimar::CTLayout {
     }
 
     template<typename Layout>
+    void serializeAtomArray(Molecule auto &mol, std::byte *data)
+    {
+        if constexpr (ctll::exists_in(AtomArray{}, Layout::type)) {
+            auto obj = EditableObject<Layout>{data};
+            for (auto atom : get_atoms(mol)) {
+                auto index = get_index(mol, atom);
+                obj.setValue(ElementValue{}, index, get_element(mol, atom));
+                obj.setValue(IsotopeValue{}, index, get_isotope(mol, atom));
+                obj.setValue(ChargeValue{}, index, get_charge(mol, atom));
+                obj.setValue(DegreeValue{}, index, get_degree(mol, atom));
+                obj.setValue(ImplicitHydrogensValue{}, index, get_implicit_hydrogens(mol, atom));
+                obj.setValue(AromaticAtomValue{}, index, is_aromatic_atom(mol, atom));
+            }
+        }
+    }
+
+    template<typename Layout>
+    void serializeBondArray(Molecule auto &mol, std::byte *data)
+    {
+        if constexpr (ctll::exists_in(BondArray{}, Layout::type)) {
+            auto obj = EditableObject<Layout>{data};
+            for (auto bond : get_bonds(mol)) {
+                auto index = get_index(mol, bond);
+                obj.setValue(SourceValue{}, index, get_index(mol, get_source(mol, bond)));
+                obj.setValue(TargetValue{}, index, get_index(mol, get_target(mol, bond)));
+                obj.setValue(OrderValue{}, index, get_order(mol, bond));
+                obj.setValue(CyclicBondValue{}, index, is_cyclic_bond(mol, bond));
+                obj.setValue(AromaticBondValue{}, index, is_aromatic_bond(mol, bond));
+            }
+        }
+    }
+
+    template<typename Layout>
+    auto findTypes(auto &source)
+    {
+        std::vector<AtomType> atomTypes;
+        std::vector<BondType> bondTypes;
+
+        if constexpr (ctll::exists_in(AtomTypeArray{}, Layout::type)) { // FIXME or BondTypeArray
+            for (auto mol : source.molecules()) {
+                for (auto atom : get_atoms(mol)) {
+                    auto type = AtomType{
+                        static_cast<uint8_t>(get_element(mol, atom)),
+                        static_cast<uint8_t>(get_isotope(mol, atom)),
+                        static_cast<int8_t>(get_charge(mol, atom)),
+                        static_cast<uint8_t>(get_degree(mol, atom)),
+                        static_cast<uint8_t>(get_implicit_hydrogens(mol, atom)),
+                        is_aromatic_atom(mol, atom)
+                    };
+
+                    if (std::ranges::find(atomTypes, type) == atomTypes.end())
+                        atomTypes.push_back(type);
+                }
+
+                for (auto bond : get_bonds(mol)) {
+                    auto type = BondType{
+                        static_cast<uint8_t>(get_order(mol, bond)),
+                        is_cyclic_bond(mol, bond),
+                        is_aromatic_bond(mol, bond)
+                    };
+
+                    if (std::ranges::find(bondTypes, type) == bondTypes.end())
+                        bondTypes.push_back(type);
+                }
+
+            }
+
+            source.reset();
+        }
+
+        return std::make_tuple(atomTypes, bondTypes);
+    }
+
+    void serializeAtomTypeMap(FileStreamSink &sink, std::vector<std::byte> &buffer,
+                            const std::vector<AtomType> &types)
+    {
+        if (types.empty())
+            return;
+
+        buffer.resize(AtomTypeLayout::size({static_cast<SizeT>(types.size())}));
+
+        auto obj = EditableObject<AtomTypeLayout>{buffer.data()};
+        obj.setSize(NumAtomTypes{}, types.size());
+        obj.setSize(obj.size());
+
+        for (auto i = 0; i < types.size(); ++i) {
+            const auto &type = types[i];
+            obj.setValue(ElementValue{}, i, type.element);
+            obj.setValue(IsotopeValue{}, i, type.isotope);
+            obj.setValue(ChargeValue{}, i, type.charge);
+            obj.setValue(DegreeValue{}, i, type.degree);
+            obj.setValue(ImplicitHydrogensValue{}, i, type.implicitHydrogens);
+            obj.setValue(AromaticAtomValue{}, i, type.aromatic);
+        }
+
+        sink.write(buffer);
+    }
+
+    template<typename Layout>
+    void serializeAtomTypeArray(Molecule auto &mol, std::byte *data,
+                                const std::vector<AtomType> &atomTypes)
+    {
+        if constexpr (ctll::exists_in(AtomTypeArray{}, Layout::type)) {
+            auto obj = EditableObject<Layout>{data};
+
+            for (auto atom : get_atoms(mol)) {
+                auto type = AtomType{
+                    static_cast<uint8_t>(get_element(mol, atom)),
+                    static_cast<uint8_t>(get_isotope(mol, atom)),
+                    static_cast<int8_t>(get_charge(mol, atom)),
+                    static_cast<uint8_t>(get_degree(mol, atom)),
+                    static_cast<uint8_t>(get_implicit_hydrogens(mol, atom)),
+                    is_aromatic_atom(mol, atom)
+                };
+
+                auto typeIndex = std::ranges::find(atomTypes, type) - atomTypes.begin();
+                obj.setValue(AtomTypeIndex{}, get_index(mol, atom), typeIndex);
+            }
+        }
+    }
+
+
+
+
+    template<typename Layout>
+    void serializeMolecule(Molecule auto &mol, std::byte *data,
+                           const std::vector<AtomType> &atomTypes)
+    {            
+        auto obj = EditableObject<Layout>{data};
+        obj.setSize(NumAtoms{}, num_atoms(mol));
+        obj.setSize(NumBonds{}, num_bonds(mol));
+        obj.setSize(obj.size());
+
+        serializeAtomTypeArray<Layout>(mol, data, atomTypes);
+
+        serializeAtomArray<Layout>(mol, data);
+        serializeBondArray<Layout>(mol, data);
+
+        serializeIncident<Layout>(mol, data);
+        serializeAdjacent<Layout>(mol, data);
+
+    }
+
+
+
+
+
+
+    template<typename Layout>
     constexpr auto moleculeSize(SizeT numAtoms, SizeT numBonds) noexcept
     {
         return Layout::size({numAtoms, numBonds});
     }
 
+
     template<typename Layout>
-    class MoleculeSink : public FileStreamSink
+    void serializeMolSource(auto &source, std::string_view filename)
     {
-        public:
-            MoleculeSink(std::string_view filename) : FileStreamSink(filename)
-            {
-            }
+        FileStreamSink sink{filename};
+        std::vector<std::byte> buffer;
 
-            auto write(Molecule auto &mol)
-            {
-                m_buffer.resize(moleculeSize<Layout>(num_atoms(mol), num_bonds(mol)));
-                serializeMolecule<Layout>(mol, m_buffer.data());
-                FileStreamSink::write(m_buffer);
-            }
 
-        private:
-            std::vector<std::byte> m_buffer;
-    };
+        auto [atomTypes, bondTypes] = findTypes<Layout>(source);
+
+        std::cout << "# atom types: " << atomTypes.size() << std::endl;
+        std::cout << "# bond types: " << bondTypes.size() << std::endl;
+
+
+
+
+        for (auto mol : source.molecules()) {
+            buffer.resize(moleculeSize<Layout>(num_atoms(mol), num_bonds(mol)));
+            serializeMolecule<Layout>(mol, buffer.data(), atomTypes);
+            sink.writeObject(buffer);
+            if (sink.size() % 10000 == 0) std::cout << sink.size() << std::endl;
+        }
+    }
+
+
 
 } // namespace Kitimar::CTLayout

@@ -30,25 +30,13 @@ namespace Kitimar {
         return std::string(KITIMAR_DATA_DIR) + "/chembl_32.StructMoleculeIncident";
     }
 
-
-
-    /*
-    template<typename FromLayout, typename ToLayout>
-    void serialize_chembl()
+    inline auto chembl_serialized_filename(CTLayout::AtomTypeMolecule)
     {
-        std::vector<std::byte> idata, odata;
-        std::ifstream ifs(chembl_serialized_filename(FromLayout{}), std::ios_base::binary | std::ios_base::in);
-        std::ofstream ofs(chembl_serialized_filename(ToLayout{}), std::ios_base::binary | std::ios_base::out);
-        assert(ofs);
-        while (ifs) {
-            auto [ok, mol] = deserialize<FromLayout>(ifs, idata);
-            if (!ok)
-                break;
-            serialize<ToLayout>(mol, ofs, odata);
-        }
+        return std::string(KITIMAR_DATA_DIR) + "/chembl_32.AtomTypeMolecule";
 
-        ofs.write(reinterpret_cast<const char*>(&LayoutEnd), LayoutSize::size());
     }
-    */
+
+
+
 
 } // namespace Kitimar

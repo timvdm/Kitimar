@@ -17,7 +17,7 @@ template<typename Layout>
 void serialize(Molecule auto &mol, std::vector<std::byte> &data)
 {
     data.resize(moleculeSize<Layout>(num_atoms(mol), num_bonds(mol)));
-    serializeMolecule<Layout>(mol, data.data());
+    serializeMolecule<Layout>(mol, data.data(), {});
 }
 
 

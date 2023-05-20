@@ -69,7 +69,7 @@ namespace Kitimar::CTLayout {
         constexpr std::size_t find(T, Container) noexcept
         {
             if constexpr (std::is_same_v<T, Container>)
-                return 0;
+                return SizeT{0};
             else if constexpr (isStruct(Container{}))
                 return findStruct(T{}, Container::type);
             else if constexpr (isArray(Container{}))
@@ -114,9 +114,9 @@ namespace Kitimar::CTLayout {
         constexpr auto indexOf(T, ctll::list<U, Us...>) noexcept
         {
             if constexpr (std::is_same_v<T, U>)
-                return 0;
+                return SizeT{0};
             else
-                return 1 + indexOf(T{}, ctll::list<Us...>{});
+                return SizeT{1} + indexOf(T{}, ctll::list<Us...>{});
         }
 
     } // namespace detail
@@ -126,9 +126,9 @@ namespace Kitimar::CTLayout {
     template<typename ...Ts>
     struct Layout
     {
-        using Type = ctll::list<Ts...>; // FIXME: unique + no array sizes
+        using Type = ctll::list<Ts...>; // FIXME: unique + no array sizes        
         static constexpr inline auto type = Type{};
-
+        
         static constexpr inline auto arrays = detail::findArrays(type);
         static constexpr inline SizeT numArrays = ctll::size(arrays);
 
@@ -144,10 +144,10 @@ namespace Kitimar::CTLayout {
         {
             using ArraySizes = std::array<SizeT, numArraySizes>;
 
-            std::size_t fixed = 0;
+            std::size_t fixed = 0UL;
             ArraySizes arraySizes = {};
             ArraySizes bitArraySizes = {};
-            SizeT stride = 0;
+            SizeT stride = SizeT{0};
 
             constexpr auto offset(const SizeT *s) const noexcept
             {
@@ -190,6 +190,7 @@ namespace Kitimar::CTLayout {
 
 
 
+
         template<typename T>
         static constexpr auto _find(T, ctll::empty_list) noexcept
         {
@@ -209,12 +210,12 @@ namespace Kitimar::CTLayout {
                 auto i = detail::indexOf(typename U::Size{}, arraySizes);
                 auto l = Loc{};
                 l.arraySizes[i] = U::n * U::stride();
-                return Loc{ 0UL, l.arraySizes} + _find(T{}, ctll::list<Us...>{}); // FIXME l + ...
+                return Loc{ SizeT{0}, l.arraySizes} + _find(T{}, ctll::list<Us...>{}); // FIXME l + ...
             } else if constexpr (isBitArray(U{})) {
                 auto i = detail::indexOf(typename U::Size{}, arraySizes);
                 auto l = Loc{};
                 l.bitArraySizes[i] = U::n;
-                return Loc{ 0UL, {}, l.bitArraySizes } + _find(T{}, ctll::list<Us...>{}); // FIXME l + ...
+                return Loc{ SizeT{0}, {}, l.bitArraySizes } + _find(T{}, ctll::list<Us...>{}); // FIXME l + ...
             } else {
                 auto size = detail::find(T{}, U{});
                 if (size != U::size())
@@ -241,6 +242,7 @@ namespace Kitimar::CTLayout {
 
         static constexpr auto size(const Loc::ArraySizes &sizes) noexcept
         {
+            assert(sizes.size() == numArraySizes);
             return size(sizes.data());
         }
 
