@@ -71,7 +71,7 @@ namespace Kitimar::CTLayout {
             if constexpr (std::is_same_v<T, Container>)
                 return SizeT{0};
             else if constexpr (isStruct(Container{}))
-                return findStruct(T{}, Container::type);
+                return findStruct(T{}, Container::members);
             else if constexpr (isArray(Container{}))
                 return find(T{}, Container::type);
             else return Container::size();

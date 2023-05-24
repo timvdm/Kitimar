@@ -71,7 +71,7 @@ template<ctll::fixed_string SMARTS, typename Callback>
 auto matchesKitimar(auto &source, Callback callback)
 {
     SingleIsomorphism<SMARTS> smarts{};
-    for (auto mol : source.objects())
+    for (auto mol : source.molecules())
         callback(mol, smarts.match(mol));
 }
 
@@ -79,14 +79,15 @@ auto matchesKitimar(auto &source, Callback callback)
 template<ctll::fixed_string SMARTS, typename Layout, typename Callback>
 auto matchesKitimarFileStream(Callback callback)
 {
-    FileStreamSource<Layout> source{chembl_serialized_filename(Layout{})};
+    FileStreamMolSource<Layout> source{chembl_serialized_filename(Layout{})};
+    std::cout << "# molecules: " << source.numMolecules() << std::endl;
     matchesKitimar<SMARTS>(source, std::forward<Callback>(callback));
 }
 
 template<ctll::fixed_string SMARTS, typename Layout, typename Callback>
 auto matchesKitimarMemoryMapped(Callback callback)
 {
-    MemoryMappedSource<Layout> source{chembl_serialized_filename(Layout{})};
+    MemoryMappedMolSource<Layout> source{chembl_serialized_filename(Layout{})};
     matchesKitimar<SMARTS>(source, std::forward<Callback>(callback));
 }
 
@@ -132,12 +133,14 @@ Benchmark countMatchesKitimarFileStream()
 
 template<ctll::fixed_string SMARTS, typename Layout>
 Benchmark countMatchesKitimarInMemory()
-{    
+{
+    /*
     InMemorySource<Layout> source{chembl_serialized_filename(Layout{})};
     Util::Timer timer;
     auto n = 0;
     matchesKitimar<SMARTS>(source, [&n] (auto &mol, bool match) { if (match) ++n; });
     return {"Kitimar InMemory", n, timer.elapsed()};
+    */
 }
 
 template<ctll::fixed_string SMARTS, typename Layout>
@@ -156,13 +159,13 @@ void countMatches(std::vector<BenchmarkGroup> &groups)
     groups.push_back({ Util::toString(SMARTS), {
         //countMatchesOpenBabelSmiles<SMARTS>(),
         //countMatchesRDKitSmiles<SMARTS>(),
-        countMatchesRDKitPickle<SMARTS>(),
+        //countMatchesRDKitPickle<SMARTS>(),
         //Benchmark{"OpenBabel SMILES"},
         //Benchmark{"RDKit SMILES"},
         //Benchmark{"RDKit Pickle"},
-        countMatchesKitimarFileStream<SMARTS, StructMoleculeIncident>(),
-        countMatchesKitimarInMemory<SMARTS, StructMoleculeIncident>(),
-        countMatchesKitimarMemoryMapped<SMARTS, StructMoleculeIncident>()
+        countMatchesKitimarFileStream<SMARTS, Vector<StructMoleculeIncident>>(),
+        //countMatchesKitimarInMemory<SMARTS, Vector<StructMoleculeIncident>>(),
+        //countMatchesKitimarMemoryMapped<SMARTS, Vector<StructMoleculeIncident>>()
     }});
     if constexpr (sizeof...(Tail))
         countMatches<Tail...>(groups);
@@ -183,6 +186,7 @@ BenchmarkGroups countMatches()
 // Deserialize
 //
 
+/*
 template<typename Layout>
 auto deserializeKitimar()
 {
@@ -190,7 +194,7 @@ auto deserializeKitimar()
     InMemorySource<Layout> source{chembl_serialized_filename(Layout{})};
     return Benchmark{"Kitimar Deserialize", source.size(), timer.elapsed()};
 }
-
+*/
 
 
 
@@ -214,6 +218,8 @@ int main()
 
 
     auto groups = countMatches<
+                  "*"
+                  /*
         "*1~*~*~*~*~*~1",
         "c1ccccc1-c2ccccc2",
         "c1ccccc1CCCCc1ccccc1",
@@ -221,6 +227,7 @@ int main()
         "Clc1ccccc1",
         "BrCCCCCCCCC",
         "O1CCOC12CCNCC2"
+                      */
     >();
     std::cout << groups.toString() << std::endl;
 

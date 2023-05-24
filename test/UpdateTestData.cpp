@@ -14,7 +14,7 @@ using namespace Kitimar::CTLayout;
 template<typename Layout>
 void serializeOpenBabelSmilesToKitimar()
 {
-    OpenBabelSmilesMolSource source{chembl_smi_filename()};
+    OpenBabelSmilesMolSource source{chembl_smi_filename("1K")};
     serializeMolSource<Layout>(source, chembl_serialized_filename(Layout{}));
 }
 
@@ -88,8 +88,8 @@ void serializeRDKitSmilesToRDKit()
 int main()
 {
     // OpenBabel SMILES -> Kitimar
-    //serializeOpenBabelSmilesToKitimar<StructMoleculeIncident>();
-    serializeOpenBabelSmilesToKitimar<AtomTypeMolecule>();
+    serializeOpenBabelSmilesToKitimar<Vector<StructMoleculeIncident>>();
+    //serializeOpenBabelSmilesToKitimar<AtomTypeMolecule>();
 
     //serializeOpenBabelSmilesToKitimarTypeIndex<StructMoleculeIncident>();
 

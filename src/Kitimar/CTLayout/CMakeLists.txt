@@ -1,12 +1,20 @@
 # Headers
 
 set(CTLayout_HDRS
-    Types.hpp
-    Layout.hpp
-    Object.hpp
-    Serialize.hpp
+    Source.hpp
+    Sink.hpp
+    Value.hpp
+    Struct.hpp
+    Vector.hpp
     Molecule.hpp
     CTLayout.hpp
+
+    #Types.hpp
+    #Layout.hpp
+    #Object.hpp
+    #Serialize.hpp
+
+
 )
 
 # Library
@@ -18,7 +26,7 @@ target_include_directories(CTLayout INTERFACE
     "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDE_DIR}>"
 )
 
-target_link_libraries(CTLayout INTERFACE ctre::ctre mio::mio Molecule)
+target_link_libraries(CTLayout INTERFACE ctre::ctre mio::mio Util Molecule)
 
 # Install
 

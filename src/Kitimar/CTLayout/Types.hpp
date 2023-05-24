@@ -1,5 +1,9 @@
 #pragma once
 
+#include <Kitimar/CTLayout/Value.hpp>
+#include <Kitimar/CTLayout/Struct.hpp>
+#include <Kitimar/CTLayout/Vector.hpp>
+
 #include <ctll/list.hpp>
 
 #include <cstdint>
@@ -40,17 +44,44 @@
 
 namespace Kitimar::CTLayout {
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     using SizeT = uint32_t;
 
-    namespace detail {
-
-        template<typename T, typename ...Ts>
-        constexpr std::size_t size(ctll::list<T, Ts...>) noexcept { return T::size() + size(ctll::list<Ts...>{}); }
-        constexpr std::size_t size(ctll::list<>) noexcept { return 0; }
-
-    }
 
 
+
+    /*
     // FXIME: T = integral or floating_point
     template<typename T>
     struct Value
@@ -60,7 +91,9 @@ namespace Kitimar::CTLayout {
 
         static constexpr std::size_t size() noexcept { return sizeof(Type); }
     };
+    */
 
+    /*
     // FXIME: Ts = Value or Struct
     template<typename ...Ts>
     struct Struct
@@ -70,6 +103,7 @@ namespace Kitimar::CTLayout {
 
         static constexpr std::size_t size() noexcept { return detail::size(type); }
     };
+    */
 
     // FXIME: T = Value or Struct
     template<typename T, typename ArraySize, int N = 1>
@@ -80,7 +114,8 @@ namespace Kitimar::CTLayout {
         static constexpr inline auto type = Type{};
         static constexpr inline auto n = N;
 
-        static constexpr std::size_t stride() noexcept { return T::size(); }
+        static constexpr std::size_t stride() noexcept
+        { return sizeOf(T{}); }
     };
 
     struct ArraySize : Value<SizeT> {};
@@ -138,11 +173,15 @@ namespace Kitimar::CTLayout {
 
     struct BitValue : Value<bool> {}; // FIXME : add T to BitArray
 
+    /*
     template<typename T> constexpr auto isValue(Value<T>) { return true; }
     constexpr auto isValue(...) { return false; }
+    */
 
+    /*
     template<typename ...Ts> constexpr auto isStruct(Struct<Ts...>) { return true; }
     constexpr auto isStruct(...) { return false; }
+    */
 
     template<typename T, typename S, int N> constexpr auto isArray(Array<T, S, N>) { return true; }
     constexpr auto isArray(...) { return false; }

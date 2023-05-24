@@ -20,23 +20,21 @@ namespace Kitimar {
         return std::string(KITIMAR_DATA_DIR) + "/chembl_32.pkl";
     }
 
-    inline auto chembl_serialized_filename(CTLayout::StructMolecule)
+    inline auto chembl_serialized_filename(CTLayout::Vector<CTLayout::StructMolecule>)
     {
         return std::string(KITIMAR_DATA_DIR) + "/chembl_32.StructMolecule";
     }
 
-    inline auto chembl_serialized_filename(CTLayout::StructMoleculeIncident)
+    inline auto chembl_serialized_filename(CTLayout::Vector<CTLayout::StructMoleculeIncident>)
     {
         return std::string(KITIMAR_DATA_DIR) + "/chembl_32.StructMoleculeIncident";
     }
 
-    inline auto chembl_serialized_filename(CTLayout::AtomTypeMolecule)
+    inline auto chembl_serialized_filename(CTLayout::Vector<CTLayout::AtomTypeMolecule>)
     {
         return std::string(KITIMAR_DATA_DIR) + "/chembl_32.AtomTypeMolecule";
 
     }
-
-
 
 
 } // namespace Kitimar

@@ -1,5 +1,8 @@
 #pragma once
 
+#define FMT_HEADER_ONLY
+#include <fmt/core.h>
+
 #include <ctll/fixed_string.hpp>
 
 #include <any>
@@ -9,6 +12,9 @@
 #include <functional>
 #include <unordered_map>
 #include <iostream>
+#include <fstream>
+#include <cassert>
+#include <filesystem>
 
 namespace Kitimar::Util {
 
@@ -62,6 +68,18 @@ namespace Kitimar::Util {
         return ss.str();
     }
 
+    inline std::vector<std::byte> readFileData(std::string_view path)
+    {
+        std::ifstream ifs{path.data(), std::ios_base::binary | std::ios_base::in};
+        assert(ifs);
+        auto size = std::filesystem::file_size(path);
+        std::vector<std::byte> data(size);
+        std::transform(std::istreambuf_iterator<char>(ifs),
+                       std::istreambuf_iterator<char>(),
+                       data.begin(),
+                       [] (auto c) { return static_cast<std::byte>(c); });
+        return data;
+    }
 
 
 } // namespace Kitimar::Util

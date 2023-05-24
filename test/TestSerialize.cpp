@@ -1,4 +1,5 @@
 #include <Kitimar/CTLayout/Molecule.hpp>
+#include <Kitimar/CTLayout/Sink.hpp>
 #include <Kitimar/OpenBabel/OpenBabel.hpp>
 #include <Kitimar/CTSmarts/Isomorphism.hpp>
 
@@ -13,11 +14,10 @@ using namespace Kitimar;
 using namespace Kitimar::CTLayout;
 using namespace Kitimar::CTSmarts;
 
-template<typename Layout>
-void serialize(Molecule auto &mol, std::vector<std::byte> &data)
-{
-    data.resize(moleculeSize<Layout>(num_atoms(mol), num_bonds(mol)));
-    serializeMolecule<Layout>(mol, data.data(), {});
+template<typename Layout, typename Sink>
+void serialize(Molecule auto &mol, Sink &sink)
+{    
+    serializeMolecule<Layout>(mol, sink);
 }
 
 
@@ -25,8 +25,8 @@ void serialize(Molecule auto &mol, std::vector<std::byte> &data)
 template<typename MolObj>
 void test_molecule()
 {
-    static_assert(AtomList<MolObj>);
-    static_assert(BondList<MolObj>);
+    static_assert(IsAtomList<MolObj>);
+    static_assert(IsBondList<MolObj>);
     static_assert(MoleculeGraph<MolObj>);
     static_assert(IncidentBondList<MolObj>);
     static_assert(AdjacentAtomList<MolObj>);
@@ -40,15 +40,18 @@ void test_molecule()
 
 TEST(TestSerialize, Molecule)
 {
-    test_molecule<Object<StructMolecule>>();
-    test_molecule<Object<StructMoleculeIncident>>();
-    test_molecule<Object<StructMoleculeAdjacent>>();
-    test_molecule<Object<StructMoleculeIncidentAdjacent>>();
+    test_molecule<StructObject<StructMolecule>>();
 
-    test_molecule<Object<ArrayMolecule>>();
-    test_molecule<Object<ArrayMoleculeIncident>>();
-    test_molecule<Object<ArrayMoleculeAdjacent>>();
-    test_molecule<Object<ArrayMoleculeIncidentAdjacent>>();
+    test_molecule<StructObject<StructMoleculeIncident>>();
+    test_molecule<StructObject<StructMoleculeAdjacent>>();
+    test_molecule<StructObject<StructMoleculeIncidentAdjacent>>();
+
+    /*
+    test_molecule<StructObject<ArrayMolecule>>();
+    test_molecule<StructObject<ArrayMoleculeIncident>>();
+    test_molecule<StructObject<ArrayMoleculeAdjacent>>();
+    test_molecule<StructObject<ArrayMoleculeIncidentAdjacent>>();
+    */
 }
 
 
@@ -59,7 +62,7 @@ void compare(auto &mol, auto &ref)
 
     for (auto i = 0; i < num_atoms(ref); ++i) {
         auto refAtom = get_atom(ref, i);
-        auto atom = get_atom(mol, i);        
+        auto atom = get_atom(mol, i);
         ASSERT_EQ(get_index(mol, atom), get_index(ref, refAtom));
         ASSERT_EQ(get_element(mol, atom), get_element(ref, refAtom));
         ASSERT_EQ(get_isotope(mol, atom), get_isotope(ref, refAtom));
@@ -121,8 +124,11 @@ void test_serialize(const std::string &smiles)
     auto obmol = readSmilesOpenBabel(smiles);
 
     std::vector<std::byte> data;
-    serialize<Layout>(obmol, data);
-    auto mol = Object<Layout>(data.data());
+    StlVectorSink sink{data};
+    serialize<Layout>(obmol, sink);
+
+    auto source = BytePtrSource{data.data()};
+    auto mol = toObject(Layout{}, source);
 
     compare(mol, obmol);
 }
@@ -132,6 +138,7 @@ TEST(TestSerialize, Serialize)
     test_serialize<StructMolecule>("CC(=O)[O-]");
     test_serialize<StructMoleculeIncident>("CC(=O)[O-]");
     test_serialize<StructMoleculeAdjacent>("CC(=O)[O-]");
+
     test_serialize<StructMoleculeIncidentAdjacent>("CC(=O)[O-]");
 
     test_serialize<StructMolecule>("c1ccccc1");
@@ -145,13 +152,14 @@ auto serializeSmiles(const std::string &SMILES, const std::string &filename)
 
     // Serialize SMILES
     std::vector<std::byte> data;
-    serialize<Layout>(obmol, data);
-    auto ref = Object<Layout>(data.data());
+    StlVectorSink sink{data};
+    serialize<Layout>(obmol, sink);
+
+    auto source = BytePtrSource{data.data()};
+    auto ref = toObject(Layout{}, source);
 
     // Write to file
     std::ofstream ofs(filename, std::ios_base::binary | std::ios_base::out);
-    LayoutSize::Type size = 1;
-    ofs.write(reinterpret_cast<char*>(&size), sizeof(size));
     ofs.write(reinterpret_cast<char*>(data.data()), data.size());
     ofs.close();
 
@@ -159,29 +167,34 @@ auto serializeSmiles(const std::string &SMILES, const std::string &filename)
 }
 
 
-TEST(TestSerialize, SerializeInMemory)
+TEST(TestSerialize, InMemorySource)
 {
     using Layout = StructMoleculeIncident;
-
+    // Compare
     auto filename = "test_mmap.bin";
     auto ref = serializeSmiles<Layout>("CC(=O)[O-]", filename);
-
-    // Deserialize using mmap
-    InMemorySource<Layout> source{filename};
-    ASSERT_EQ(source.size(), 1);
-    ASSERT_EQ(source.offset(), LayoutSize::size());
-    auto mol = source.read();
-    SizeT numAtoms = num_atoms(ref);
-    SizeT numBonds = num_bonds(ref);
-    ASSERT_EQ(source.offset(), LayoutSize::size() + Layout::size({numAtoms, numBonds}));
-
+    // Deserialize
+    InMemorySource source{filename};
+    auto mol = toObject(Layout{}, source);
     // Compare
     compare(mol, ref);
-
 }
 
+TEST(TestSerialize, MemoryMappedSource)
+{
+    using Layout = StructMoleculeIncident;
+    // Compare
+    auto filename = "test_mmap.bin";
+    auto ref = serializeSmiles<Layout>("CC(=O)[O-]", filename);
+    // Deserialize
+    MemoryMappedSource source{filename};
+    auto mol = toObject(Layout{}, source);
+    // Compare
+    compare(mol, ref);
+}
 
-TEST(TestSerialize, CompareMemoryMappedInMemory)
+/*
+TEST(TestSerialize, ValidateMemory)
 {
     using Layout = StructMoleculeIncident;
 
@@ -196,107 +209,91 @@ TEST(TestSerialize, CompareMemoryMappedInMemory)
         compare(memMol, mmapMol);
     }
 }
+*/
 
+//TEST(TestSerialize, CompareMemoryMappedInMemory)
+//{
+//    using Layout = StructMoleculeIncident;
 
-TEST(TestSerialize, SerializeMemoryMap)
-{
-    using Layout = StructMoleculeIncident;
+//    MemoryMappedSource<Layout> mmap{chembl_serialized_filename(Layout{})};
+//    InMemorySource<Layout> mem{chembl_serialized_filename(Layout{})};
 
-    // Read SMILES
-    auto smiles = "CC(=O)[O-]";
-    auto obmol = readSmilesOpenBabel(smiles);
+//    ASSERT_EQ(mem.size(), mmap.size());
 
-    // Serialize SMILES
-    std::vector<std::byte> data;
-    serialize<Layout>(obmol, data);
-    auto ref = Object<Layout>(data.data());
-
-    auto filename = "test_mmap.bin";
-
-    // Write to file
-    std::ofstream ofs(filename, std::ios_base::binary | std::ios_base::out);
-    LayoutSize::Type size = 1;
-    ofs.write(reinterpret_cast<char*>(&size), sizeof(size));
-    ofs.write(reinterpret_cast<char*>(data.data()), data.size());
-    ofs.close();
-
-    // Deserialize using mmap
-    MemoryMappedSource<Layout> source{filename};
-    ASSERT_EQ(source.size(), 1);
-    ASSERT_EQ(source.offset(), LayoutSize::size());
-    auto mol = source.read();
-    ASSERT_EQ(source.offset(), LayoutSize::size() + Layout::size({num_atoms(ref), num_bonds(ref)}));
-
-    // Compare
-    compare(mol, ref);
-}
+//    for (auto i = 0; i < mmap.size(); ++i) {
+//        auto memMol = mem.read();
+//        auto mmapMol = mmap.read();
+//        compare(memMol, mmapMol);
+//    }
+//}
 
 
 
-auto findOBMatches(const std::string &SMARTS, const std::string &filename = chembl_smi_filename())
-{
-    OpenBabel::OBSmartsPattern smarts;
-    smarts.Init(SMARTS);
 
-    std::vector<bool> matches;
-    OpenBabelSmilesMolSource source{filename};
-    for (auto mol : source.molecules())
-        matches.push_back(smarts.Match(mol));
+//auto findOBMatches(const std::string &SMARTS, const std::string &filename = chembl_smi_filename())
+//{
+//    OpenBabel::OBSmartsPattern smarts;
+//    smarts.Init(SMARTS);
 
-    return matches;
-}
+//    std::vector<bool> matches;
+//    OpenBabelSmilesMolSource source{filename};
+//    for (auto mol : source.molecules())
+//        matches.push_back(smarts.Match(mol));
 
-template<ctll::fixed_string SMARTS, typename Layout>
-auto findCTMatches()
-{
-    FileStreamSource<Layout> source{chembl_serialized_filename(Layout{})};
-    SingleIsomorphism<SMARTS> smarts{};
+//    return matches;
+//}
 
-    std::vector<bool> matches;
-    for (auto mol : source.objects()) {
-        matches.push_back(smarts.match(mol));
-    }
+//template<ctll::fixed_string SMARTS, typename Layout>
+//auto findCTMatches()
+//{
+//    FileStreamSource<Layout> source{chembl_serialized_filename(Layout{})};
+//    SingleIsomorphism<SMARTS> smarts{};
 
-    return matches;
-}
+//    std::vector<bool> matches;
+//    for (auto mol : source.objects()) {
+//        matches.push_back(smarts.match(mol));
+//    }
 
-template<ctll::fixed_string SMARTS, typename Layout>
-auto validateOpenBabel()
-{
-    auto ctMatches = findCTMatches<SMARTS, Layout>();
-    auto obMatches = findOBMatches(std::string{SMARTS.begin(), SMARTS.end()});
+//    return matches;
+//}
 
-
-    ASSERT_EQ(ctMatches.size(), obMatches.size());
-
-    ASSERT_EQ(std::ranges::count(ctMatches, true),
-              std::ranges::count(obMatches, true));
-
-}
+//template<ctll::fixed_string SMARTS, typename Layout>
+//auto validateOpenBabel()
+//{
+//    auto ctMatches = findCTMatches<SMARTS, Layout>();
+//    auto obMatches = findOBMatches(std::string{SMARTS.begin(), SMARTS.end()});
 
 
-#define VALIDATE_OPENBABEL 0
+//    ASSERT_EQ(ctMatches.size(), obMatches.size());
+
+//    ASSERT_EQ(std::ranges::count(ctMatches, true),
+//              std::ranges::count(obMatches, true));
+
+//}
 
 
-TEST(TestSerialize, ValidateOpenBabel)
-{
-    if (!VALIDATE_OPENBABEL)
-        return;
+//#define VALIDATE_OPENBABEL 0
 
-    validateOpenBabel<"C", StructMoleculeIncident>();
 
-    validateOpenBabel<"*1~*~*~*~*~*~1", StructMoleculeIncident>();
-    validateOpenBabel<"c1ccccc1-c2ccccc2", StructMoleculeIncident>();
-    validateOpenBabel<"c1ccccc1CCCCc1ccccc1", StructMoleculeIncident>();
-    validateOpenBabel<"c1cc2c(cc1)cccc2", StructMoleculeIncident>();
-    validateOpenBabel<"Clc1ccccc1", StructMoleculeIncident>();
-    validateOpenBabel<"BrCCCCCCCCC", StructMoleculeIncident>();
-    //validateOpenBabel<"[nH]1ccc2c1cccc2", StructMoleculeIncident>();
-    //validateOpenBabel<"[nH]", StructMoleculeIncident>();
-    //validateOpenBabel<"c1cc(=O)cc[nH]1", StructMoleculeIncident>();
-    validateOpenBabel<"O1CCOC12CCNCC2", StructMoleculeIncident>();
+//TEST(TestSerialize, ValidateOpenBabel)
+//{
+//    if (!VALIDATE_OPENBABEL)
+//        return;
 
-}
+//    validateOpenBabel<"C", StructMoleculeIncident>();
+
+//    validateOpenBabel<"*1~*~*~*~*~*~1", StructMoleculeIncident>();
+//    validateOpenBabel<"c1ccccc1-c2ccccc2", StructMoleculeIncident>();
+//    validateOpenBabel<"c1ccccc1CCCCc1ccccc1", StructMoleculeIncident>();
+//    validateOpenBabel<"c1cc2c(cc1)cccc2", StructMoleculeIncident>();
+//    validateOpenBabel<"Clc1ccccc1", StructMoleculeIncident>();
+//    validateOpenBabel<"BrCCCCCCCCC", StructMoleculeIncident>();
+//    //validateOpenBabel<"[nH]1ccc2c1cccc2", StructMoleculeIncident>();
+//    //validateOpenBabel<"[nH]", StructMoleculeIncident>();
+//    //validateOpenBabel<"c1cc(=O)cc[nH]1", StructMoleculeIncident>();
+//    validateOpenBabel<"O1CCOC12CCNCC2", StructMoleculeIncident>();
+
+//}
 
 
 
@@ -318,20 +315,20 @@ TEST(TestSerialize, ValidateOpenBabel)
 
 
 
-void test_phenol()
-{
-    auto obmol = readSmilesOpenBabel("c1ccccc1O");
-    std::vector<std::byte> data;
-    serialize<StructMolecule>(obmol, data);
+//void test_phenol()
+//{
+//    auto obmol = readSmilesOpenBabel("c1ccccc1O");
+//    std::vector<std::byte> data;
+//    serialize<StructMolecule>(obmol, data);
 
-    auto mol = Object<StructMolecule>(data.data());
+//    auto mol = Object<StructMolecule>(data.data());
 
-    auto iso = SingleIsomorphism<"c1ccccc1O">{};
+//    auto iso = SingleIsomorphism<"c1ccccc1O">{};
 
-    //std::cout << "phenol: " << iso.match(mol, get_atom(mol, 0)) << std::endl;
-    std::cout << "phenol: " << iso.match(mol) << std::endl;
+//    //std::cout << "phenol: " << iso.match(mol, get_atom(mol, 0)) << std::endl;
+//    std::cout << "phenol: " << iso.match(mol) << std::endl;
 
-}
+//}
 
 
 

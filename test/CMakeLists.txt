@@ -26,11 +26,12 @@ gtest_add_tests(TARGET TestMolecule)
 # CTLayout
 
 add_executable(TestCTLayout TestCTLayout.cpp)
-target_link_libraries(TestCTLayout CTLayout Test)
+target_link_libraries(TestCTLayout CTLayout Test fmt::fmt)
 gtest_add_tests(TARGET TestCTLayout)
 
 add_executable(TestSerialize TestSerialize.cpp)
-target_link_libraries(TestSerialize CTLayout CTSmarts KitimarOpenBabel Test)
+#target_link_libraries(TestSerialize CTLayout CTSmarts KitimarOpenBabel Test fmt::fmt)
+target_link_libraries(TestSerialize CTLayout KitimarOpenBabel Test fmt::fmt)
 gtest_add_tests(TARGET TestSerialize)
 
 # CTSmarts

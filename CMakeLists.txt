@@ -26,6 +26,7 @@ add_compile_options(-flto)
 
 include(cmake/CPM.cmake)
 
+CPMAddPackage("gh:fmtlib/fmt#10.0.0")
 CPMAddPackage("gh:hanickadot/compile-time-regular-expressions@3.7.2")
 CPMAddPackage("gh:mandreyel/mio#8b6b7d878c89e81614d05edca7936de41ccdd2da")
 CPMAddPackage("gh:google/googletest@1.13.0")

@@ -9,6 +9,7 @@
 
 #include <functional>
 #include <ranges>
+#include <iostream>
 
 namespace Kitimar {
 
@@ -47,7 +48,7 @@ namespace Kitimar {
             OpenBabel::OBMol read()
             {
                 if (m_atEnd)
-                    return {};
+                    return {};                
                 auto mol = m_mol; // FIXME use shared_ptr
                 m_atEnd = !m_conv.Read(&m_mol);
                 ++m_index;
@@ -60,7 +61,7 @@ namespace Kitimar {
                         std::views::take_while([this] (auto) {
                             return !m_atEnd;
                         }) |
-                        std::views::transform([this] (auto) {
+                        std::views::transform([this] (auto) {                            
                             return read();
                         });
             }
@@ -71,10 +72,31 @@ namespace Kitimar {
                 m_atEnd = !m_conv.ReadFile(&m_mol, m_conv.GetInFilename());
             }
 
+            auto numMolecules()
+            {
+                if (m_numMolecules == -1) {
+                    auto index = m_index;
+                    auto pos = m_conv.GetInStream()->tellg();
+                    reset();
+
+                    for (auto mol : molecules()) {
+                        //m_numMolecules = std::ranges::distance(molecules());
+                        //if (m_index % 1000 == 0) std::cout << m_index << std::endl;
+                    }
+                    m_numMolecules = m_index;
+
+                    reset();
+                    m_index = index;
+                    m_conv.GetInStream()->seekg(pos);
+                }
+                return m_numMolecules;
+            }
+
         private:
             OpenBabel::OBMol m_mol;
             OpenBabel::OBConversion m_conv;
             std::size_t m_index = 0;
+            std::size_t m_numMolecules = -1;
             bool m_atEnd = false;
     };
 

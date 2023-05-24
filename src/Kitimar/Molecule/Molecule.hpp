@@ -35,7 +35,7 @@ namespace Kitimar {
 
 
     template<typename Mol>
-    concept AtomList = requires (Mol &mol)
+    concept IsAtomList = requires (Mol &mol)
     {
         { num_atoms(mol) } -> std::convertible_to<std::size_t>;
         { get_atom(mol, 0) };
@@ -44,7 +44,7 @@ namespace Kitimar {
     };
 
     template<typename Mol>
-    concept BondList = requires (Mol &mol)
+    concept IsBondList = requires (Mol &mol)
     {
         { num_bonds(mol) } -> std::convertible_to<std::size_t>;
         { get_bond(mol, 0) };
@@ -55,8 +55,8 @@ namespace Kitimar {
     };
 
     template<typename Mol>
-    concept MoleculeGraph = AtomList<Mol> &&
-                            BondList<Mol>;
+    concept MoleculeGraph = IsAtomList<Mol> &&
+                            IsBondList<Mol>;
 
     template<typename Mol>
     concept IncidentBondList = requires (Mol &mol)

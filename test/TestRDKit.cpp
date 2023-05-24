@@ -4,8 +4,8 @@
 
 #include <gtest/gtest.h>
 
-static_assert(Kitimar::AtomList<RDKit::ROMol*>);
-static_assert(Kitimar::BondList<RDKit::ROMol*>);
+static_assert(Kitimar::IsAtomList<RDKit::ROMol*>);
+static_assert(Kitimar::IsBondList<RDKit::ROMol*>);
 static_assert(Kitimar::MoleculeGraph<RDKit::ROMol*>);
 static_assert(Kitimar::IncidentBondList<RDKit::ROMol*>);
 static_assert(Kitimar::AdjacentAtomList<RDKit::ROMol*>);

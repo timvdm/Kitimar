@@ -4,8 +4,8 @@
 
 #include <gtest/gtest.h>
 
-static_assert(Kitimar::AtomList<OpenBabel::OBMol>);
-static_assert(Kitimar::BondList<OpenBabel::OBMol>);
+static_assert(Kitimar::IsAtomList<OpenBabel::OBMol>);
+static_assert(Kitimar::IsBondList<OpenBabel::OBMol>);
 static_assert(Kitimar::MoleculeGraph<OpenBabel::OBMol>);
 static_assert(Kitimar::IncidentBondList<OpenBabel::OBMol>);
 static_assert(Kitimar::AdjacentAtomList<OpenBabel::OBMol>);
