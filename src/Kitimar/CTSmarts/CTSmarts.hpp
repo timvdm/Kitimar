@@ -4,10 +4,6 @@
 
 namespace Kitimar::CTSmarts {
 
-
-
-
-
     template<typename Molecule, typename Smarts, auto N>
     auto captureAtoms(Molecule &mol, Smarts, const IsomorphismMapping &map, const std::array<int, N> &cap)
     {

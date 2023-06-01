@@ -17,7 +17,7 @@ add_compile_options(-Wno-sign-compare)
 add_compile_options(-Wno-unused-variable)
 add_compile_options(-Wno-unused-but-set-variable)
 
-add_compile_options(-fconcepts-diagnostics-depth=3)
+#add_compile_options(-fconcepts-diagnostics-depth=3)
 
 add_compile_options(-march=native -mtune=native)
 #set(CMAKE_UNITY_BUILD ON)
@@ -43,7 +43,7 @@ include(GoogleTest)
 enable_testing()
 add_custom_target(RunTests ctest)
 
-set(KITIMAR_WITH_RDKIT TRUE)
+set(KITIMAR_WITH_RDKIT FALSE)
 
 add_subdirectory(src)
 add_subdirectory(test)

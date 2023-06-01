@@ -253,7 +253,7 @@ int main()
     //BENCHMARK((singleMatch_Kitimar<StructMoleculeIncident, "c1cc(=O)cc[nH]1">));        //
 
     for (auto &[name, total] : groups.totalElapsed())
-        std::cout << Util::pad(name, 50) << total << '\n';
+        std::cout << Util::pad(name, 50) << total.count() << '\n';
     std::cout << std::endl;
 
 }

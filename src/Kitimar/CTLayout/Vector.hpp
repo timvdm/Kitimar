@@ -76,7 +76,7 @@ namespace Kitimar::CTLayout {
 
     // offset
 
-    template<typename VectorT, typename T, typename Source = PtrSource, typename Index = VectorT::Index, typename ...Indexes>
+    template<typename VectorT, typename T, typename Source = PtrSource, typename Index = typename VectorT::Index, typename ...Indexes>
     constexpr std::size_t offset(VectorT, T, Source data = {}, Index index = {}, Indexes ...indexes) noexcept requires IsVector<VectorT>
     {
         using Length = typename VectorT::Length;
@@ -101,8 +101,8 @@ namespace Kitimar::CTLayout {
     class VectorObject
     {
         public:
-            using Type = VectorT::Type;
-            using Length = VectorT::Length;
+            using Type = typename VectorT::Type;
+            using Length = typename VectorT::Length;
 
             constexpr VectorObject(VectorT = {}, Source data = {}) noexcept : m_data(data)
             {
@@ -144,8 +144,8 @@ namespace Kitimar::CTLayout {
     class VectorWriter
     {
         public:
-            using Type = VectorT::Type;
-            using Length = VectorT::Length;
+            using Type = typename VectorT::Type;
+            using Length = typename VectorT::Length;
 
             VectorWriter(VectorT, Sink sink, Finished finished = nullptr) : m_sink(sink), m_finished{finished}
             {

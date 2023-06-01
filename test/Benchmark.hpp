@@ -24,7 +24,7 @@ namespace Kitimar {
             std::stringstream ss;
             ss << Util::pad(name, namePadding);
             ss << Util::pad(Util::toString(result), resultPadding);
-            ss << elapsed;
+            ss << elapsed.count();
             return ss.str();
         }
     };
