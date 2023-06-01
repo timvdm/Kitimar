@@ -7,7 +7,6 @@
 #include <filesystem>
 #include <fstream>
 #include <vector>
-//#include <algorithm>
 #include <ranges>
 #include <iostream>
 #include <cassert>
@@ -15,14 +14,14 @@
 namespace Kitimar::CTLayout {
 
     template<typename Ptr = const std::byte*>
-    class PtrSource
+    class PtrSourceBase
     {
         public:
-            constexpr PtrSource(Ptr data = nullptr) noexcept : m_data{data}
+            constexpr PtrSourceBase(Ptr data = nullptr) noexcept : m_data{data}
             {
             }
 
-            constexpr operator Ptr() const noexcept
+            operator bool() const noexcept
             {
                 return m_data;
             }
@@ -33,16 +32,30 @@ namespace Kitimar::CTLayout {
                 return *reinterpret_cast<const T*>(m_data + offset);
             }
 
-            constexpr auto operator+(std::size_t offset) const noexcept
+            template<typename T>
+            constexpr auto range(auto length, std::size_t offset = 0) const noexcept
             {
-                return PtrSource<Ptr>(m_data + offset);
+                auto ptr = reinterpret_cast<const T*>(m_data + offset);
+                return std::ranges::subrange(ptr, ptr + length);
             }
 
         protected:
             Ptr m_data;
     };
 
-    using BytePtrSource = PtrSource<>;
+    class PtrSource : public PtrSourceBase<>
+    {
+        public:
+            constexpr PtrSource(const std::byte *data = nullptr) noexcept : PtrSourceBase<>{data}
+            {
+            }
+
+            constexpr auto operator+(std::size_t offset) const noexcept
+            {
+                return PtrSource(m_data + offset);
+            }
+    };
+
 
     class FileStreamSource
     {
@@ -62,29 +75,44 @@ namespace Kitimar::CTLayout {
                 return m_ifs.get();
             }
 
-            auto& ifs() { return m_ifs; }
-            const auto& ifs() const { return m_ifs; }
-
-            void close()
-            {
-                m_ifs->close();
-            }
-
             template<typename T>
             auto read(std::size_t offset = 0) const
             {
                 assert(m_ifs);
-                m_ifs->seekg(offset);
+                m_ifs->seekg(m_offset + offset);
                 T value;
                 m_ifs->read(reinterpret_cast<char*>(&value), sizeof(T));
                 return value;
             }
 
+            template<typename T>
+            constexpr auto range(auto length, std::size_t offset = 0) const noexcept
+            {
+                std::vector<T> items;
+                for (auto i = 0; i < length; ++i)
+                    items.push_back(read<T>(offset + i * sizeof(T)));
+                return items;
+            }
+
             FileStreamSource operator+(std::size_t offset) const noexcept
             {
                 return FileStreamSource{m_ifs, m_offset + offset};
+            }                    
+
+            auto& ifs()
+            {
+                return m_ifs;
             }
 
+            const auto& ifs() const
+            {
+                return m_ifs;
+            }
+
+            void close()
+            {
+                m_ifs->close();
+            }
 
 
         private:
@@ -120,17 +148,25 @@ namespace Kitimar::CTLayout {
             template<typename T>
             auto read(std::size_t offset = 0) const
             {
-                assert(m_data);
-                //std::cout << "StlVectorSink::read(offset = " << m_offset + offset << ", size = " << sizeof(T) << ")" << std::endl;
+                assert(m_data);                
                 assert(m_offset + offset + sizeof(T) <= m_data->size());
                 return *reinterpret_cast<T*>(m_data->data() + m_offset + offset);
             }
 
-            operator const std::byte*() const noexcept
+            template<typename T>
+            auto range(auto length, std::size_t offset = 0) const noexcept
             {
-                return m_data->data() + m_offset;
+                assert(m_data);
+                assert(m_offset + offset + length * sizeof(T) <= m_data->size());
+                auto ptr = reinterpret_cast<const T*>(m_data->data() + m_offset + offset);
+                return std::ranges::subrange(ptr, ptr + length);
             }
 
+            PtrSource toPtrSource() const noexcept
+            {
+                assert(m_data);
+                return {m_data->data()};
+            }
 
             auto operator+(std::size_t offset) const noexcept
             {
@@ -149,7 +185,6 @@ namespace Kitimar::CTLayout {
         public:
             MemoryMappedSource(std::string_view filename)
             {
-                std::cout << filename << std::endl;
                 m_source = std::make_shared<MioMemMapSource>(filename);
                 assert(m_source->is_mapped());
             }
@@ -167,16 +202,24 @@ namespace Kitimar::CTLayout {
             auto read(std::size_t offset = 0) const
             {
                 assert(m_source->is_mapped());
-                //std::cout << "StlVectorSink::read(offset = " << m_offset + offset << ", size = " << sizeof(T) << ")" << std::endl;
                 assert(m_offset + offset + sizeof(T) <= m_source->size());
                 return *reinterpret_cast<const T*>(m_source->begin() + m_offset + offset);
             }
 
-            operator const std::byte*() const noexcept
+            template<typename T>
+            constexpr auto range(auto length, std::size_t offset = 0) const noexcept
             {
-                return m_source->begin() + m_offset;
+                assert(m_source->is_mapped());
+                assert(m_offset + offset + length * sizeof(T) <= m_source->size());
+                auto ptr = reinterpret_cast<const T*>(m_source->begin() + m_offset + offset);
+                return std::ranges::subrange(ptr, ptr + length);
             }
 
+            PtrSource toPtrSource() const noexcept
+            {
+                assert(m_source->is_mapped());
+                return {m_source->begin()};
+            }
 
             auto operator+(std::size_t offset) const noexcept
             {
@@ -187,8 +230,5 @@ namespace Kitimar::CTLayout {
             std::shared_ptr<MioMemMapSource> m_source;
             std::size_t m_offset = 0;
     };
-
-
-
 
 } // namespace Kitimar::CTLayout

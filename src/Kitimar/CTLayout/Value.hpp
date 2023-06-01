@@ -41,7 +41,7 @@ namespace Kitimar::CTLayout {
 
     // sizeOf
 
-    template<typename T, typename Source = BytePtrSource>
+    template<typename T, typename Source = PtrSource>
     constexpr std::size_t sizeOf(Value<T>, Source data = {}) noexcept { return sizeof(T); }
 
     // offset
@@ -56,19 +56,14 @@ namespace Kitimar::CTLayout {
 
     // ValueObject
 
-    template<typename ValueT, typename Source = BytePtrSource>
+    template<typename ValueT, typename Source = PtrSource>
     class ValueObject
     {
         public:
-            using Type = ValueT::Type;
+            using Type = typename ValueT::Type;
 
             constexpr ValueObject(ValueT, Source data) noexcept : m_data(data)
             {
-            }
-
-            Source data() const
-            {
-                return m_data;
             }
 
             constexpr Type get() const noexcept
@@ -87,7 +82,7 @@ namespace Kitimar::CTLayout {
 
     // toObject
 
-    template<typename ValueT, typename Source = BytePtrSource>
+    template<typename ValueT, typename Source = PtrSource>
     constexpr auto toObject(ValueT, Source data) noexcept requires IsValue<ValueT>
     {
         return ValueObject{ValueT{}, data};
@@ -99,7 +94,7 @@ namespace Kitimar::CTLayout {
     class ValueWriter
     {
         public:
-            using Type = ValueT::Type;
+            using Type = typename ValueT::Type;
 
             ValueWriter(ValueT, Sink sink, Finished finished = nullptr) : m_sink(sink), m_finished{finished}
             {

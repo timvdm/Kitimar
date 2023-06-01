@@ -14,6 +14,7 @@ target_include_directories(KitimarRDKit INTERFACE
     ${CMAKE_SOURCE_DIR}/src
     ${RDKIT_INCLUDE_DIR}
 )
+target_compile_definitions(KitimarRDKit INTERFACE -DKITIMAR_WITH_RDKIT)
 target_link_libraries(KitimarRDKit INTERFACE Molecule ${RDKIT_LIBRARIES}) # FIXME add RDKit...
 
 

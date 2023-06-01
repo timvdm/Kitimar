@@ -2,8 +2,10 @@
 #include "TestData.hpp"
 
 #include <Kitimar/OpenBabel/OpenBabel.hpp>
-#include <Kitimar/RDKit/RDKit.hpp>
 
+#ifdef KITIMAR_WITH_RDKIT
+#include <Kitimar/RDKit/RDKit.hpp>
+#endif
 
 
 using namespace Kitimar;
@@ -12,10 +14,11 @@ using namespace Kitimar::CTLayout;
 
 
 template<typename Layout>
-void serializeOpenBabelSmilesToKitimar()
+void serializeOpenBabelSmilesToKitimar(const std::string &suffix = {})
 {
-    OpenBabelSmilesMolSource source{chembl_smi_filename("1K")};
-    serializeMolSource<Layout>(source, chembl_serialized_filename(Layout{}));
+    OpenBabelSmilesMolSource source{chembl_smi_filename(suffix)};
+    FileStreamSink sink{chembl_serialized_filename(Layout{}, suffix)};
+    serializeMolSource<Layout>(source, sink);
 }
 
 
@@ -63,6 +66,7 @@ void serializeOpenBabelSmilesToKitimarTypeIndex()
 
 
 
+#ifdef KITIMAR_WITH_RDKIT
 
 void serializeRDKit(auto &source)
 {
@@ -82,19 +86,23 @@ void serializeRDKitSmilesToRDKit()
     serializeRDKit(source);
 }
 
-
+#endif
 
 
 int main()
 {
     // OpenBabel SMILES -> Kitimar
-    serializeOpenBabelSmilesToKitimar<Vector<StructMoleculeIncident>>();
-    //serializeOpenBabelSmilesToKitimar<AtomTypeMolecule>();
+    //serializeOpenBabelSmilesToKitimar<Vector<StructMolecule>>();
+    //serializeOpenBabelSmilesToKitimar<Vector<StructMoleculeIncident>>();
+    //serializeOpenBabelSmilesToKitimar<Vector<ListMoleculeIncident>>();
+    serializeOpenBabelSmilesToKitimar<TypeMolecules>();
 
     //serializeOpenBabelSmilesToKitimarTypeIndex<StructMoleculeIncident>();
 
+#ifdef KITIMAR_WITH_RDKIT
     // RDKit SMILES -> RDKit Pickle
     //serializeRDKitSmilesToRDKit();
+#endif
 
 
 }

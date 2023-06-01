@@ -19,7 +19,7 @@ namespace Kitimar {
         Util::Timer::Duration elapsed = {};
 
         // <name> <result> <elapsed>
-        std::string toString(int namePadding = 30, int resultPadding = 10) const
+        std::string toString(int namePadding = 50, int resultPadding = 10) const
         {
             std::stringstream ss;
             ss << Util::pad(name, namePadding);

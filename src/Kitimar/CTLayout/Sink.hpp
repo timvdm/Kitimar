@@ -13,11 +13,10 @@
 
 namespace Kitimar::CTLayout {
 
-    template<typename Ptr = std::byte*>
-    class PtrSink : public PtrSource<Ptr>
+    class PtrSink : public PtrSourceBase<std::byte*>
     {
         public:
-            constexpr PtrSink(Ptr data = nullptr) noexcept : PtrSource<Ptr>{data}
+            constexpr PtrSink(std::byte *data = nullptr) noexcept : PtrSourceBase<std::byte*>{data}
             {
             }
 
@@ -29,11 +28,10 @@ namespace Kitimar::CTLayout {
 
             constexpr auto operator+(std::size_t offset) const noexcept
             {
-                return PtrSink<Ptr>(this->m_data + offset);
+                return PtrSink(this->m_data + offset);
             }
     };
 
-    using BytePtrSink = PtrSink<>;
 
     class StlVectorSink
     {
@@ -118,9 +116,9 @@ namespace Kitimar::CTLayout {
             auto read(std::size_t offset = 0) const
             {
                 //std::cout << "read(offset = " << offset << ")" << std::endl;
-                assert(*m_fs.get());
+                assert(m_fs.get());
                 m_fs->seekg(m_offset + offset);
-                assert(*m_fs.get());
+                assert(m_fs.get());
                 T value;
                 m_fs->read(reinterpret_cast<char*>(&value), sizeof(T));
                 return value;
@@ -130,9 +128,9 @@ namespace Kitimar::CTLayout {
             void write(T value, std::size_t offset = 0)
             {
                 //std::cout << "write(value = " << value << ", offset = " << m_offset + offset << ")" << std::endl;
-                assert(*m_fs.get());
+                assert(m_fs.get());
                 m_fs->seekp(m_offset + offset);
-                assert(*m_fs.get());
+                assert(m_fs.get());
                 m_fs->write(reinterpret_cast<const char*>(&value), sizeof(T));
             }
 

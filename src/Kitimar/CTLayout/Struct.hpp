@@ -51,7 +51,7 @@ namespace Kitimar::CTLayout {
 
     // sizeOf(ctll::list)
 
-    template<typename T, typename ...Ts, typename Source = BytePtrSource>
+    template<typename T, typename ...Ts, typename Source = PtrSource>
     constexpr std::size_t sizeOf(ctll::list<T, Ts...>, Source data = {}) noexcept
     {
         auto sizeOfT = sizeOf(T{}, data);
@@ -142,7 +142,7 @@ namespace Kitimar::CTLayout {
 
     // sizeOf
 
-    template<typename ...Ts, typename Source = BytePtrSource>
+    template<typename ...Ts, typename Source = PtrSource>
     constexpr std::size_t sizeOf(Struct<Ts...>, Source data = {}) noexcept
     {
         if constexpr (!isFixedSize(Struct<Ts...>{}))
@@ -152,7 +152,7 @@ namespace Kitimar::CTLayout {
 
     // offset
 
-    template<typename StructT, typename T, typename Source = BytePtrSource, std::integral Index = uint32_t>
+    template<typename StructT, typename T, typename Source = PtrSource, std::integral Index = uint32_t>
     constexpr std::size_t offset(StructT, T, Source data = {}, Index index = {}) noexcept requires IsStruct<StructT>
     {
         if constexpr (std::is_same_v<StructT, T>)
@@ -170,20 +170,16 @@ namespace Kitimar::CTLayout {
 
     // StructObject
 
-    template<typename StructT, typename Source = BytePtrSource>
+    template<typename StructT, typename SourceT = PtrSource>
     class StructObject
     {
         public:
             using Type = StructT;
-            using Members = StructT::Members;
+            using Members = typename StructT::Members;
+            using Source = SourceT;
 
             constexpr StructObject(StructT, Source data) noexcept : m_data(data)
             {
-            }
-
-            Source data() const
-            {
-                return m_data;
             }
 
             template<typename T>
@@ -194,13 +190,18 @@ namespace Kitimar::CTLayout {
                 return toObject(T{}, m_data + off);
             }
 
+            constexpr auto data() const noexcept
+            {
+                return m_data;
+            }
+
         private:
             Source m_data = {};
     };
 
     // toObject
 
-    template<typename StructT, typename Source = BytePtrSource>
+    template<typename StructT, typename Source = PtrSource>
     constexpr auto toObject(StructT, Source data) noexcept requires IsStruct<StructT>
     {
         return StructObject{StructT{}, data};
@@ -213,7 +214,7 @@ namespace Kitimar::CTLayout {
     {
         public:
             using Type = StructT;
-            using Members = StructT::Members;
+            using Members = typename StructT::Members;
 
             StructWriter(StructT, Sink sink, Finished finished = nullptr) : m_sink(sink), m_finished{finished}
             {

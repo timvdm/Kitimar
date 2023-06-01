@@ -127,7 +127,7 @@ void test_serialize(const std::string &smiles)
     StlVectorSink sink{data};
     serialize<Layout>(obmol, sink);
 
-    auto source = BytePtrSource{data.data()};
+    auto source = PtrSource{data.data()};
     auto mol = toObject(Layout{}, source);
 
     compare(mol, obmol);
@@ -145,34 +145,41 @@ TEST(TestSerialize, Serialize)
 }
 
 template<typename Layout>
-auto serializeSmiles(const std::string &SMILES, const std::string &filename)
+auto serializeSmilesStlVectorSink(const std::string &SMILES, const std::string &filename)
 {
     // Read SMILES
     auto obmol = readSmilesOpenBabel(SMILES);
-
     // Serialize SMILES
     std::vector<std::byte> data;
     StlVectorSink sink{data};
     serialize<Layout>(obmol, sink);
-
-    auto source = BytePtrSource{data.data()};
-    auto ref = toObject(Layout{}, source);
-
     // Write to file
-    std::ofstream ofs(filename, std::ios_base::binary | std::ios_base::out);
-    ofs.write(reinterpret_cast<char*>(data.data()), data.size());
-    ofs.close();
+    Util::writeFileData(filename, data);
+
+    return obmol;
+}
+
+template<typename Layout>
+auto serializeSmilesFileStreamSink(const std::string &SMILES, const std::string &filename)
+{
+    // Read SMILES
+    auto obmol = readSmilesOpenBabel(SMILES);
+    // Serialize SMILES
+    FileStreamSink sink{filename};
+    serialize<Layout>(obmol, sink);
 
     return obmol;
 }
 
 
-TEST(TestSerialize, InMemorySource)
+
+
+TEST(TestSerialize, StlVectorSinkInMemorySource)
 {
     using Layout = StructMoleculeIncident;
     // Compare
-    auto filename = "test_mmap.bin";
-    auto ref = serializeSmiles<Layout>("CC(=O)[O-]", filename);
+    auto filename = "Kitimar_StlVectorSinkInMemorySource.bin";
+    auto ref = serializeSmilesStlVectorSink<Layout>("CC(=O)[O-]", filename);
     // Deserialize
     InMemorySource source{filename};
     auto mol = toObject(Layout{}, source);
@@ -180,17 +187,67 @@ TEST(TestSerialize, InMemorySource)
     compare(mol, ref);
 }
 
-TEST(TestSerialize, MemoryMappedSource)
+TEST(TestSerialize, StlVectorSinkMemoryMappedSource)
 {
     using Layout = StructMoleculeIncident;
     // Compare
-    auto filename = "test_mmap.bin";
-    auto ref = serializeSmiles<Layout>("CC(=O)[O-]", filename);
+    auto filename = "Kitimar_StlVectorSinkMemoryMappedSource.bin";
+    auto ref = serializeSmilesStlVectorSink<Layout>("CC(=O)[O-]", filename);
     // Deserialize
     MemoryMappedSource source{filename};
     auto mol = toObject(Layout{}, source);
     // Compare
     compare(mol, ref);
+}
+
+TEST(TestSerialize, FileStreamSinkMemoryMappedSource)
+{
+    using Layout = StructMoleculeIncident;
+    // Compare
+    auto filename = "Kitimar_FileStreamSinkMemoryMappedSource.bin";
+    auto ref = serializeSmilesFileStreamSink<Layout>("CC(=O)[O-]", filename);
+    // Deserialize
+    InMemorySource source{filename};
+    auto mol = toObject(Layout{}, source);
+    // Compare
+    compare(mol, ref);
+}
+
+template<typename Layout>
+void test_validate()
+{
+    auto suffix = "1K";
+    //auto suffix = "";
+    auto path = chembl_serialized_filename(Layout{}, suffix);
+    FileStreamSink sink{path};
+
+    OpenBabelSmilesMolSource obMolSource{chembl_smi_filename(suffix)};
+    std::cout << "counting molecules..." << std::endl;
+    auto numMolecules = obMolSource.numMolecules();
+    std::cout << "# molecules: " << numMolecules << std::endl;
+    std::cout << "serializing molecules..." << std::endl;
+    serializeMolSource<Layout>(obMolSource, sink);
+    sink.close();
+    obMolSource.reset();
+
+    std::cout << "validating molecules..." << std::endl;
+    auto source = InMemorySource{path};
+    BytePtrMolSource<Layout> molSource{source.toPtrSource()};
+
+    ASSERT_EQ(molSource.numMolecules(), obMolSource.numMolecules());
+
+    for (auto i = 0; i < numMolecules; ++i) {
+        auto obmol = obMolSource.read();
+        auto mol = molSource.read();
+        compare(mol, obmol);
+    }
+}
+
+TEST(TestSerialize, Validate)
+{
+    test_validate<Vector<StructMoleculeIncident>>();
+    test_validate<Vector<ListMoleculeIncident>>();
+    test_validate<TypeMolecules>();
 }
 
 /*

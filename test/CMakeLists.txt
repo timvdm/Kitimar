@@ -3,9 +3,13 @@
 add_library(TestData INTERFACE TestData.hpp)
 target_compile_definitions(TestData INTERFACE -DKITIMAR_DATA_DIR="${CMAKE_SOURCE_DIR}/data")
 target_include_directories(TestData INTERFACE ${CMAKE_SOURCE_DIR}/test)
+target_link_libraries(TestData INTERFACE CTLayout)
 
 add_executable(UpdateTestData UpdateTestData.cpp)
-target_link_libraries(UpdateTestData PRIVATE TestData CTLayout KitimarOpenBabel KitimarRDKit)
+target_link_libraries(UpdateTestData TestData CTLayout KitimarOpenBabel)
+if(KITIMAR_WITH_RDKIT)
+    target_link_libraries(UpdateTestData KitimarRDKit)
+endif()
 
 # Test
 
@@ -48,11 +52,17 @@ gtest_add_tests(TARGET TestOpenBabel)
 
 # RDKit
 
-add_executable(TestRDKit TestRDKit.cpp)
-target_link_libraries(TestRDKit KitimarRDKit CTLayout Test)
-gtest_add_tests(TARGET TestRDKit)
+if(KITIMAR_WITH_RDKIT)
+    add_executable(TestRDKit TestRDKit.cpp)
+    target_link_libraries(TestRDKit KitimarRDKit CTLayout Test)
+    gtest_add_tests(TARGET TestRDKit)
+endif()
 
 # Benchmark
+
 add_executable(BenchmarkSerialize BenchmarkSerialize.cpp)
 #target_compile_definitions(SerializeBenchmark PRIVATE -DKITIMAR_DATA_DIR="${CMAKE_SOURCE_DIR}/data")
-target_link_libraries(BenchmarkSerialize CTLayout CTSmarts Util KitimarOpenBabel KitimarRDKit Benchmark)
+target_link_libraries(BenchmarkSerialize CTLayout CTSmarts Util KitimarOpenBabel Benchmark)
+if(KITIMAR_WITH_RDKIT)
+    target_link_libraries(BenchmarkSerialize KitimarRDKit)
+endif()

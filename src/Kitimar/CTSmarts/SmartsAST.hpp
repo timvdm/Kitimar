@@ -1,6 +1,7 @@
 #pragma once
 
 namespace Kitimar::CTSmarts {
+
     //
     // Operators
     //
@@ -145,7 +146,8 @@ namespace Kitimar::CTSmarts {
     //
 
     template<int Source, int Target, typename Expr>
-    struct Bond {        
+    struct Bond
+    {
         static constexpr inline auto source = Source;
         static constexpr inline auto target = Target;
         static constexpr inline auto expr = Expr();        

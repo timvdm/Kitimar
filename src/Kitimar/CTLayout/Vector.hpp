@@ -61,7 +61,7 @@ namespace Kitimar::CTLayout {
         return data.template read<std::size_t>(off);
     }
 
-    template<typename VectorT, typename Source = BytePtrSource>
+    template<typename VectorT, typename Source = PtrSource>
     constexpr std::size_t sizeOf(VectorT, Source data) noexcept requires IsVector<VectorT>
     {
         using Length = typename VectorT::Length;                                                                                                      
@@ -76,7 +76,7 @@ namespace Kitimar::CTLayout {
 
     // offset
 
-    template<typename VectorT, typename T, typename Source = BytePtrSource, typename Index = VectorT::Index, typename ...Indexes>
+    template<typename VectorT, typename T, typename Source = PtrSource, typename Index = VectorT::Index, typename ...Indexes>
     constexpr std::size_t offset(VectorT, T, Source data = {}, Index index = {}, Indexes ...indexes) noexcept requires IsVector<VectorT>
     {
         using Length = typename VectorT::Length;
@@ -97,14 +97,14 @@ namespace Kitimar::CTLayout {
 
     // VectorObject
 
-    template<typename VectorT, typename Source = BytePtrSource>
+    template<typename VectorT, typename Source = PtrSource>
     class VectorObject
     {
         public:
             using Type = VectorT::Type;
             using Length = VectorT::Length;
 
-            constexpr VectorObject(VectorT, Source data) noexcept : m_data(data)
+            constexpr VectorObject(VectorT = {}, Source data = {}) noexcept : m_data(data)
             {
             }
 
@@ -113,17 +113,17 @@ namespace Kitimar::CTLayout {
                 return m_data.template read<Length>();
             }
 
-            // FIXME: replace with begin/end
-            constexpr auto data() const noexcept
-            {
-                auto off = offset(VectorT{}, Type{}, m_data, 0);
-                return m_data + off;
-            }
-
             constexpr auto at(std::integral auto index) const noexcept
             {
                 auto off = offset(VectorT{}, Type{}, m_data, index);
                 return toObject(Type{}, m_data + off);
+            }
+
+            constexpr auto range() const noexcept
+            {
+                static_assert(isValue(Type{}));
+                auto off = offset(VectorT{}, Type{}, m_data, 0);
+                return m_data.template range<typename Type::Type>(length(), off);
             }
 
         private:
@@ -132,7 +132,7 @@ namespace Kitimar::CTLayout {
 
     // toObject
 
-    template<typename VectorT, typename Source = BytePtrSource>
+    template<typename VectorT, typename Source = PtrSource>
     constexpr auto toObject(VectorT, Source data) noexcept requires IsVector<VectorT>
     {
         return VectorObject{VectorT{}, data};
@@ -163,8 +163,13 @@ namespace Kitimar::CTLayout {
             {
                 //fmt::println("VectorWriter::setLength({})", length);
                 m_sink.write(length);
-                m_written.resize(length);
-                m_locked.resize(length);
+                if (!length) {
+                    if constexpr (!std::is_same_v<Finished, std::nullptr_t>)
+                        m_finished();
+                } else {
+                    m_written.resize(length);
+                    m_locked.resize(length);
+                }
             }
 
             constexpr auto at(std::integral auto index) noexcept

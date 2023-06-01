@@ -16,6 +16,9 @@
 #include <cassert>
 #include <filesystem>
 
+#include <cxxabi.h> // FIXME
+
+
 namespace Kitimar::Util {
 
     namespace detail {
@@ -39,6 +42,25 @@ namespace Kitimar::Util {
         };
 
     } // namespace detail
+
+    template<typename T>
+    std::string typeName(T, bool qualified = false)
+    {
+        std::string_view name = abi::__cxa_demangle(typeid(T).name(), nullptr, nullptr, nullptr);
+        if (qualified)
+            return name.data();
+        auto pos = name.rfind("::");
+        if (pos == std::string_view::npos)
+            return name.data();
+        return name.substr(pos + 2).data();
+    }
+
+    template<typename Container>
+    auto indexOf(const Container &c, auto value)
+    {
+        return std::ranges::find(c, value) - c.begin();
+    }
+
 
     inline std::string toString(const std::any &value)
     {
@@ -80,6 +102,15 @@ namespace Kitimar::Util {
                        [] (auto c) { return static_cast<std::byte>(c); });
         return data;
     }
+
+    inline void writeFileData(std::string_view path, const std::vector<std::byte> &data)
+    {
+        std::ofstream ofs(path.data(), std::ios_base::binary | std::ios_base::out);
+        assert(ofs);
+        ofs.write(reinterpret_cast<const char*>(data.data()), data.size());
+        ofs.close();
+    }
+
 
 
 } // namespace Kitimar::Util

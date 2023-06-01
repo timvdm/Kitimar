@@ -11,6 +11,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_COMPILER_LAUNCHER ccache)
 
 add_compile_options(-Wall)
+add_compile_options(-Werror)
+add_compile_options(-pedantic)
 add_compile_options(-Wno-sign-compare)
 add_compile_options(-Wno-unused-variable)
 add_compile_options(-Wno-unused-but-set-variable)
@@ -18,7 +20,11 @@ add_compile_options(-Wno-unused-but-set-variable)
 add_compile_options(-fconcepts-diagnostics-depth=3)
 
 add_compile_options(-march=native -mtune=native)
-add_compile_options(-flto)
+#set(CMAKE_UNITY_BUILD ON)
+
+#add_compile_options(-flto)
+
+
 
 #add_compile_options(-fsanitize=address)
 #add_link_options(-fsanitize=address)
@@ -37,7 +43,7 @@ include(GoogleTest)
 enable_testing()
 add_custom_target(RunTests ctest)
 
-
+set(KITIMAR_WITH_RDKIT TRUE)
 
 add_subdirectory(src)
 add_subdirectory(test)
