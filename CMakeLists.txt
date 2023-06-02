@@ -7,9 +7,6 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules")
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# FIXME: local settings... move to presets...
-set(CMAKE_CXX_COMPILER_LAUNCHER ccache)
-
 add_compile_options(-Wall)
 add_compile_options(-Werror)
 add_compile_options(-pedantic)
@@ -37,7 +34,9 @@ CPMAddPackage("gh:hanickadot/compile-time-regular-expressions@3.7.2")
 CPMAddPackage("gh:mandreyel/mio#8b6b7d878c89e81614d05edca7936de41ccdd2da")
 CPMAddPackage("gh:google/googletest@1.13.0")
 
-add_custom_target(README ALL SOURCES README.md)
+add_custom_target(AdditionalFiles ALL SOURCES
+    README.md
+)
 
 include(GoogleTest)
 enable_testing()
