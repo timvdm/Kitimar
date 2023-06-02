@@ -42,8 +42,8 @@ include(GoogleTest)
 enable_testing()
 add_custom_target(RunTests ctest)
 
-option(KITIMAR_WITH_OPENBABEL "Build with OpenBabel support" ON)
-option(KITIMAR_WITH_RDKIT "Build with RDKit support" ON)
+option(KITIMAR_WITH_OPENBABEL "Build with OpenBabel support" OFF)
+option(KITIMAR_WITH_RDKIT "Build with RDKit support" OFF)
 
 add_subdirectory(src)
 add_subdirectory(test)
