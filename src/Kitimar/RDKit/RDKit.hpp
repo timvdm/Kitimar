@@ -172,6 +172,11 @@ namespace RDKit {
         return atom->getDegree();
     }
 
+    inline RDKit::Atom* null_atom(const RDKit::ROMol *mol)
+    {
+        return nullptr;
+    }
+
     // BondList
 
     inline auto num_bonds(const RDKit::ROMol *mol)
@@ -211,15 +216,10 @@ namespace RDKit {
         return bond->getEndAtom();
     }
 
-
-
-
-
-
-
-
-
-
+    inline RDKit::Bond* null_bond(const RDKit::ROMol *mol)
+    {
+        return nullptr;
+    }
 
 
     // IncidentBondList

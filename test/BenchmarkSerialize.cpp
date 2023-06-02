@@ -1,7 +1,11 @@
 #include <Kitimar/Util/Util.hpp>
 #include <Kitimar/CTLayout/CTLayout.hpp>
 #include <Kitimar/CTSmarts/CTSmarts.hpp>
+
+#ifdef KITIMAR_WITH_OPENBABEL
 #include <Kitimar/OpenBabel/OpenBabel.hpp>
+#include <openbabel/parsmart.h>
+#endif
 
 #ifdef KITIMAR_WITH_RDKIT
 #include <Kitimar/RDKit/RDKit.hpp>
@@ -11,7 +15,6 @@
 #include "TestData.hpp"
 #include "Benchmark.hpp"
 
-#include <openbabel/parsmart.h>
 
 
 #include <algorithm>
@@ -26,6 +29,8 @@ using namespace Kitimar::CTSmarts;
 //
 
 // OpenBabel
+
+#ifdef KITIMAR_WITH_OPENBABEL
 
 template<ctll::fixed_string SMARTS, typename Callback>
 auto matchesOpenBabel(auto &source, Callback callback)
@@ -42,6 +47,8 @@ auto matchesOpenBabelSmiles(Callback callback)
     OpenBabelSmilesMolSource source{chembl_smi_filename()};
     matchesOpenBabel<SMARTS>(source, std::forward<Callback>(callback));
 }
+
+#endif // KITIMAR_WITH_OPENBABEL
 
 // RDKit
 

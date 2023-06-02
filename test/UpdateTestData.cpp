@@ -1,7 +1,9 @@
 
 #include "TestData.hpp"
 
+#ifdef KITIMAR_WITH_OPENBABEL
 #include <Kitimar/OpenBabel/OpenBabel.hpp>
+#endif
 
 #ifdef KITIMAR_WITH_RDKIT
 #include <Kitimar/RDKit/RDKit.hpp>
@@ -11,7 +13,7 @@
 using namespace Kitimar;
 using namespace Kitimar::CTLayout;
 
-
+#ifdef KITIMAR_WITH_OPENBABEL
 
 template<typename Layout>
 void serializeOpenBabelSmilesToKitimar(const std::string &suffix = {})
@@ -64,7 +66,7 @@ void serializeOpenBabelSmilesToKitimarTypeIndex()
 
 }
 
-
+#endif // KITIMAR_WITH_OPENBABEL
 
 #ifdef KITIMAR_WITH_RDKIT
 
@@ -86,11 +88,12 @@ void serializeRDKitSmilesToRDKit()
     serializeRDKit(source);
 }
 
-#endif
+#endif // #ifdef KITIMAR_WITH_RDKIT
 
 
 int main()
 {
+#ifdef KITIMAR_WITH_OPENBABEL
     // OpenBabel SMILES -> Kitimar
     //serializeOpenBabelSmilesToKitimar<Vector<StructMolecule>>();
     //serializeOpenBabelSmilesToKitimar<Vector<StructMoleculeIncident>>();
@@ -98,6 +101,7 @@ int main()
     serializeOpenBabelSmilesToKitimar<TypeMolecules>();
 
     //serializeOpenBabelSmilesToKitimarTypeIndex<StructMoleculeIncident>();
+#endif
 
 #ifdef KITIMAR_WITH_RDKIT
     // RDKit SMILES -> RDKit Pickle

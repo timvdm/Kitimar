@@ -1,12 +1,15 @@
 #include <Kitimar/CTLayout/Molecule.hpp>
 #include <Kitimar/CTLayout/Sink.hpp>
-#include <Kitimar/OpenBabel/OpenBabel.hpp>
 #include <Kitimar/CTSmarts/Isomorphism.hpp>
 
-#include "TestData.hpp"
-//#include "Test.hpp"
-
+#ifdef KITIMAR_WITH_OPENBABEL
+#include <Kitimar/OpenBabel/OpenBabel.hpp>
 #include <openbabel/parsmart.h>
+#endif
+
+#include "TestData.hpp"
+
+
 
 #include <gtest/gtest.h>
 
@@ -118,6 +121,8 @@ void compare(auto &mol, auto &ref)
     }
 }
 
+#ifdef KITIMAR_WITH_OPENBABEL
+
 template<typename Layout>
 void test_serialize(const std::string &smiles)
 {
@@ -170,8 +175,6 @@ auto serializeSmilesFileStreamSink(const std::string &SMILES, const std::string 
 
     return obmol;
 }
-
-
 
 
 TEST(TestSerialize, StlVectorSinkInMemorySource)
@@ -249,6 +252,10 @@ TEST(TestSerialize, Validate)
     test_validate<Vector<ListMoleculeIncident>>();
     test_validate<TypeMolecules>();
 }
+
+
+#endif
+
 
 /*
 TEST(TestSerialize, ValidateMemory)

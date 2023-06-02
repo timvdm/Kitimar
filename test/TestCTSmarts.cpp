@@ -1,7 +1,9 @@
 #include <Kitimar/CTSmarts/CTSmarts.hpp>
-#include <Kitimar/OpenBabel/OpenBabel.hpp>
 
+#ifdef KITIMAR_WITH_OPENBABEL
+#include <Kitimar/OpenBabel/OpenBabel.hpp>
 #include <openbabel/parsmart.h>
+#endif
 
 #include <gtest/gtest.h>
 
@@ -643,6 +645,8 @@ auto chembl_smi_filename()
     return std::string(KITIMAR_DATA_DIR) + "/chembl_32.smi";
 }
 
+#ifdef KITIMAR_WITH_OPENBABEL
+
 template<ctll::fixed_string SMARTS>
 auto test_match(auto &mol)
 {
@@ -684,6 +688,7 @@ TEST(TestCTSmarts, ValidateOpenBabel)
 }
 
 
+#endif // KITIMAR_WITH_OPENBABEL
 
 
 

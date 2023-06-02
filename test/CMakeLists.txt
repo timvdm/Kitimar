@@ -6,7 +6,10 @@ target_include_directories(TestData INTERFACE ${CMAKE_SOURCE_DIR}/test)
 target_link_libraries(TestData INTERFACE CTLayout)
 
 add_executable(UpdateTestData UpdateTestData.cpp)
-target_link_libraries(UpdateTestData TestData CTLayout KitimarOpenBabel)
+target_link_libraries(UpdateTestData TestData CTLayout)
+if(KITIMAR_WITH_OPENBABEL)
+    target_link_libraries(UpdateTestData KitimarOpenBabel)
+endif()
 if(KITIMAR_WITH_RDKIT)
     target_link_libraries(UpdateTestData KitimarRDKit)
 endif()
@@ -34,21 +37,28 @@ target_link_libraries(TestCTLayout CTLayout Test fmt::fmt)
 gtest_add_tests(TARGET TestCTLayout)
 
 add_executable(TestSerialize TestSerialize.cpp)
-#target_link_libraries(TestSerialize CTLayout CTSmarts KitimarOpenBabel Test fmt::fmt)
-target_link_libraries(TestSerialize CTLayout KitimarOpenBabel Test fmt::fmt)
+target_link_libraries(TestSerialize CTLayout Test fmt::fmt)
+if(KITIMAR_WITH_OPENBABEL)
+    target_link_libraries(TestSerialize KitimarOpenBabel)
+endif()
 gtest_add_tests(TARGET TestSerialize)
 
 # CTSmarts
 
 add_executable(TestCTSmarts TestCTSmarts.cpp)
-target_link_libraries(TestCTSmarts CTSmarts KitimarOpenBabel Test)
+target_link_libraries(TestCTSmarts CTSmarts Test)
+if(KITIMAR_WITH_OPENBABEL)
+    target_link_libraries(TestCTSmarts KitimarOpenBabel)
+endif()
 gtest_add_tests(TARGET TestCTSmarts)
 
 # OpenBabel
 
-add_executable(TestOpenBabel TestOpenBabel.cpp)
-target_link_libraries(TestOpenBabel KitimarOpenBabel CTLayout Test)
-gtest_add_tests(TARGET TestOpenBabel)
+if(KITIMAR_WITH_OPENBABEL)
+    add_executable(TestOpenBabel TestOpenBabel.cpp)
+    target_link_libraries(TestOpenBabel KitimarOpenBabel CTLayout Test)
+    gtest_add_tests(TARGET TestOpenBabel)
+endif()
 
 # RDKit
 
@@ -62,7 +72,10 @@ endif()
 
 add_executable(BenchmarkSerialize BenchmarkSerialize.cpp)
 #target_compile_definitions(SerializeBenchmark PRIVATE -DKITIMAR_DATA_DIR="${CMAKE_SOURCE_DIR}/data")
-target_link_libraries(BenchmarkSerialize CTLayout CTSmarts Util KitimarOpenBabel Benchmark)
+target_link_libraries(BenchmarkSerialize CTLayout CTSmarts Util Benchmark)
+if(KITIMAR_WITH_OPENBABEL)
+    target_link_libraries(BenchmarkSerialize KitimarOpenBabel)
+endif()
 if(KITIMAR_WITH_RDKIT)
     target_link_libraries(BenchmarkSerialize KitimarRDKit)
 endif()
