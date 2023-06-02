@@ -1,0 +1,52 @@
+name: CMake Build Matrix
+
+on: [push, pull_request]
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build:
+    name: ${{ matrix.config.name }}
+    runs-on: ${{ matrix.config.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+        - {
+            name: "Ubuntu Latest GCC 12",
+            os: ubuntu-latest,
+            cc: "gcc-12", cxx: "g++-12",
+          }
+        - {
+            name: "Ubuntu Latest GCC 11",
+            os: ubuntu-latest,
+            cc: "gcc-11", cxx: "g++-11",
+          }
+
+    steps:
+    - name: Check variables
+      run: echo "${{runner.os}} ${{matrix.config.os}} ${{matrix.config.cc}}"
+
+    - uses: actions/checkout@v2
+
+    - name: Install Dependencies (Linux)
+      if: runner.os == 'Linux'
+      run: sudo apt-get -qq install ninja-build
+
+    - name: Run CMake
+      run: |
+        mkdir "${{ runner.workspace }}/build"
+        cd "${{ runner.workspace }}/build"
+        cmake $GITHUB_WORKSPACE -GNinja -DCMAKE_C_COMPILER=${{matrix.config.cc}} -DCMAKE_CXX_COMPILER=${{matrix.config.cxx}}
+      shell: bash
+
+    - name: Build
+      run: CC=${{matrix.config.cc}} CXX=${{matrix.config.cxx}} cmake --build .
+      shell: bash
+      working-directory: ${{ runner.workspace }}/build
+
+    - name: Test
+      if: runner.os != 'Windows'
+      working-directory: ${{ runner.workspace }}/build
+      run: ctest --output-on-failure
