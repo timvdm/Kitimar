@@ -47,3 +47,5 @@ set(KITIMAR_WITH_RDKIT FALSE)
 
 add_subdirectory(src)
 add_subdirectory(test)
+add_subdirectory(tools)
+add_subdirectory(examples)

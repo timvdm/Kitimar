@@ -188,8 +188,9 @@ namespace Kitimar::CTLayout {
         return index;
     }
 
-
+    //
     // Atom
+    //
 
     template<typename MolObj, typename Property, typename PropertyList>
     constexpr auto get_atom_property(const MolObj &mol, auto atom, Property, PropertyList) noexcept
@@ -277,7 +278,7 @@ namespace Kitimar::CTLayout {
     {
         assert(atom < num_atoms(mol));        
         return get_bonds(mol, atom) | std::views::transform([&mol, atom] (auto bond) {
-            return get_nbr(mol, bond, atom);
+            return Kitimar::Molecule::get_nbr(mol, bond, atom);
         });
         /*
         if constexpr (contains(typename MolObj::Type{}, AdjacentListList{})) {
@@ -289,6 +290,12 @@ namespace Kitimar::CTLayout {
             });
         }
         */
+    }
+
+    template<typename MolObj>
+    constexpr auto null_atom(const MolObj &mol) noexcept
+    {
+        return -1;
     }
 
     //
@@ -359,10 +366,16 @@ namespace Kitimar::CTLayout {
     }
     */
 
+    template<typename MolObj>
+    constexpr auto null_bond(const MolObj &mol) noexcept
+    {
+        return -1;
+    }
+
     namespace detail {
 
         template<typename Layout>
-        void writeIncident(Molecule auto &mol, auto &writer)
+        void writeIncident(Molecule::Molecule auto &mol, auto &writer)
         {
             if constexpr (contains(Layout{}, IncidentListList{})) {                
                 auto incidentList = writer.get(IncidentListList{});
@@ -380,7 +393,7 @@ namespace Kitimar::CTLayout {
         }
 
         template<typename Layout>
-        void writeAdjacent(Molecule auto &mol, auto &writer)
+        void writeAdjacent(Molecule::Molecule auto &mol, auto &writer)
         {
             if constexpr (contains(Layout{}, AdjacentListList{})) {
                 auto adjacentList = writer.get(AdjacentListList{});
@@ -396,7 +409,7 @@ namespace Kitimar::CTLayout {
         }
 
         template<typename Layout>
-        void writeAtomList(Molecule auto &mol, auto &writer)
+        void writeAtomList(Molecule::Molecule auto &mol, auto &writer)
         {
             if constexpr (contains(Layout{}, AtomList{})) {
                 auto atomList = writer.get(AtomList{});
@@ -443,7 +456,7 @@ namespace Kitimar::CTLayout {
         }
 
         template<typename Layout>
-        void writeBondList(Molecule auto &mol, auto &writer)
+        void writeBondList(Molecule::Molecule auto &mol, auto &writer)
         {
             if constexpr (std::is_same_v<Layout, TypeMolecule>) {
                 auto sourceList = writer.get(SourceList{});
@@ -569,7 +582,7 @@ namespace Kitimar::CTLayout {
             }
         }
 
-        void writeAtomTypeIndexList(Molecule auto &mol, auto &writer, const std::vector<AtomType> &atomTypes)
+        void writeAtomTypeIndexList(Molecule::Molecule auto &mol, auto &writer, const std::vector<AtomType> &atomTypes)
         {
             auto atomTypeIndexList = writer.get(AtomTypeIndexList{});
             atomTypeIndexList.setLength(num_atoms(mol));
@@ -589,7 +602,7 @@ namespace Kitimar::CTLayout {
             }
         }
 
-        void writeBondTypeIndexList(Molecule auto &mol, auto &writer, const std::vector<BondType> &bondTypes)
+        void writeBondTypeIndexList(Molecule::Molecule auto &mol, auto &writer, const std::vector<BondType> &bondTypes)
         {
             auto bondTypeIndexList = writer.get(BondTypeIndexList{});
             bondTypeIndexList.setLength(num_bonds(mol));
@@ -610,7 +623,7 @@ namespace Kitimar::CTLayout {
 
 
         template<typename Layout>
-        void serializeAtomTypeList(Molecule auto &mol, std::byte *data,
+        void serializeAtomTypeList(Molecule::Molecule auto &mol, std::byte *data,
                                     const std::vector<AtomType> &atomTypes)
         {
             if constexpr (ctll::exists_in(AtomTypeList{}, Layout::type)) {
@@ -635,7 +648,7 @@ namespace Kitimar::CTLayout {
         */
 
         template<typename Layout>
-        void writeMolecule(Molecule auto &mol, auto &writer,
+        void writeMolecule(Molecule::Molecule auto &mol, auto &writer,
                            const std::vector<AtomType> &atomTypes = {},
                            const std::vector<BondType> &bondTypes = {})
         {
@@ -658,7 +671,7 @@ namespace Kitimar::CTLayout {
     } // namespace detail
 
     template<typename Layout, typename Sink>
-    void serializeMolecule(Molecule auto &mol, Sink &sink,
+    void serializeMolecule(Molecule::Molecule auto &mol, Sink &sink,
                            const std::vector<AtomType> &atomTypes = {})
     {
         auto writer = toWriter(Layout{}, sink);

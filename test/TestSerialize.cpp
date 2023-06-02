@@ -15,7 +15,7 @@ using namespace Kitimar::CTLayout;
 using namespace Kitimar::CTSmarts;
 
 template<typename Layout, typename Sink>
-void serialize(Molecule auto &mol, Sink &sink)
+void serialize(Molecule::Molecule auto &mol, Sink &sink)
 {    
     serializeMolecule<Layout>(mol, sink);
 }
@@ -25,16 +25,16 @@ void serialize(Molecule auto &mol, Sink &sink)
 template<typename MolObj>
 void test_molecule()
 {
-    static_assert(IsAtomList<MolObj>);
-    static_assert(IsBondList<MolObj>);
-    static_assert(MoleculeGraph<MolObj>);
-    static_assert(IncidentBondList<MolObj>);
-    static_assert(AdjacentAtomList<MolObj>);
-    static_assert(ElementLayer<MolObj>);
-    static_assert(IsotopeLayer<MolObj>);
-    static_assert(ChargeLayer<MolObj>);
-    static_assert(BondOrderLayer<MolObj>);
-    static_assert(ImplicitHydrogensLayer<MolObj>);
+    static_assert(Molecule::IsAtomList<MolObj>);
+    static_assert(Molecule::IsBondList<MolObj>);
+    static_assert(Molecule::MoleculeGraph<MolObj>);
+    static_assert(Molecule::IncidentBondList<MolObj>);
+    static_assert(Molecule::AdjacentAtomList<MolObj>);
+    static_assert(Molecule::ElementLayer<MolObj>);
+    static_assert(Molecule::IsotopeLayer<MolObj>);
+    static_assert(Molecule::ChargeLayer<MolObj>);
+    static_assert(Molecule::BondOrderLayer<MolObj>);
+    static_assert(Molecule::ImplicitHydrogensLayer<MolObj>);
     //static_assert(AromaticLayer<MolObj>);
 }
 

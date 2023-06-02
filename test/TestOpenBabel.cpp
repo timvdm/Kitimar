@@ -4,17 +4,17 @@
 
 #include <gtest/gtest.h>
 
-static_assert(Kitimar::IsAtomList<OpenBabel::OBMol>);
-static_assert(Kitimar::IsBondList<OpenBabel::OBMol>);
-static_assert(Kitimar::MoleculeGraph<OpenBabel::OBMol>);
-static_assert(Kitimar::IncidentBondList<OpenBabel::OBMol>);
-static_assert(Kitimar::AdjacentAtomList<OpenBabel::OBMol>);
-static_assert(Kitimar::ElementLayer<OpenBabel::OBMol>);
-static_assert(Kitimar::IsotopeLayer<OpenBabel::OBMol>);
-static_assert(Kitimar::ChargeLayer<OpenBabel::OBMol>);
-static_assert(Kitimar::BondOrderLayer<OpenBabel::OBMol>);
-static_assert(Kitimar::ImplicitHydrogensLayer<OpenBabel::OBMol>);
-static_assert(Kitimar::AromaticLayer<OpenBabel::OBMol>);
+static_assert(Kitimar::Molecule::IsAtomList<OpenBabel::OBMol>);
+static_assert(Kitimar::Molecule::IsBondList<OpenBabel::OBMol>);
+static_assert(Kitimar::Molecule::MoleculeGraph<OpenBabel::OBMol>);
+static_assert(Kitimar::Molecule::IncidentBondList<OpenBabel::OBMol>);
+static_assert(Kitimar::Molecule::AdjacentAtomList<OpenBabel::OBMol>);
+static_assert(Kitimar::Molecule::ElementLayer<OpenBabel::OBMol>);
+static_assert(Kitimar::Molecule::IsotopeLayer<OpenBabel::OBMol>);
+static_assert(Kitimar::Molecule::ChargeLayer<OpenBabel::OBMol>);
+static_assert(Kitimar::Molecule::BondOrderLayer<OpenBabel::OBMol>);
+static_assert(Kitimar::Molecule::ImplicitHydrogensLayer<OpenBabel::OBMol>);
+static_assert(Kitimar::Molecule::AromaticLayer<OpenBabel::OBMol>);
 
 using namespace Kitimar;
 

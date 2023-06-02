@@ -133,6 +133,11 @@ namespace OpenBabel {
         return atom->GetExplicitDegree();
     }
 
+    inline auto null_atom(const OpenBabel::OBMol &mol)
+    {
+        return nullptr;
+    }
+
     // BondList
 
     inline auto num_bonds(const OpenBabel::OBMol &mol)
@@ -169,6 +174,11 @@ namespace OpenBabel {
         return bond->GetEndAtom();
     }
 
+    inline auto null_bond(const OpenBabel::OBMol &mol)
+    {
+        return nullptr;
+    }
+
     // IncidentBondList
 
     inline auto get_bonds(const OpenBabel::OBMol &mol, OpenBabel::OBAtom *atom)
@@ -182,7 +192,7 @@ namespace OpenBabel {
     inline auto get_nbrs(const OpenBabel::OBMol &mol, OpenBabel::OBAtom *atom)
     {
         assert(atom);
-        return get_bonds(mol, atom) | std::views::transform([&mol, atom] (auto bond) { return Kitimar::get_nbr(mol, bond, atom); });
+        return get_bonds(mol, atom) | std::views::transform([&mol, atom] (auto bond) { return Kitimar::Molecule::get_nbr(mol, bond, atom); });
     }
 
     // ElementLayer
@@ -236,7 +246,10 @@ namespace OpenBabel {
         return bond->IsAromatic();
     }
 
-
+    inline auto is_cyclic_atom(const OpenBabel::OBMol &mol, OpenBabel::OBAtom *atom)
+    {
+        return atom->IsInRing();
+    }
 
     inline auto is_cyclic_bond(const OpenBabel::OBMol &mol, OpenBabel::OBBond *bond)
     {

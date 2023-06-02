@@ -77,7 +77,7 @@ namespace Kitimar::CTSmarts {
 
             static_assert(ctll::size(smarts.bonds) == ctll::size(dfsBonds));
 
-            Isomorphism(const Smarts<SMARTS> &query = {})
+            Isomorphism()
             {
                 m_degrees = get_degrees<smarts.numAtoms>(smarts.bonds);
                 m_map.fill(-1);
@@ -110,7 +110,7 @@ namespace Kitimar::CTSmarts {
                 IsomorphismMapping map;
                 matchComponents(mol, [&map] (const auto &array) {
                     map.resize(array.size());
-                    std::ranges::copy(map, map.begin());
+                    std::ranges::copy(array, map.begin());
                 });
                 return map;
             }
@@ -198,7 +198,7 @@ namespace Kitimar::CTSmarts {
                     if (!matchBondExpr(mol, bond, queryBond.bondExpr))
                         continue;
 
-                    auto target = get_nbr(mol, bond, source);
+                    auto target = Molecule::get_nbr(mol, bond, source);
                     auto targetIndex = get_index(mol, target);
 
 
@@ -385,26 +385,13 @@ namespace Kitimar::CTSmarts {
             std::conditional_t<Type == MapType::Single, bool, std::monostate> m_done;
     };
 
+    template<ctll::fixed_string SMARTS>
+    using SingleIsomorphism = Isomorphism<SMARTS, MapType::Single>;
 
     template<ctll::fixed_string SMARTS>
-    class SingleIsomorphism : public Isomorphism<SMARTS, MapType::Single>
-    {
-        public:
-            SingleIsomorphism(const Smarts<SMARTS> &query = {}) : Isomorphism<SMARTS, MapType::Single>(query) {}
-    };
+    using UniqueIsomorphism = Isomorphism<SMARTS, MapType::Unique>;
 
     template<ctll::fixed_string SMARTS>
-    class UniqueIsomorphism : public Isomorphism<SMARTS, MapType::Unique>
-    {
-        public:
-            UniqueIsomorphism(const Smarts<SMARTS> &query = {}) : Isomorphism<SMARTS, MapType::Unique>(query) {}
-    };
-
-    template<ctll::fixed_string SMARTS>
-    class AllIsomorphism : public Isomorphism<SMARTS, MapType::All>
-    {
-        public:
-            AllIsomorphism(const Smarts<SMARTS> &query = {}) : Isomorphism<SMARTS, MapType::All>(query) {}
-    };
+    using AllIsomorphism = Isomorphism<SMARTS, MapType::All>;
 
 } // namespace ctsmarts

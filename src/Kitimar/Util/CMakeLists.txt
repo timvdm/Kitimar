@@ -14,7 +14,7 @@ target_include_directories(Util INTERFACE
     "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDE_DIR}>"
 )
 
-target_link_libraries(Util INTERFACE fmt::fmt)
+target_link_libraries(Util INTERFACE fmt::fmt ctre::ctre)
 
 # Install
 

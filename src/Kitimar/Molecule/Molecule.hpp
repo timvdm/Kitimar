@@ -1,10 +1,9 @@
 #pragma once
 
 #include <concepts>
-
 #include <ranges>
 
-namespace Kitimar {
+namespace Kitimar::Molecule {
 
     /*
      *
@@ -41,6 +40,7 @@ namespace Kitimar {
         { get_atom(mol, 0) };
         { get_atoms(mol) } -> AtomBondRange<std::remove_cvref_t<decltype(get_atom(mol, 0))>>;
         { get_index(mol, get_atom(mol, 0)) } -> std::convertible_to<std::size_t>;
+        { null_atom(mol) };
     };
 
     template<typename Mol>
@@ -52,6 +52,7 @@ namespace Kitimar {
         { get_index(mol, get_bond(mol, 0)) } -> std::convertible_to<std::size_t>;
         { get_source(mol, get_bond(mol, 0)) } -> std::convertible_to<decltype(get_atom(mol, 0))>;
         { get_target(mol, get_bond(mol, 0)) } -> std::convertible_to<decltype(get_atom(mol, 0))>;
+        { null_bond(mol) };
     };
 
     template<typename Mol>
@@ -135,4 +136,4 @@ namespace Kitimar {
 
 
 
-} // namespace Kitimar
+} // namespace Kitimar::Molecule
