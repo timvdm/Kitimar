@@ -23,6 +23,11 @@ jobs:
             os: ubuntu-latest,
             cc: "gcc-11", cxx: "g++-11",
           }
+        - {
+            name: "Ubuntu Latest Clang 16",
+            os: ubuntu-latest,
+            cc: "clang-16", cxx: "clang++-16",
+          }
 
     steps:
     - name: Check variables
