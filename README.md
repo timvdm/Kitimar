@@ -42,7 +42,7 @@ See [planned features](#planned-features) below.
 
 ### Build instructions
 
-```console
+```shell
 ~$ git clone https://github.com/timvdm/Kitimar.git
 ~$ cd Kitimar
 ~/Kitimar$ mkdir build
@@ -57,7 +57,7 @@ See [planned features](#planned-features) below.
 
 The examples can be found in the `examples/CTSmarts` directory.
 
-```console
+```shell
 ~/Kitimar/build$ ./examples/CTSmarts/Match
 Matching SMARTS "C[O-]" in SMILES "CC(=O)[O-]": 1
 ~/Kitimar/build$ ./examples/CTSmarts/Mapping
