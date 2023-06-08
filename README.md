@@ -21,7 +21,7 @@ Many features are still missing and/or untested.
 - Recursive SMARTS
 - Stereochemistry
 - Invalid SMARTS
-    - Compile error need be improved using `static_assert` and easy to understand messages.
+    - Compile errors need to be improved using `static_assert` and easy to understand messages.
     - Workaround: validate SMARTS expressions using other tools first
 - Performance
     - Finding multiple matches still keeps a list of all matches ([Coroutines](https://en.cppreference.com/w/cpp/language/coroutines)?)
