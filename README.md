@@ -15,7 +15,7 @@ It is implemented as a C++20 header-only library and inspired by the [Compile ti
 This is currently a working proof of concept. The aim was to see if this would possible in C++20 using current compilers.
 Many features are still missing and/or untested.
 
-## Known limitations
+#### Known limitations
 
 - Multiple connected components
 - Recursive SMARTS
@@ -39,6 +39,32 @@ Many features are still missing and/or untested.
     - More planned...
 
 See [planned features](#planned-features) below.
+
+### Build instructions
+
+```console
+~$ git clone https://github.com/timvdm/Kitimar.git
+~$ cd Kitimar
+~/Kitimar$ mkdir build
+~/Kitimar$ cd build
+~/Kitimar/build$ cmake -DCMAKE_BUILD_TYPE=Release ..
+~/Kitimar/build$ make
+~/Kitimar/build$ make test
+```
+
+
+### Examples
+
+The examples can be found in the `examples/CTSmarts` directory.
+
+```console
+~/Kitimar/build$ ./examples/CTSmarts/Match
+Matching SMARTS "C[O-]" in SMILES "CC(=O)[O-]": 1
+~/Kitimar/build$ ./examples/CTSmarts/Mapping
+...
+~/Kitimar/build$ ./examples/CTSmarts/Capture
+...
+```
 
 ### API
 
