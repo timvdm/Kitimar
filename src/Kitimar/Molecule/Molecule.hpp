@@ -88,7 +88,7 @@ namespace Kitimar::Molecule {
     template<typename Mol>
     concept ChargeLayer = requires (Mol &mol)
     {
-        { get_charge(mol, get_atom(mol, 0)) } -> std::integral;
+        { get_charge(mol, get_atom(mol, 0)) } -> std::signed_integral;
     };
 
     template<typename Mol>

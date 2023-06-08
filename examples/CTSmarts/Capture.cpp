@@ -43,7 +43,7 @@ int main()
 
     std::cout << "match 4:" << std::endl;
     i = 0;
-    for (auto [C4a, C4b] : CTSmarts::captures<"CC">(molecule, CTSmarts::CaptureAll)) {
+    for (auto [C4a, C4b] : CTSmarts::captures<"CC">(molecule, CTSmarts::All)) {
         std::cout << "    capture " << i++ << std::endl;
         std::cout << "        C:1 -> " << C4a << std::endl;
         std::cout << "        C:2 -> " << C4b << std::endl;

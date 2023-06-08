@@ -780,7 +780,7 @@ constexpr void test_atom_match()
     using smarts = AST::output_type;
     static_assert(ctll::size(smarts::atoms) == 1);
     auto expr = ctll::front(smarts::atoms);
-    constexpr auto m = match(Atom(), expr);
+    constexpr auto m = contains(Atom(), expr);
     static_assert(m == Expected);
 }
 

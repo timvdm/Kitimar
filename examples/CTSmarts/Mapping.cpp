@@ -25,7 +25,7 @@ int main()
     // Find all unique mappings.
     // A mapping is considered unique if it's atom set is unique.
 
-    std::vector<std::vector<int>> unique = CTSmarts::unique<"Nc1ccccc1">(molecule);
+    std::vector<std::vector<int>> unique = CTSmarts::multi<"Nc1ccccc1">(molecule);
 
     std::cout << "Unique mappings from SMARTS \"Nc1ccccc1\" to SMILES \"Nc1ccc(N)cc1\":" << std::endl;
     for (auto i = 0; i < unique.size(); ++i) {
@@ -37,7 +37,7 @@ int main()
 
     // Find all mappings.
 
-    std::vector<std::vector<int>> all = CTSmarts::all<"Nc1ccccc1">(molecule);
+    std::vector<std::vector<int>> all = CTSmarts::multi<"Nc1ccccc1">(molecule, CTSmarts::All);
 
     std::cout << "All mappings from SMARTS \"Nc1ccccc1\" to SMILES \"Nc1ccc(N)cc1\":" << std::endl;
     for (auto i = 0; i < all.size(); ++i) {

@@ -6,8 +6,8 @@ namespace Kitimar::CTSmarts {
 
     namespace detail {
 
-        template<typename Molecule, typename Smarts, auto N>
-        auto captureAtoms(Molecule &mol, Smarts, const IsomorphismMapping &map, const std::array<int, N> &cap)
+        template<typename Smarts, auto N>
+        auto captureAtoms(Molecule::Molecule auto &mol, Smarts, const IsomorphismMapping &map, const std::array<int, N> &cap)
         {
             using Atom = decltype(get_atom(mol, 0));
             if constexpr (N) {
@@ -37,8 +37,8 @@ namespace Kitimar::CTSmarts {
         }
 
 
-        template<typename Molecule, typename Smarts, auto N>
-        auto captureMatchAtoms(Molecule &mol, Smarts smarts, const IsomorphismMapping &map, const std::array<int, N> &cap)
+        template<typename Smarts, auto N>
+        auto captureMatchAtoms(Molecule::Molecule auto &mol, Smarts smarts, const IsomorphismMapping &map, const std::array<int, N> &cap)
         {
             return std::tuple_cat(std::make_tuple(!map.empty()), captureAtoms(mol, smarts, map, cap));
         }
@@ -58,96 +58,102 @@ namespace Kitimar::CTSmarts {
 
     } // namespace detail
 
-    //
-    // Molecule
-    //
+    template<MapType T>
+    using MapTypeTag = std::integral_constant<MapType, T>;
+
+    static constexpr auto Unique = MapTypeTag<MapType::Unique>{};
+    static constexpr auto All = MapTypeTag<MapType::All>{};
 
     //
-    // ctsmarts::match<SMARTS>(mol) -> bool
+    // CTSmarts::contains<"SMARTS">(mol) -> bool
     //
-    template<ctll::fixed_string SMARTS, typename Molecule>
-    constexpr bool match(Molecule &mol)
+
+    template<ctll::fixed_string SMARTS>
+    constexpr bool contains(Molecule::Molecule auto &mol)
     {
         auto iso = SingleIsomorphism<SMARTS>{};
         return iso.match(mol);
     }
 
     //
-    // ctsmarts::single<SMARTS>(mol) -> std::vector<int>
+    // CTSmarts::count<"SMARTS">(mol, CTSmarts::[Unique, All]) -> std::integeral
     //
-    template<ctll::fixed_string SMARTS, typename Molecule>
-    constexpr auto single(Molecule &mol)
+
+    template<ctll::fixed_string SMARTS, MapType M = MapType::Unique>
+    constexpr auto count(Molecule::Molecule auto &mol, MapTypeTag<M> = {})
+    {
+        static_assert(M != MapType::Single, "Use CTSmarts::contains()");
+        auto iso = Isomorphism<SMARTS, M>{};
+        return iso.count(mol);
+    }
+
+    //
+    // CTSmarts::single<"SMARTS">(mol) -> std::vector<int>
+    //
+
+    template<ctll::fixed_string SMARTS>
+    constexpr auto single(Molecule::Molecule auto &mol)
     {
         auto iso = SingleIsomorphism<SMARTS>{};
         return iso.single(mol);
     }
 
     //
-    // ctsmarts::count<SMARTS>(mol) -> std::integeral
+    // CTSmarts::single<"SMARTS">(mol, atom) -> std::vector<int>
     //
-    template<ctll::fixed_string SMARTS, typename Molecule>
-    constexpr auto count(Molecule &mol)
-    {
-        auto iso = UniqueIsomorphism<SMARTS>{};
-        return iso.count(mol);
-    }
 
-    //
-    // ctsmarts::unique<SMARTS>(mol) -> std::vector<std::vector<int>>
-    //
-    template<ctll::fixed_string SMARTS, typename Molecule>
-    constexpr auto unique(Molecule &mol)
+    template<ctll::fixed_string SMARTS>
+    constexpr auto single(Molecule::Molecule auto &mol, const auto &atom)
     {
-        auto iso = UniqueIsomorphism<SMARTS>{};
-        return iso.all(mol);
-    }
-
-    //
-    // ctsmarts::countAll<SMARTS>(mol) -> std::integeral
-    //
-    template<ctll::fixed_string SMARTS, typename Molecule>
-    constexpr auto countAll(Molecule &mol)
-    {
-        auto iso = AllIsomorphism<SMARTS>{};
-        return iso.count(mol);
-    }
-
-    //
-    // ctsmarts::all<SMARTS>(mol) -> std::vector<std::vector<int>>
-    //
-    template<ctll::fixed_string SMARTS, typename Molecule>
-    constexpr auto all(Molecule &mol)
-    {
-        auto iso = AllIsomorphism<SMARTS>{};
-        return iso.all(mol);
-    }
-
-    //
-    // ctsmarts::capture<SMARTS>(mol) -> tuple<bool, Atom...>
-    //
-    template <ctll::fixed_string SMARTS, typename Molecule>
-    auto capture(Molecule &mol)
-    {
-        auto smarts = Smarts<SMARTS>();
-        constexpr auto cap = captureMapping(smarts);
         auto iso = SingleIsomorphism<SMARTS>{};
-        auto map = iso.single(mol);
-        return detail::captureMatchAtoms(mol, smarts, map, cap);
+        return iso.single(mol, atom);
     }
 
-    template<MapType T>
-    using CaptureTag = std::integral_constant<MapType, T>;
-
-    static constexpr auto CaptureUnique = CaptureTag<MapType::Unique>{};
-    static constexpr auto CaptureAll = CaptureTag<MapType::All>{};
-
     //
-    // ctsmarts::captures<SMARTS>(mol) -> std::range<std::array<Atom...>>
+    // CTSmarts::multi<"SMARTS">(mol, CTSmarts::[Unique, All]) -> std::vector<std::vector<int>>
     //
-    template <ctll::fixed_string SMARTS, MapType CaptureType = MapType::Unique>
-    auto captures(Molecule::Molecule auto &mol, CaptureTag<CaptureType> = {})
+
+    template<ctll::fixed_string SMARTS, MapType M = MapType::Unique>
+    constexpr auto multi(Molecule::Molecule auto &mol, MapTypeTag<M> = {})
     {
-        auto iso = Isomorphism<SMARTS, CaptureType>{};
+        auto iso = Isomorphism<SMARTS, M>{};
+        return iso.all(mol);
+    }
+
+    //
+    // CTSmarts::capture<"SMARTS">(mol) -> tuple<bool, Atom...>
+    //
+
+    template <ctll::fixed_string SMARTS>
+    auto capture(Molecule::Molecule auto &mol)
+    {
+        auto iso = SingleIsomorphism<SMARTS>{};
+        constexpr auto cap = captureMapping(iso.smarts);
+        auto map = iso.single(mol);
+        return detail::captureMatchAtoms(mol, iso.smarts, map, cap);
+    }
+
+    //
+    // CTSmarts::capture<"SMARTS">(mol, atom) -> tuple<bool, Atom...>
+    //
+
+    template <ctll::fixed_string SMARTS>
+    auto capture(Molecule::Molecule auto &mol, const auto &atom)
+    {
+        auto iso = SingleIsomorphism<SMARTS>{};
+        constexpr auto cap = captureMapping(iso.smarts);
+        auto map = iso.single(mol, atom);
+        return detail::captureMatchAtoms(mol, iso.smarts, map, cap);
+    }
+
+    //
+    // CTSmarts::captures<"SMARTS">(mol, CTSmarts::[Unique, All]) -> std::range<std::array<Atom, N>>
+    //
+
+    template <ctll::fixed_string SMARTS, MapType M = MapType::Unique>
+    auto captures(Molecule::Molecule auto &mol, MapTypeTag<M> = {})
+    {
+        auto iso = Isomorphism<SMARTS, M>{};
         static constexpr auto cap = captureMapping(iso.smarts);
         if constexpr (__cpp_lib_ranges >= 202110L)
             return iso.all(mol) | std::views::transform([&] (const auto &map) {
@@ -158,18 +164,14 @@ namespace Kitimar::CTSmarts {
             return detail::copyCapture(mol, iso, cap, iso.all(mol));
     }
 
+    //
+    // CTSmarts::captures<"SMARTS">(mol, atom, CTSmarts::[Unique, All]) -> std::range<std::array<Atom, N>>
+    //
 
-    //
-    // Atom
-    //
-
-    //
-    // ctsmarts::captures<SMARTS>(mol, atom) -> std::range<std::array<Atom...>>
-    //
-    template <ctll::fixed_string SMARTS, MapType CaptureType = MapType::Unique>
-    auto captures(Molecule::Molecule auto &mol, const auto &atom, CaptureTag<CaptureType> = {})
+    template <ctll::fixed_string SMARTS, MapType M = MapType::Unique>
+    auto captures(Molecule::Molecule auto &mol, const auto &atom, MapTypeTag<M> = {})
     {
-        auto iso = Isomorphism<SMARTS, CaptureType>{};
+        auto iso = Isomorphism<SMARTS, M>{};
         static constexpr auto cap = captureMapping(iso.smarts);
         if constexpr (__cpp_lib_ranges >= 202110L)
             return iso.all(mol, atom) | std::views::transform([&] (const auto &map) {
