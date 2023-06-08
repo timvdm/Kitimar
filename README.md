@@ -135,11 +135,15 @@ NOTES:
 
 CTSmarts requires a `C++20` compiler and associated standard template library.
 
+Known **supported** compilers:
+
 - GCC 12.1+ (12.0 untested)
 - Clang 16.0+
 - GCC 11.3+ (see [known limitations](#known-limitations) above)
 
-Known unspoorted compilers: Clang 15.0
+Known **unsupported** compilers:
+
+- Clang 15.0
 
 ### Planned features
 
