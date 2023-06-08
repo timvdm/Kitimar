@@ -10,9 +10,22 @@ The SMARTS expressions are parsed at compile-time resulting in a minimal amount 
 
 It is implemented as a C++20 header-only library and inspired by the [Compile time regular expressions](https://github.com/hanickadot/compile-time-regular-expressions) and uses it's `ctll` compile-time LL(1) parser.
 
-### Proof of concept
+### STATUS: Proof of concept
 
 This is currently a working proof of concept. The aim was to see if this would possible in C++20 using current compilers.
+Many features are still missing and/or untested.
+
+## Known limitations
+
+- Multiple connected components
+- Recursive SMARTS
+- Stereochemistry
+- Invalid SMARTS
+    - Compile error need be improved using `static_assert` and easy to understand messages.
+    - Workaround: validate SMARTS expressions using other tools first
+- Performance
+    - Finding multiple matches still keeps a list of all matches ([Coroutines](https://en.cppreference.com/w/cpp/language/coroutines)?)
+    - C++11 has no `std::ranges::owning_view` &rarr; maps are copied before returning ([range-v3](https://github.com/ericniebler/range-v3)?)
 
 ### Features
 
@@ -21,6 +34,11 @@ This is currently a working proof of concept. The aim was to see if this would p
 - Capture atoms using SMARTS atom classes
 - No need for global state &rarr; no threading issues
 - No need for external SMARTS to C++ conversion tool and build system setup
+- Compile time optimizations:
+    - Add cyclicity check to cyclic SMARTS atoms and bonds
+    - More planned...
+
+See [planned features](#planned-features) below.
 
 ### API
 
@@ -103,7 +121,7 @@ for (auto [C, O] : CTSmarts::captures<"C=O">(mol)) {
 
 ### Memory usage
 
-CTSmarts uses a ***minimal amount of memory*** at runtime.
+CTSmarts uses a **minimal amount of memory** at runtime.
 Currently a `std::vector<bool>` is used to keep track of mapped atoms in the molecule.
 When searching for unique matches, there is also a `std::unordered_set<std::size_t>` to keep track of found matches using a hash of the vector of bools.
 An `std::array<int, NumSmartsAtoms>` is used to store the current mapping since the size is known at compile time. This avoids dynamic allocations.
@@ -113,12 +131,26 @@ NOTES:
 - `Isomorphism::m_degrees` will be removed
 - Optimizations for special cases could be added to reduce this even further (see features).
 
+### Supported compiler
+
+CTSmarts requires a `C++20` compiler and associated standard template library.
+
+- GCC 12.1+ (12.0 untested)
+- Clang 16.0+
+- GCC 11.3+ (see [known limitations](#known-limitations) above)
+
+Known unspoorted compilers: Clang 15.0
+
 ### Planned features
 
 - More compile-time optimizations
   - Match less common atoms first
+  - Optimize atom and bond expressions
+  - API for custom optimizers
+- API for custom SMARTS extensions
 - Improved error reporting
 - Optimize special cases (match single atom/bond, central atom with bonds, ...)
+    - No need for dynamic memory allocations
 - ...
 
 ### History
@@ -135,14 +167,14 @@ A *"C++ Molecule Template Library (MTL)"* could have saved me a lot of time. Unf
 However, writing this hypothetical *"MTL"* in C++98 is no easy task. A replacement for all 3 would be needed.
 [Helium](https://github.com/timvdm/Helium/) was my first attempt to implement this *"MTL"*.
 
-The ***container*** was the easy part. While molecules are labeled graphs and no iterator pairs over a range of values,
+The **container** was the easy part. While molecules are labeled graphs and no iterator pairs over a range of values,
 a replacement for this was already available. The [Boost Graph Library (BGL)](boost.org/doc/libs/1_78_0/libs/graph/doc/index.html), 
 which is also used by [RDKit](https://www.rdkit.org/), solved this by defining a graph concept (in documentation) and a set of free functions. 
 Developers could implement these functions for their own custom graph data structure and use all of the algorithms provided by the BGL.
-***Iterators*** are still iterators, but these iterate over the atoms/bonds of a molecule or incident/adjacent to another atom. Dereferencing an iterator no longer returns a value but an atom or a bond. 
+**Iterators** are still iterators, but these iterate over the atoms/bonds of a molecule or incident/adjacent to another atom. Dereferencing an iterator no longer returns a value but an atom or a bond. 
 These atoms/bonds have a vertex/edge label containing their properties (element, charge, bond order, ...) which can also be retrieved using a free function. 
 
-The ***Molecule concept*** was now defined. In the documentation at least, C++98 did not have concepts. Older compilers would also print errors hundreds of lines long when you tried to call std::sort on an std::list.
+The **Molecule concept** was now defined. In the documentation at least, C++98 did not have concepts. Older compilers would also print errors hundreds of lines long when you tried to call std::sort on an std::list.
 Template meta-programming which was required to implement this was also a time consuming task.
 To make things worse, C++98 for loops using iterators were not exactly elegant code.
 The developer using the *"MTL"* should be able to write compact, readable, performant code. All of this without being a template meta-programming wizard.
@@ -155,23 +187,23 @@ Compiler support for the new standard would still have to catch on.
 The first versions of Helium (2012-2014) still used C++98 with optional support C++11 `std:thread` to do similarity searches in parallel.
 A year later the project was updated to require C++11 and use range based for loops to replace the macros using `BOOST_TYPEOF` and associated boilerplate code.
 
-The ***algorithms*** found in Helium include a number of basic graph algorithms (e.g. breath-first-search, depth-first-search, cycles, Dijkstra's shortest path, connected components, canonicalization, ...)
+The **algorithms** found in Helium include a number of basic graph algorithms (e.g. breath-first-search, depth-first-search, cycles, Dijkstra's shortest path, connected components, canonicalization, ...)
 and cheminformatics algorithms (aromatize, kekulize, subgraph isomorphisms using SMARTS expressions, stereochemistry, ...).
-These are ***high-level algorithms***, written using the same repetitive code I mentioned earlier.
+These are **high-level algorithms**, written using the same repetitive code I mentioned earlier.
 These blocks of code are the low-level algorithms to query a molecule and could easily be expressed as SMARTS patterns.
 
-Implementing these ***low-level algorithms*** efficiently with little to no overhead compared to the handwritten code was harder.
-Parsing the ***SMARTS expression at run-time*** creates ***overhead***.
+Implementing these **low-level algorithms** efficiently with little to no overhead compared to the handwritten code was harder.
+Parsing the **SMARTS expression at run-time** creates **overhead**.
 A shared instance between threads which is only initialized once requires synchronisation between threads.
 Furthermore, this results in a graph representation and abstract syntax trees (AST) for the atom and bond expressions existing in memory. This layer of indirection will never be as fast as the handwritten code.
 
 For simple cases, Helium tried to provide predefined predicates which could be used and combined to do some of these tasks.
 This never resulted in an elegant syntax or provided any real advantage. More recently, I also tried to use the ranges library which is now part of the C++20 standard for this. 
 Again, the results were never what I was looking for. SMARTS expressions are just a very compact way of representing these queries.
-An equivalent way of expressing these ***queries using valid C++*** syntax will always be ***more verbose*** and requires a ***new, unfamiliar syntax*** to be learned.
+An equivalent way of expressing these **queries using valid C++** syntax will always be **more verbose** and requires a **new, unfamiliar syntax** to be learned.
 Existing SMARTS expressions would also have to be converted to this syntax.
 
-Another approach trying to combine the advantages of SMARTS with the performance of handwritten code are tools that ***generate code from SMARTS***.
+Another approach trying to combine the advantages of SMARTS with the performance of handwritten code are tools that **generate code from SMARTS**.
 Examples of this include [NextMove Software's Patsy](https://www.nextmovesoftware.com/patsy.html) and the [SmartsCompiler](https://github.com/timvdm/SmartsCompiler) I started writing.
 Patsy is definitely a major improvement over simple SMARTS implementations. The preprocessing also allows for optimizations which would otherwise create extra overhead.
 However, to use tools like this, you have to specify the SMARTS patterns somewhere, setup a build system to convert the SMARTS to code and call this generated code.
@@ -209,7 +241,7 @@ bool OBAtom::IsAromaticNOxide()
 *The next few years life happened and I did not have time to work on this. During this time, the new C++17/20 standards were released.
 For my current job I also use C++ and for some time now, I thought revisiting this idea would be a great way to play with the new C++ features I was not already using.*
 
-I knew ***constexpr*** might be capable of this, but it was not immediately clear how this would work.
+I knew [**constexpr**](https://en.cppreference.com/w/cpp/language/constexpr) might be capable of this now, but it was not immediately clear how this would work.
 There are still limitations that make it difficult to transfer the result of compile-time computations to run time.
 The final piece I needed to put this altogether for this was the [Compile time regular expressions (ctre) library](https://github.com/hanickadot/compile-time-regular-expressions).
 Using this as a example and basis I quickly had a working prototype.
