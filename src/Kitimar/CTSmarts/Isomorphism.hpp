@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Kitimar/Molecule/Molecule.hpp>
+#include "../Molecule/Molecule.hpp"
 
 #include "Smarts.hpp"
 #include "SmartsMatch.hpp"
@@ -28,7 +28,6 @@ namespace Kitimar::CTSmarts {
         Unique,
         All
     };
-
 
     // FIXME
     template<int AtomIndex>

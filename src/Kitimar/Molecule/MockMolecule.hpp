@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Kitimar/Molecule/Molecule.hpp>
+#include "Molecule.hpp"
 
 #include <cstdint>
 #include <vector>
