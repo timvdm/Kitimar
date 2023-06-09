@@ -23,11 +23,6 @@ namespace Kitimar::CTSmarts {
     using IsomorphismMapping = std::vector<int>;
     using IsomorphismMappings = std::vector<IsomorphismMapping>;
 
-    enum class MapType {
-        Single,
-        Unique,
-        All
-    };
 
     // FIXME
     template<int AtomIndex>
@@ -65,18 +60,30 @@ namespace Kitimar::CTSmarts {
 
     }
 
+    enum class MapType {
+        Single,
+        Unique,
+        All
+    };
 
-    template<ctll::fixed_string SMARTS, MapType Type>
+    template<MapType T>
+    using MapTypeTag = std::integral_constant<MapType, T>;
+
+    static constexpr auto Single = MapTypeTag<MapType::Single>{};
+    static constexpr auto Unique = MapTypeTag<MapType::Unique>{};
+    static constexpr auto All    = MapTypeTag<MapType::All>{};
+
+    template<typename SmartsT, MapType Type>
     class Isomorphism
     {
 
         public:
-            static constexpr inline auto smarts = Smarts<SMARTS>();
+            static constexpr inline auto smarts = SmartsT{};
             static constexpr inline auto dfsBonds = getDfsBonds(smarts);
 
             static_assert(ctll::size(smarts.bonds) == ctll::size(dfsBonds));
 
-            Isomorphism()
+            Isomorphism(SmartsT, MapTypeTag<Type>)
             {
                 m_degrees = get_degrees<smarts.numAtoms>(smarts.bonds);
                 m_map.fill(-1);

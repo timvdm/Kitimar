@@ -22,7 +22,6 @@
 
 using namespace Kitimar;
 using namespace Kitimar::CTLayout;
-using namespace Kitimar::CTSmarts;
 
 //
 // Generic single match using callback
@@ -84,9 +83,8 @@ auto matchesRDKitPickle(Callback callback)
 template<ctll::fixed_string SMARTS, typename Callback>
 auto matchesKitimar(auto &source, Callback callback)
 {
-    Isomorphism<SMARTS, MapType::Single> smarts{};
     for (auto mol : source.molecules())
-        callback(mol, smarts.match(mol));
+        callback(mol, CTSmarts::contains<SMARTS>(mol));
 }
 
 
