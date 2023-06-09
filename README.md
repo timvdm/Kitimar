@@ -151,10 +151,10 @@ CTSmarts uses a **minimal amount of memory** at runtime.
 Currently a `std::vector<bool>` is used to keep track of mapped atoms in the molecule.
 When searching for unique matches, there is also a `std::unordered_set<std::size_t>` to keep track of found matches using a hash of the vector of bools.
 An `std::array<int, NumSmartsAtoms>` is used to store the current mapping since the size is known at compile time. This avoids dynamic allocations.
+Finally, an `std::array<uint8_t, NumSmartsAtoms>` is needed to get the degree of a SMARTS atom using a run time integer index.
 
 NOTES: 
 - See `Isomorphism` class
-- `Isomorphism::m_degrees` will be removed
 - Optimizations for special cases could be added to reduce this even further (see features).
 
 ### Supported compiler
