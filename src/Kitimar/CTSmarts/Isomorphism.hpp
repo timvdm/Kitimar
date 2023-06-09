@@ -384,13 +384,4 @@ namespace Kitimar::CTSmarts {
             std::conditional_t<Type == MapType::Single, bool, std::monostate> m_done;
     };
 
-    template<ctll::fixed_string SMARTS>
-    using SingleIsomorphism = Isomorphism<SMARTS, MapType::Single>;
-
-    template<ctll::fixed_string SMARTS>
-    using UniqueIsomorphism = Isomorphism<SMARTS, MapType::Unique>;
-
-    template<ctll::fixed_string SMARTS>
-    using AllIsomorphism = Isomorphism<SMARTS, MapType::All>;
-
 } // namespace ctsmarts

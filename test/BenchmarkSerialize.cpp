@@ -84,7 +84,7 @@ auto matchesRDKitPickle(Callback callback)
 template<ctll::fixed_string SMARTS, typename Callback>
 auto matchesKitimar(auto &source, Callback callback)
 {
-    SingleIsomorphism<SMARTS> smarts{};
+    Isomorphism<SMARTS, MapType::Single> smarts{};
     for (auto mol : source.molecules())
         callback(mol, smarts.match(mol));
 }

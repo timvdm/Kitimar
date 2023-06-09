@@ -311,7 +311,7 @@ TEST(TestSerialize, ValidateMemory)
 //auto findCTMatches()
 //{
 //    FileStreamSource<Layout> source{chembl_serialized_filename(Layout{})};
-//    SingleIsomorphism<SMARTS> smarts{};
+//    Isomorphism<SMARTS, MapType::Single> smarts{};
 
 //    std::vector<bool> matches;
 //    for (auto mol : source.objects()) {
@@ -387,7 +387,7 @@ TEST(TestSerialize, ValidateMemory)
 
 //    auto mol = Object<StructMolecule>(data.data());
 
-//    auto iso = SingleIsomorphism<"c1ccccc1O">{};
+//    auto iso = Isomorphism<"c1ccccc1O", MapType::Single>{};
 
 //    //std::cout << "phenol: " << iso.match(mol, get_atom(mol, 0)) << std::endl;
 //    std::cout << "phenol: " << iso.match(mol) << std::endl;

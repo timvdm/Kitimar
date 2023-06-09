@@ -650,7 +650,7 @@ auto chembl_smi_filename()
 template<ctll::fixed_string SMARTS>
 auto test_match(auto &mol)
 {
-    auto iso = SingleIsomorphism<SMARTS>{};
+    auto iso = Isomorphism<SMARTS, MapType::Single>{};
     auto ctMatch = iso.match(mol);
 
     OpenBabel::OBSmartsPattern obsmarts;
