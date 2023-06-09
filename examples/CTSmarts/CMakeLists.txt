@@ -6,3 +6,6 @@ target_link_libraries(Mapping CTSmarts)
 
 add_executable(Capture Capture.cpp)
 target_link_libraries(Capture CTSmarts)
+
+add_executable(AtomBond AtomBond.cpp)
+target_link_libraries(AtomBond CTSmarts)

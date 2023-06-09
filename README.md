@@ -91,13 +91,21 @@ auto mol = ...; // Molecule that satifies the Molecule::Molecule concept.
 
 CTSmarts::contains<"SMARTS">(mol) -> bool;
 
+// Check if an atom matches the first SMARTS atom
+
+CTSmarts::atom<"SMARTS">(mol, atom) -> bool;
+
+// Check if a bond matches the first SMARTS bond
+
+CTSmarts::bond<"SMARTS">(mol, bond) -> bool;
+
 // Find the first mapping or an empty vector if there is no mapping.
 
 CTSmarts::single<"SMARTS">(mol) -> std::vector<int>;
 
 // Find the first mapping starting from a specified atom or an empty vector if there is no mapping.
 
-CTSmarts::single<"SMARTS">(mol) -> std::vector<int>;
+CTSmarts::single<"SMARTS">(mol, atom) -> std::vector<int>;
 
 // Count the number of mappings.
 

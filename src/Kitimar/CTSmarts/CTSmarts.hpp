@@ -76,6 +76,47 @@ namespace Kitimar::CTSmarts {
     }
 
     //
+    // CTSmarts::atom<"SMARTS">(mol, atom) -> bool
+    //
+
+    template<ctll::fixed_string SMARTS>
+    constexpr bool atom(Molecule::Molecule auto &mol, const auto &atom)
+    {
+        auto smarts = Smarts<SMARTS>{};
+        if constexpr (smarts.numAtoms == 1) {
+            return matchAtomExpr(mol, atom, get<0>(smarts.atoms));
+        } else {
+            auto iso = SingleIsomorphism<SMARTS>{};
+            return iso.match(mol, atom);
+        }
+    }
+
+    //
+    // CTSmarts::bond<"SMARTS">(mol, bond) -> bool
+    //
+
+    template<ctll::fixed_string SMARTS>
+    constexpr bool bond(Molecule::Molecule auto &mol, const auto &bond)
+    {
+        auto smarts = Smarts<SMARTS>{};
+        auto source = get_source(mol, bond);
+        auto target = get_target(mol, bond);
+        if constexpr (smarts.numAtoms == 2 && smarts.numBonds == 1) {
+            if (!matchBondExpr(mol, bond, get<0>(smarts.bonds).expr))
+                return false;
+            if (matchAtomExpr(mol, source, get<0>(smarts.atoms)))
+                return matchAtomExpr(mol, target, get<1>(smarts.atoms));
+            return matchAtomExpr(mol, source, get<1>(smarts.atoms)) &&
+                   matchAtomExpr(mol, target, get<0>(smarts.atoms));
+        } else {
+            auto iso = SingleIsomorphism<SMARTS>{};
+            if (iso.match(mol, source))
+                return true;
+            return iso.match(mol, target);
+        }
+    }
+
+    //
     // CTSmarts::count<"SMARTS">(mol, CTSmarts::[Unique, All]) -> std::integeral
     //
 
