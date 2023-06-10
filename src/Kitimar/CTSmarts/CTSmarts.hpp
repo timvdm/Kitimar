@@ -102,6 +102,11 @@ namespace Kitimar::CTSmarts {
 
         }
 
+        constexpr auto centralAtomMap(auto smarts, auto &mol, const auto &atom)
+        {
+            std::array<int, smarts.numAtoms> map;
+        }
+
 
     } // namespace detail
 

@@ -1773,6 +1773,10 @@ namespace Kitimar::CTSmarts {
     template <ctll::fixed_string SMARTS, bool IgnoreInvalid = false>
     struct Smarts;
 
+    //
+    // Adjacency list
+    //
+
     template<int I = 0>
     constexpr auto rotateAdjacencyList(auto adjList)
     {
@@ -1784,10 +1788,6 @@ namespace Kitimar::CTSmarts {
 
         }
     }
-
-    //
-    // Adjacency list
-    //
 
     template<int NumAtoms, int NumBonds, typename ...Bonds, typename AdjList = decltype(resize<NumAtoms, ctll::list<>>())>
     constexpr auto adjacencyList(ctll::list<Bonds...> bonds, AdjList adjList = {})
@@ -1905,7 +1905,22 @@ namespace Kitimar::CTSmarts {
         return ctll::rotate(DfsSearch::visit(smarts, atomVisitor, DfsSearch::NoBondVisitor));
     }
 
-    //template<int BondIdx = 0, typename Atoms = ctll::empty_list, typename Bonds = ctll::empty_list, typename Path = ctll::empty_list>
+    constexpr auto getDfsBonds(auto smarts) noexcept
+    {
+        constexpr auto bondVisitor = [] (auto smarts, auto sourceIdx, auto targetIdx, auto expr, auto isRingClosure, auto ctx) {
+            auto sourceExpr = get<sourceIdx.value>(smarts.atoms);
+            auto targetExpr = get<targetIdx.value>(smarts.atoms);
+            return ctll::push_front(DfsBond<sourceIdx.value, targetIdx.value, false, isRingClosure.value,
+                                            decltype(sourceExpr), decltype(targetExpr), decltype(expr)>(), ctx);
+        };
+        auto dfsBonds = ctll::rotate(DfsSearch::visit(smarts, DfsSearch::NoAtomVisitor, bondVisitor));
+        return addCycleMembership<0>(dfsBonds, getCycleMembership(smarts).bonds);
+    }
+
+    //
+    // Cycle-membership
+    //
+
     template<int BondIdx, typename Atoms, typename Bonds, typename Path>
     struct CycleMembershipContext
     {
@@ -1993,58 +2008,44 @@ namespace Kitimar::CTSmarts {
         return ctll::push_front(dfsBond, addCycleMembership<BondIdx+1>(ctll::list<CycleBonds...>{}, cyclicBondIdxs));
     }
 
-    constexpr auto getDfsBonds(auto smarts) noexcept
-    {
-        constexpr auto bondVisitor = [] (auto smarts, auto sourceIdx, auto targetIdx, auto expr, auto isRingClosure, auto ctx) {
-            auto sourceExpr = get<sourceIdx.value>(smarts.atoms);
-            auto targetExpr = get<targetIdx.value>(smarts.atoms);
-            return ctll::push_front(DfsBond<sourceIdx.value, targetIdx.value, false, isRingClosure.value,
-                                            decltype(sourceExpr), decltype(targetExpr), decltype(expr)>(), ctx);
-        };
-        auto dfsBonds = ctll::rotate(DfsSearch::visit(smarts, DfsSearch::NoAtomVisitor, bondVisitor));
-        return addCycleMembership<0>(dfsBonds, getCycleMembership(smarts).bonds);
+    //
+    // Degrees
+    //
 
-        //return ctll::rotate(DfsSearch::visit(smarts, DfsSearch::NoAtomVisitor, bondVisitor));
+    template<int AtomIndex>
+    constexpr auto getDegree(ctll::empty_list)
+    {
+        return 0;
     }
 
-    /*
-    template<int sourceIndex, int adjIndex, typename SmartsT, typename ...VBs, typename ...VAs, typename ...Ts>
-    constexpr auto getDfsBonds(SmartsT smarts,  ctll::list<VBs...> visitedBonds = {}, ctll::list<VAs...> visitedAtoms = {}, ctll::list<Ts...> bonds = {})
+    template<int AtomIndex, typename Bond, typename ...Bonds>
+    constexpr auto getDegree(ctll::list<Bond, Bonds...>)
     {
-        auto sourceExpr = get<sourceIndex>(smarts.atoms);
-        auto adj = get<sourceIndex>(smarts.adjList);
-        if constexpr (adjIndex >= ctll::size(adj)) {
-            return std::make_tuple(bonds, visitedBonds, visitedAtoms);
-        } else {
-            auto bondIndex = get<adjIndex>(adj);
-            if constexpr (ctll::exists_in(bondIndex, visitedBonds)) {
-                return getDfsBonds<sourceIndex, adjIndex + 1>(smarts, visitedBonds, visitedAtoms, bonds);;
-            } else {
-                auto bond = get<bondIndex.value>(smarts.bonds);
-                auto bondExpr = bond.expr;
-                constexpr auto targetIndex = bond.source == sourceIndex ? bond.target : bond.source;
-                auto targetExpr = get<targetIndex>(smarts.atoms);                
-                constexpr auto isRingClosure = ctll::exists_in(Number<targetIndex>(), visitedAtoms);
-                // mark as visited
-                auto visitedBonds2 = ctll::push_front(bondIndex, visitedBonds);
-                auto visitedAtoms2 = ctll::push_front(Number<sourceIndex>(), ctll::push_front(Number<targetIndex>(), visitedAtoms));
-                // add dfs bond
-                auto bonds2 = ctll::push_front(DfsBond<sourceIndex, targetIndex, isRingClosure, decltype(sourceExpr), decltype(targetExpr), decltype(bondExpr)>(), bonds);
-                // dfs search....
-                auto [bonds3, visitedBonds3, visitedAtoms3] = getDfsBonds<targetIndex, 0>(smarts, visitedBonds2, visitedAtoms2, bonds2);
-                // bond to next nbr
-                return getDfsBonds<sourceIndex, adjIndex + 1>(smarts, visitedBonds3, visitedAtoms3, bonds3);
-            }
-        }
+        int d = Bond::source == AtomIndex || Bond::target == AtomIndex;
+        return d + getDegree<AtomIndex>(ctll::list<Bonds...>{});
     }
 
-    template<typename SmartsT>
-    constexpr auto getDfsBonds(SmartsT smarts)
+    template<int AtomIndex, int NumAtoms, typename Bonds>
+    constexpr auto getDegrees(Bonds)
     {
-        //return ctll::rotate(std::get<0>(getDfsBonds<0, 0>(smarts)));
-        return getDfsBonds2(smarts);
+        if constexpr (AtomIndex == NumAtoms)
+            return ctll::empty_list{};
+        else
+        return ctll::push_front(Number<getDegree<AtomIndex>(Bonds{})>{}, getDegrees<AtomIndex+1, NumAtoms>(Bonds{}));
     }
-    */
+
+    template<typename ...T>
+    constexpr auto degreesToArray(ctll::list<T...> degrees)
+    {
+        return std::array<uint8_t, ctll::size(degrees)>({T::value...});
+    }
+
+    template<int NumAtoms, typename Bonds>
+    constexpr auto getDegrees(Bonds)
+    {
+        return degreesToArray(getDegrees<0, NumAtoms>(Bonds{}));
+
+    }
 
     //
     // Captures
@@ -2074,11 +2075,37 @@ namespace Kitimar::CTSmarts {
         }
     }
 
-    template<typename Smarts>
-    constexpr auto captureMapping(Smarts smarts)
+    constexpr auto captureMapping(auto smarts)
     {
         constexpr auto mapping = captureMappingHelper<1>(smarts.context.params.classes, ctll::empty_list());
         return to_array(mapping);
+    }
+
+    //
+    // Optimized cases
+    //
+
+    template<int NumAtoms, int NumBonds, typename Bonds>
+    constexpr auto getCentralAtom(Bonds bonds)
+    {
+        if constexpr (NumAtoms < 3 || NumAtoms != NumBonds + 1)
+            return -1;
+        auto centralAtom = -1;
+        auto degrees = getDegrees<NumAtoms>(bonds);
+        for (auto i = 0; i < degrees.size(); ++i) {
+            switch (degrees[i]) {
+                case 0:
+                    return -1;
+                case 1:
+                    continue;
+                default:
+                    if (centralAtom != -1)
+                        return -1;
+                    centralAtom = i;
+                    break;
+            }
+        }
+        return centralAtom;
     }
 
     //
@@ -2136,6 +2163,7 @@ namespace Kitimar::CTSmarts {
 
         static constexpr inline auto isSingleAtom = numAtoms == 1;
         static constexpr inline auto isSingleBond = numAtoms == 2 && numBonds == 1;
+        static constexpr inline auto centralAtom = getCentralAtom<numAtoms, numBonds>(bonds);
 
         template<typename ErrorTag>
         static constexpr auto getError(ErrorTag)
@@ -2372,42 +2400,6 @@ namespace Kitimar::CTSmarts {
         return os;
     }
 
-    // FIXME
-    template<int AtomIndex>
-    constexpr auto get_degree(ctll::empty_list)
-    {
-        return 0;
-    }
-
-    template<int AtomIndex, typename Bond, typename ...Bonds>
-    constexpr auto get_degree(ctll::list<Bond, Bonds...>)
-    {
-        int d = Bond::source == AtomIndex || Bond::target == AtomIndex;
-        return d + get_degree<AtomIndex>(ctll::list<Bonds...>{});
-    }
-
-    template<int AtomIndex, int NumAtoms, typename Bonds>
-    constexpr auto get_degrees(Bonds)
-    {
-        if constexpr (AtomIndex == NumAtoms)
-            return ctll::empty_list{};
-        else
-            return ctll::push_front(Number<get_degree<AtomIndex>(Bonds{})>{}, get_degrees<AtomIndex+1, NumAtoms>(Bonds{}));
-    }
-
-    template<typename ...T>
-    constexpr auto degreesToArray(ctll::list<T...> degrees)
-    {
-        return std::array<uint8_t, ctll::size(degrees)>({T::value...});
-    }
-
-    template<int NumAtoms, typename Bonds>
-    constexpr auto get_degrees(Bonds)
-    {
-        return degreesToArray(get_degrees<0, NumAtoms>(Bonds{}));
-
-    }
-
     enum class MapType {
         Single,
         Unique,
@@ -2433,7 +2425,7 @@ namespace Kitimar::CTSmarts {
 
             Isomorphism(SmartsT, MapTypeTag<Type>)
             {
-                m_degrees = get_degrees<smarts.numAtoms>(smarts.bonds);
+                m_degrees = getDegrees<smarts.numAtoms>(smarts.bonds);
                 m_map.fill(-1);
             }
 
@@ -3045,6 +3037,11 @@ namespace Kitimar::CTSmarts {
                 return std::make_tuple(true, target, source);
             }
 
+        }
+
+        constexpr auto centralAtomMap(auto smarts, auto &mol, const auto &atom)
+        {
+            std::array<int, smarts.numAtoms> map;
         }
 
     } // namespace detail

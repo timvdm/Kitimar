@@ -466,6 +466,26 @@ TEST(TestCTSmarts, Operators)
     */
 }
 
+TEST(TestCTSmarts, GetCentralAtom)
+{
+    EXPECT_EQ(Smarts<"C">::centralAtom, -1);
+    EXPECT_EQ(Smarts<"CC">::centralAtom, -1);
+    EXPECT_EQ(Smarts<"CCC">::centralAtom, 1);
+    EXPECT_EQ(Smarts<"C(C)C">::centralAtom, 0);
+    EXPECT_EQ(Smarts<"CCCC">::centralAtom, -1);
+    EXPECT_EQ(Smarts<"CC(C)C">::centralAtom, 1);
+    EXPECT_EQ(Smarts<"C(C)(C)C">::centralAtom, 0);
+    EXPECT_EQ(Smarts<"CCCCC">::centralAtom, -1);
+    EXPECT_EQ(Smarts<"CC(C)CC">::centralAtom, -1);
+    EXPECT_EQ(Smarts<"CC(C)(C)C">::centralAtom, 1);
+    EXPECT_EQ(Smarts<"C(C)(C)(C)C">::centralAtom, 0);
+    EXPECT_EQ(Smarts<"C1CC1">::centralAtom, -1);
+}
+
+
+
+
+
 TEST(TestCTSmarts, MACCS)
 {
     /*

@@ -33,43 +33,6 @@ namespace Kitimar::CTSmarts {
         return os;
     }
 
-
-    // FIXME
-    template<int AtomIndex>
-    constexpr auto get_degree(ctll::empty_list)
-    {
-        return 0;
-    }
-
-    template<int AtomIndex, typename Bond, typename ...Bonds>
-    constexpr auto get_degree(ctll::list<Bond, Bonds...>)
-    {
-        int d = Bond::source == AtomIndex || Bond::target == AtomIndex;
-        return d + get_degree<AtomIndex>(ctll::list<Bonds...>{});
-    }
-
-    template<int AtomIndex, int NumAtoms, typename Bonds>
-    constexpr auto get_degrees(Bonds)
-    {
-        if constexpr (AtomIndex == NumAtoms)
-            return ctll::empty_list{};
-        else
-            return ctll::push_front(Number<get_degree<AtomIndex>(Bonds{})>{}, get_degrees<AtomIndex+1, NumAtoms>(Bonds{}));
-    }
-
-    template<typename ...T>
-    constexpr auto degreesToArray(ctll::list<T...> degrees)
-    {
-        return std::array<uint8_t, ctll::size(degrees)>({T::value...});
-    }
-
-    template<int NumAtoms, typename Bonds>
-    constexpr auto get_degrees(Bonds)
-    {
-        return degreesToArray(get_degrees<0, NumAtoms>(Bonds{}));
-
-    }
-
     enum class MapType {
         Single,
         Unique,
@@ -95,7 +58,7 @@ namespace Kitimar::CTSmarts {
 
             Isomorphism(SmartsT, MapTypeTag<Type>)
             {
-                m_degrees = get_degrees<smarts.numAtoms>(smarts.bonds);
+                m_degrees = getDegrees<smarts.numAtoms>(smarts.bonds);
                 m_map.fill(-1);
             }
 
