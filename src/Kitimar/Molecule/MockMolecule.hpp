@@ -39,12 +39,12 @@ namespace Kitimar::Molecule {
     // Molecule
     //
 
-    inline auto num_atoms(const MockMolecule &mol) noexcept
+    inline uint32_t num_atoms(const MockMolecule &mol) noexcept
     {
         return mol.atoms.size();
     }
 
-    inline auto num_bonds(const MockMolecule &mol) noexcept
+    inline uint32_t num_bonds(const MockMolecule &mol) noexcept
     {
         return mol.atoms.size();
     }
@@ -142,7 +142,7 @@ namespace Kitimar::Molecule {
         });
     }
 
-    inline auto null_atom(const MockMolecule &mol) noexcept
+    inline uint32_t null_atom(const MockMolecule &mol) noexcept
     {
         return -1;
     }

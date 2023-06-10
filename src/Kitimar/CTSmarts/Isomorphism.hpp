@@ -23,6 +23,16 @@ namespace Kitimar::CTSmarts {
     using IsomorphismMapping = std::vector<int>;
     using IsomorphismMappings = std::vector<IsomorphismMapping>;
 
+    template<auto N>
+    std::ostream& operator<<(std::ostream &os, const std::array<int, N> &map)
+    {
+        os << "[";
+        for (auto i = 0; i < map.size(); ++i)
+            os << " " << map[i];
+        os << " ]";
+        return os;
+    }
+
 
     // FIXME
     template<int AtomIndex>
@@ -87,8 +97,6 @@ namespace Kitimar::CTSmarts {
             {
                 m_degrees = get_degrees<smarts.numAtoms>(smarts.bonds);
                 m_map.fill(-1);
-                //m_mapped.fill(false);
-                setDone(false);
             }
 
             //
@@ -135,11 +143,46 @@ namespace Kitimar::CTSmarts {
             // Atom
             //
 
-            bool match(auto &mol, const auto &atom)
+            bool matchAtom(auto &mol, const auto &atom)
             {
                 reset(mol);
                 matchComponent(mol, atom,  nullptr);
                 return isDone();
+            }
+
+            bool matchBond(auto &mol, const auto &bond)
+            {
+                reset(mol);
+                auto source = get_source(mol, bond);
+                auto target = get_target(mol, bond);
+
+                if (matchAtom(mol, source, 0, get<0>(smarts.atoms))) {
+                    auto index = get_index(mol, source);
+                    m_map[0] = index;
+                    m_mapped[index] = true;
+                    auto callback = [this, &mol, target] (const auto &map) {
+                        if (m_map[1] == get_index(mol, target))
+                            setDone(true);
+                    };
+                    matchDfs(mol, callback, dfsBonds);
+                    if (isDone() && m_map[1] == get_index(mol, target))
+                        return true;
+                }
+
+                reset(mol); // FIXME: needed?
+                if (matchAtom(mol, target, 0, get<0>(smarts.atoms))) {
+                    auto index = get_index(mol, target);
+                    m_map[0] = index;
+                    m_mapped[index] = true;
+                    auto callback = [this, &mol, source] (const auto &map) {
+                        if (m_map[1] == get_index(mol, source))
+                            setDone(true);
+                    };
+                    matchDfs(mol, callback, dfsBonds);
+                    return isDone() && m_map[1] == get_index(mol, source);
+                }
+
+                return false;
             }
 
             auto count(auto &mol, const auto &atom)
@@ -188,7 +231,7 @@ namespace Kitimar::CTSmarts {
                 static_assert(!ctll::empty(bonds));
                 auto queryBond = ctll::front(bonds);
                 auto querySource = queryBond.source;
-                auto queryTarget = queryBond.target;                
+                auto queryTarget = queryBond.target;
 
                 auto source = get_atom(mol, m_map[querySource]);
 
@@ -234,6 +277,9 @@ namespace Kitimar::CTSmarts {
 
                         //if (stereoMatches())
 
+                        //if (DEBUG_ISOMORPHISM)
+                        //    std::cout << "found map: " << m_map << std::endl;
+
                         if constexpr (Type == MapType::Unique) {
                             // create bit mask of atoms (to ensure uniqueness of mapping)
                             std::vector<bool> atoms(num_atoms(mol));
@@ -252,6 +298,7 @@ namespace Kitimar::CTSmarts {
                     }
 
                     // exit as soon as possible if only one match is required
+                    // (single mapping stored in m_map after returning)
                     if (isDone())
                         return;
 
@@ -261,7 +308,6 @@ namespace Kitimar::CTSmarts {
                         m_mapped[targetIndex] = false;
                     }
                 }
-
             }
 
 
@@ -340,21 +386,19 @@ namespace Kitimar::CTSmarts {
 
             constexpr auto isDone() const noexcept
             {
-                if constexpr (Type == MapType::Single)
-                    return m_done;
-                return false;
+                return m_done;
             }
 
             constexpr auto setDone(bool done) noexcept
             {
-                if constexpr (Type == MapType::Single)
-                    m_done = done;
+                m_done = done;
             }
 
             template<typename Callback>
             constexpr auto addMapping(Callback callback) noexcept
             {
-                setDone(true);
+                if constexpr (Type == MapType::Single)
+                    setDone(true);
                 if constexpr (!std::is_same_v<std::nullptr_t, Callback>)
                     callback(m_map);
             }
@@ -388,7 +432,7 @@ namespace Kitimar::CTSmarts {
             //std::array<bool, smarts.numAtoms> m_mapped; // current mapping: queried atom index -> true if mapped
             std::vector<bool> m_mapped; // current mapping: queried atom index -> true if mapped
             std::conditional_t<Type == MapType::Unique, std::unordered_set<std::size_t>, std::monostate> m_maps;
-            std::conditional_t<Type == MapType::Single, bool, std::monostate> m_done;
+            bool m_done = false;
     };
 
 } // namespace ctsmarts

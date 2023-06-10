@@ -12,6 +12,19 @@ namespace Kitimar::CTSmarts {
     template <ctll::fixed_string SMARTS, bool IgnoreInvalid = false>
     struct Smarts;
 
+
+    template<int I = 0>
+    constexpr auto rotateAdjacencyList(auto adjList)
+    {
+        if constexpr (I == ctll::size(adjList))
+            return adjList;
+        else {
+            auto newAdjList = replace<I, decltype(ctll::rotate(get<I>(adjList)))>(adjList);
+            return rotateAdjacencyList<I + 1>(newAdjList);
+
+        }
+    }
+
     //
     // Adjacency list
     //
@@ -378,7 +391,10 @@ namespace Kitimar::CTSmarts {
         static constexpr inline auto bonds = ctll::rotate(Context::bonds);
         static constexpr inline auto numAtoms = ctll::size(atoms);
         static constexpr inline auto numBonds = ctll::size(bonds);
-        static constexpr inline auto adjList = adjacencyList<numAtoms, numBonds>(bonds);
+        static constexpr inline auto adjList = rotateAdjacencyList(adjacencyList<numAtoms, numBonds>(bonds));
+
+        static constexpr inline auto isSingleAtom = numAtoms == 1;
+        static constexpr inline auto isSingleBond = numAtoms == 2 && numBonds == 1;
 
         template<typename ErrorTag>
         static constexpr auto getError(ErrorTag)

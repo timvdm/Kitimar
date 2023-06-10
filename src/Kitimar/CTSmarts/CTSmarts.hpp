@@ -13,18 +13,11 @@ namespace Kitimar::CTSmarts {
             using Atom = decltype(get_atom(mol, 0));
             if constexpr (N) {
                 std::array<Atom, N> atoms = {};
-                std::cout << "atoms.size(): " << atoms.size() << std::endl;
-                std::cout << "map.size(): " << map.size() << std::endl;
-                std::cout << "cap.size(): " << cap.size() << std::endl;
                 if (map.empty())
                     atoms.fill(null_atom(mol));
                 else
-                    for (auto i = 0; i < N; ++i) {
-                        std::cout << "i: " << i << std::endl;
-                        std::cout << "    cap[i]: " << cap[i] << std::endl;
-                        std::cout << "    map[cap[i]]: " << map[cap[i]] << std::endl;
+                    for (auto i = 0; i < N; ++i)
                         atoms[i] = get_atom(mol, map[cap[i]]);
-                    }
                 return atoms;
             } else {
                 std::array<Atom, Smarts::numAtoms> atoms = {};
@@ -57,6 +50,59 @@ namespace Kitimar::CTSmarts {
             return v;
         }
 
+        constexpr bool singleAtomMatch(auto smarts, auto &mol, const auto &atom)
+        {
+            return matchAtomExpr(mol, atom, get<0>(smarts.atoms));
+        }
+
+        // 0 -> no match
+        // 1 -> source is SMARTS atom 0, target is SMARTS atom 1
+        // 2 -> source is SMARTS atom 1, target is SMARTS atom 0
+        constexpr int singleBondMatch(auto smarts, auto &mol, const auto &bond)
+        {
+            auto source = get_source(mol, bond);
+            auto target = get_target(mol, bond);
+            if (!matchBondExpr(mol, bond, get<0>(smarts.bonds).expr))
+                return 0;
+            if (matchAtomExpr(mol, source, get<0>(smarts.atoms)) && matchAtomExpr(mol, target, get<1>(smarts.atoms)))
+                return 1;
+            if (matchAtomExpr(mol, source, get<1>(smarts.atoms)) && matchAtomExpr(mol, target, get<0>(smarts.atoms)))
+                return 2;
+            return 0;
+        }
+
+        constexpr auto singleBondCapture(auto smarts, auto &mol, const auto &bond, int singleBondMatchType)
+        {
+            constexpr auto cap = captureMapping(smarts);
+            if constexpr (cap.size() == 1) {
+                switch (singleBondMatchType) {
+                    case 1:
+                        return cap[0] == 0 ? std::make_tuple(true, get_source(mol, bond)) :
+                                             std::make_tuple(true, get_target(mol, bond));
+                    case 2:
+                        return cap[0] == 0 ? std::make_tuple(true, get_target(mol, bond)) :
+                                             std::make_tuple(true, get_source(mol, bond));
+                    default:
+                        return std::make_tuple(false, null_atom(mol));
+                }
+            } else {
+                if (!singleBondMatchType)
+                    return std::make_tuple(false, null_atom(mol), null_atom(mol));
+
+                auto source = get_source(mol, bond);
+                auto target = get_target(mol, bond);
+                if constexpr (cap.size())
+                    if (cap[0] > cap[1])
+                        std::swap(source, target);
+
+                if (singleBondMatchType == 1)
+                    return std::make_tuple(true, source, target);
+                return std::make_tuple(true, target, source);
+            }
+
+        }
+
+
     } // namespace detail
 
 
@@ -68,8 +114,22 @@ namespace Kitimar::CTSmarts {
     constexpr bool contains(Molecule::Molecule auto &mol)
     {
         auto smarts = Smarts<SMARTS>{};
-        auto iso = Isomorphism{smarts, Single};
-        return iso.match(mol);
+        if constexpr (smarts.isSingleAtom) {
+            // Optimize single atom SMARTS
+            for (auto atom : get_atoms(mol)) // FIXME: use std::ranges::find_if -> check assembly?
+                if (detail::singleAtomMatch(smarts, mol, atom))
+                    return true;
+            return false;
+        } else if constexpr (smarts.isSingleBond) {
+            // Optimize single bond SMARTS
+            for (auto bond : get_bonds(mol))
+                if (detail::singleBondMatch(smarts, mol, bond))
+                    return true;
+            return false;
+        } else {
+            auto iso = Isomorphism{smarts, Single};
+            return iso.match(mol);
+        }
     }
 
     //
@@ -80,12 +140,23 @@ namespace Kitimar::CTSmarts {
     constexpr bool atom(Molecule::Molecule auto &mol, const auto &atom)
     {
         auto smarts = Smarts<SMARTS>{};
-        if constexpr (smarts.numAtoms == 1) {
-            return matchAtomExpr(mol, atom, get<0>(smarts.atoms));
+        if constexpr (smarts.isSingleAtom) {
+            // Optimize single atom SMARTS
+            return detail::singleAtomMatch(smarts, mol, atom);
+        } else if constexpr (smarts.isSingleBond) {
+            // Optimize single bond SMARTS
+            if (!matchAtomExpr(mol, atom, get<0>(smarts.atoms)))
+                return false;
+            for (auto bond : get_bonds(mol, atom)) {
+                if (!matchBondExpr(mol, bond, get<0>(smarts.bonds).expr))
+                    continue;
+                if (matchAtomExpr(mol, get_nbr(mol, bond, atom), get<1>(smarts.atoms)))
+                    return true;
+            }
+            return false;
         } else {
-            auto smarts = Smarts<SMARTS>{};
             auto iso = Isomorphism{smarts, Single};
-            return iso.match(mol, atom);
+            return iso.matchAtom(mol, atom);
         }
     }
 
@@ -97,21 +168,23 @@ namespace Kitimar::CTSmarts {
     constexpr bool bond(Molecule::Molecule auto &mol, const auto &bond)
     {
         auto smarts = Smarts<SMARTS>{};
-        auto source = get_source(mol, bond);
-        auto target = get_target(mol, bond);
-        if constexpr (smarts.numAtoms == 2 && smarts.numBonds == 1) {
-            if (!matchBondExpr(mol, bond, get<0>(smarts.bonds).expr))
-                return false;
-            if (matchAtomExpr(mol, source, get<0>(smarts.atoms)))
-                return matchAtomExpr(mol, target, get<1>(smarts.atoms));
-            return matchAtomExpr(mol, source, get<1>(smarts.atoms)) &&
-                   matchAtomExpr(mol, target, get<0>(smarts.atoms));
+        //std::cout << "CTSmarts::bond<" << smarts.input() << ">(mol, " << get_index(mol, bond) << ")" << std::endl;
+        static_assert(smarts.numBonds, "There should at least be one bond in the SMARTS expression.");
+        if constexpr (smarts.isSingleBond) {
+            // Optimize single bond SMARTS
+            return detail::singleBondMatch(smarts, mol, bond);
         } else {
-            auto smarts = Smarts<SMARTS>{};
-            auto iso = Isomorphism{smarts, Single};
-            if (iso.match(mol, source))
-                return true;
-            return iso.match(mol, target);
+            auto iso = Isomorphism{smarts, All};
+            return iso.matchBond(mol, bond);
+            /*
+            for (const auto &map : iso.all(mol)) {
+                if (map[queryBond.source] == sourceIndex && map[queryBond.target] == targetIndex)
+                    return true;
+                if (map[queryBond.source] == targetIndex && map[queryBond.target] == sourceIndex)
+                    return true;
+            }
+            return false;
+            */
         }
     }
 
@@ -122,10 +195,26 @@ namespace Kitimar::CTSmarts {
     template<ctll::fixed_string SMARTS, MapType M = MapType::Unique>
     constexpr auto count(Molecule::Molecule auto &mol, MapTypeTag<M> mapType = {})
     {
-        static_assert(M != MapType::Single, "Use CTSmarts::contains()");
+        static_assert(M != MapType::Single, "Use CTSmarts::contains<\"SMARTS\">(mol) to check for a single match.");
         auto smarts = Smarts<SMARTS>{};
-        auto iso = Isomorphism{smarts, mapType};
-        return iso.count(mol);
+        if constexpr (smarts.isSingleAtom) {
+            // Optimize single atom SMARTS
+            auto n = 0;
+            for (auto atom : get_atoms(mol))
+                if (detail::singleAtomMatch(smarts, mol, atom))
+                    ++n;
+            return n;
+        } else if constexpr (smarts.isSingleBond) {
+            // Optimize single bond SMARTS
+            auto n = 0;
+            for (auto bond : get_bonds(mol))
+                if (detail::singleBondMatch(smarts, mol, bond))
+                    ++n;
+            return n;
+        } else {
+            auto iso = Isomorphism{smarts, mapType};
+            return iso.count(mol);
+        }
     }
 
     //
@@ -136,8 +225,29 @@ namespace Kitimar::CTSmarts {
     constexpr auto single(Molecule::Molecule auto &mol)
     {
         auto smarts = Smarts<SMARTS>{};
-        auto iso = Isomorphism{smarts, Single};
-        return iso.single(mol);
+        if constexpr (smarts.isSingleAtom) {
+            // Optimize single atom SMARTS
+            for (auto atom : get_atoms(mol))
+                if (detail::singleAtomMatch(smarts, mol, atom))
+                    return IsomorphismMapping{1, atom};
+            return IsomorphismMapping{};
+        } else if constexpr (smarts.isSingleBond) {
+            // Optimize single bond SMARTS
+            for (auto bond : get_bonds(mol)) {
+                switch (detail::singleBondMatch(smarts, mol, bond)) {
+                    case 1:
+                        return IsomorphismMapping{1, get_source(mol, bond), get_target(mol, bond)};
+                    case 2:
+                        return IsomorphismMapping{1, get_target(mol, bond), get_source(mol, bond)};
+                    default:
+                        break;
+                }
+            }
+            return IsomorphismMapping{};
+        } else {
+            auto iso = Isomorphism{smarts, Single};
+            return iso.single(mol);
+        }
     }
 
     //
@@ -172,10 +282,27 @@ namespace Kitimar::CTSmarts {
     auto capture(Molecule::Molecule auto &mol)
     {
         auto smarts = Smarts<SMARTS>{};
-        auto iso = Isomorphism{smarts, Single};
-        constexpr auto cap = captureMapping(iso.smarts);
-        auto map = iso.single(mol);
-        return detail::captureMatchAtoms(mol, iso.smarts, map, cap);
+        if constexpr (smarts.isSingleAtom) {
+            // Optimize single atom SMARTS
+            for (auto atom : get_atoms(mol))
+                if (detail::singleAtomMatch(smarts, mol, atom))
+                    return std::make_tuple(true, atom);
+            return std::make_tuple(false, null_atom(mol));
+        } else if constexpr (smarts.isSingleBond) {
+            // Optimize single bond SMARTS
+            constexpr auto cap = captureMapping(smarts);
+            for (auto bond : get_bonds(mol)) {
+                auto matchType = detail::singleBondMatch(smarts, mol, bond);
+                if (matchType)
+                    return detail::singleBondCapture(smarts, mol, bond, matchType);
+            }
+            return detail::singleBondCapture(smarts, mol, null_bond(mol), 0);
+        } else {
+            auto iso = Isomorphism{smarts, Single};
+            constexpr auto cap = captureMapping(smarts);
+            auto map = iso.single(mol);
+            return detail::captureMatchAtoms(mol, smarts, map, cap);
+        }
     }
 
     //
@@ -186,10 +313,11 @@ namespace Kitimar::CTSmarts {
     auto capture(Molecule::Molecule auto &mol, const auto &atom)
     {
         auto smarts = Smarts<SMARTS>{};
+
         auto iso = Isomorphism{smarts, Single};
-        constexpr auto cap = captureMapping(iso.smarts);
+        constexpr auto cap = captureMapping(smarts);
         auto map = iso.single(mol, atom);
-        return detail::captureMatchAtoms(mol, iso.smarts, map, cap);
+        return detail::captureMatchAtoms(mol, smarts, map, cap);
     }
 
     //
@@ -201,10 +329,10 @@ namespace Kitimar::CTSmarts {
     {
         auto smarts = Smarts<SMARTS>{};
         auto iso = Isomorphism{smarts, mapType};
-        static constexpr auto cap = captureMapping(iso.smarts);
+        static constexpr auto cap = captureMapping(smarts);
         if constexpr (__cpp_lib_ranges >= 202110L)
             return iso.all(mol) | std::views::transform([&] (const auto &map) {
-                return detail::captureAtoms(mol, iso.smarts, map, cap);
+                return detail::captureAtoms(mol, smarts, map, cap);
             });
         else
             // missing std::ranges::owning_view
@@ -220,10 +348,10 @@ namespace Kitimar::CTSmarts {
     {
         auto smarts = Smarts<SMARTS>{};
         auto iso = Isomorphism{smarts, mapType};
-        static constexpr auto cap = captureMapping(iso.smarts);
+        static constexpr auto cap = captureMapping(smarts);
         if constexpr (__cpp_lib_ranges >= 202110L)
             return iso.all(mol, atom) | std::views::transform([&] (const auto &map) {
-                return detail::captureAtoms(mol, iso.smarts, map, cap);
+                return detail::captureAtoms(mol, smarts, map, cap);
             });
         else
             // missing std::ranges::owning_view
