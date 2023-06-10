@@ -793,11 +793,60 @@ TEST(TestCTSmarts, CTSmarts_capture)
     EXPECT_EQ(CTSmarts::capture<"C(=O)C">(mol), std::make_tuple(true, C1, O2, C0));
     EXPECT_EQ(CTSmarts::capture<"CC(=O)O">(mol), std::make_tuple(true, C0, C1, O2, O3));
     EXPECT_EQ(CTSmarts::capture<"CC(O)=O">(mol), std::make_tuple(true, C0, C1, O3, O2));
-
-
 }
 
+TEST(TestCTSmarts, CTSmarts_captureAtom)
+{
+    auto mol = mockAcetateAnion(); // CC(=O)[O-]
 
+    auto C0 = get_atom(mol, 0);
+    auto C1 = get_atom(mol, 1);
+    auto O2 = get_atom(mol, 2);
+    auto O3 = get_atom(mol, 3);
+
+    // single atom
+    EXPECT_EQ(CTSmarts::captureAtom<"C">(mol), C0);
+    EXPECT_EQ(CTSmarts::captureAtom<"O">(mol), O2);
+
+    EXPECT_EQ(CTSmarts::captureAtom<"N">(mol), null_atom(mol));
+
+    // single bond
+    EXPECT_EQ(CTSmarts::captureAtom<"CC">(mol), C0);
+    EXPECT_EQ(CTSmarts::captureAtom<"C=O">(mol), C1);
+    EXPECT_EQ(CTSmarts::captureAtom<"CO">(mol), C1);
+    EXPECT_EQ(CTSmarts::captureAtom<"O=C">(mol), O2);
+    EXPECT_EQ(CTSmarts::captureAtom<"OC">(mol), O3);
+
+    EXPECT_EQ(CTSmarts::captureAtom<"[C:1]C">(mol), C0);
+    EXPECT_EQ(CTSmarts::captureAtom<"[C:1]=O">(mol), C1);
+    EXPECT_EQ(CTSmarts::captureAtom<"[C:1]O">(mol), C1);
+    EXPECT_EQ(CTSmarts::captureAtom<"[O:1]=C">(mol), O2);
+    EXPECT_EQ(CTSmarts::captureAtom<"[O:1]C">(mol), O3);
+
+    EXPECT_EQ(CTSmarts::captureAtom<"C[C:1]">(mol), C1);
+    EXPECT_EQ(CTSmarts::captureAtom<"C=[O:1]">(mol), O2);
+    EXPECT_EQ(CTSmarts::captureAtom<"C[O:1]">(mol), O3);
+    EXPECT_EQ(CTSmarts::captureAtom<"O=[C:1]">(mol), C1);
+    EXPECT_EQ(CTSmarts::captureAtom<"O[C:1]">(mol), C1);
+
+    EXPECT_EQ(CTSmarts::captureAtom<"C#C">(mol), null_atom(mol));
+
+    // general case
+    EXPECT_EQ(CTSmarts::captureAtom<"CCO">(mol), C0);
+    EXPECT_EQ(CTSmarts::captureAtom<"CO">(mol), C1);
+    EXPECT_EQ(CTSmarts::captureAtom<"OCC">(mol), O3);
+    EXPECT_EQ(CTSmarts::captureAtom<"O=CC">(mol), O2);
+    EXPECT_EQ(CTSmarts::captureAtom<"CC(=O)O">(mol), C0);
+    EXPECT_EQ(CTSmarts::captureAtom<"C(C)(=O)O">(mol), C1);
+
+    EXPECT_EQ(CTSmarts::captureAtom<"[C:1]C(=O)O">(mol), C0);
+    EXPECT_EQ(CTSmarts::captureAtom<"C[C:1](=O)O">(mol), C1);
+    EXPECT_EQ(CTSmarts::captureAtom<"CC(=[O:1])O">(mol), O2);
+    EXPECT_EQ(CTSmarts::captureAtom<"CC(=O)[O:1]">(mol), O3);
+
+    EXPECT_EQ(CTSmarts::captureAtom<"CC(=O)N">(mol), null_atom(mol));
+
+}
 
 auto chembl_smi_filename()
 {
