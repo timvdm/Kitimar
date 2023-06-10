@@ -171,7 +171,7 @@ for (auto [C, O] : CTSmarts::captures<"C=O">(mol)) {
 
 ### Performance
 
-#### Optimized for simple cases
+#### Optimized cases
 
 Simple cases are optimized to match the perormance of handwritten code. In most of these cases the generated assembly is actually the same.
 
@@ -222,17 +222,27 @@ Kitimar::CTSmarts::matchAtomExpr<Kitimar::CTSmarts::Element<6>, Kitimar::CTSmart
  ret 
 ```
 
-#### Memory usage
+#### General case
 
-CTSmarts uses a **minimal amount of memory** at runtime.
-Currently a `std::vector<bool>` is used to keep track of mapped atoms in the molecule.
-When searching for unique matches, there is also a `std::unordered_set<std::size_t>` to keep track of found matches using a hash of the vector of bools.
-An `std::array<int, NumSmartsAtoms>` is used to store the current mapping since the size is known at compile time. This avoids dynamic allocations.
-Finally, an `std::array<uint8_t, NumSmartsAtoms>` is needed to get the degree of a SMARTS atom using a run time integer index.
+In the general case, a [subgraph-isomorphism search](https://en.wikipedia.org/wiki/Subgraph_isomorphism_problem) is needed.
 
-NOTES: 
-- See `Isomorphism` class
-- Optimizations for special cases could be added to reduce this even further (see features).
+A very simple subgraph-isomorphism algorithm is used which requires a **minimal amount of memory**.
+At **compile-time**, the **matching order** of the SMARTS expression is **optimized**.
+The result is a list of SMARTS bonds in the order of a depth-first-search tree. Molecules are matched against this tree using a backtracking.
+To **prune** the search space, a simple check is used to ensure the degree of a candidate atom is greater or equal to the degree of the SMARTS atom.
+
+More advanced algorithms with better pruning rules (e.g. [Ullmann](https://dl.acm.org/doi/abs/10.1145/321921.321925),
+[VF2](https://ieeexplore.ieee.org/abstract/document/1323804), [VF2++](https://www.sciencedirect.com/science/article/pii/S0166218X18300829#b8)) require additional memory and overhead to apply these pruning rules. In the case of molecular graphs, these algorithms often perform worse because of this. See [The secrets of fast SMARTS matching](https://www.nextmovesoftware.com/talks/Mayfield_SecretsOfFastSmartsMatching_Sheffield_201906.pdf) for a more detailed explanation.
+
+##### Memory usage
+
+| Name                    | Type                              | Size (N)       | Allocation | Conditional
+|-------------------------|-----------------------------------|----------------|------------|------------
+| SMARTS atom degrees     | `std::array<uint8_t, N>`          | # SMARTS atoms | Static     | -
+| Current mapping         | `std::array<int, N>`              | # SMARTS atoms | Static     | -
+| Current mapped atom set | `std::vector<bool>`               | num_atoms(mol) | Dynamic    | -
+| Unique atom set hashes  | `std::unordered_set<std::size_t>` | # mappings     | Dynamic    | ctse::Unique
+
 
 ### Supported compilers
 
