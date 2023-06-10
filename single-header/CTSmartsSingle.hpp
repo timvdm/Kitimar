@@ -3249,6 +3249,18 @@ namespace Kitimar::CTSmarts {
     }
 
     //
+    // CTSmarts::captureAtom<"SMARTS">(mol) -> Atom (null atom if there is no match)
+    //
+
+    template <ctll::fixed_string SMARTS>
+    auto captureAtom(Molecule::Molecule auto &mol)
+    {
+        auto caps = capture<SMARTS>(mol);
+        static_assert(std::tuple_size<decltype(caps)>{} >= 2); // FIXME: better validation 2 or # SMARTS atoms
+        return std::get<1>(caps);
+    }
+
+    //
     // CTSmarts::capture<"SMARTS">(mol, atom) -> tuple<bool, Atom...>
     //
 
