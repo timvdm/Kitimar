@@ -2,6 +2,22 @@
 
 Kitimar is a container project for CTSmarts providing utilities for development, testing and benchmarking.
 
+## Table of concents
+
+- [CTSmarts: C++ compile-time SMARTS expressions](#ctsmarts-c-compile-time-smarts-expressions)
+    - [STATUS: Proof of concept](#status-proof-of-concept)
+    - [Features](#features)
+    - [Build instructions](#build-instructions)
+    - [Examples](#examples)
+    - [API](#api)
+    - [Performance](#performance)
+    - [Supported compilers](#supported-compilers)
+    - [Planned features](#planned-features)
+    - [History](#history)
+- [Molecule: C++20 Molecule concept](#molecule-c20-molecule-concept)
+- [Modules](#modules)
+- [Thanks](#thanks)
+
 ## CTSmarts: C++ compile-time SMARTS expressions
 
 `CTSmarts` provides fast compile-time SMARTS expressions with support for matching, mapping and capturing.
@@ -153,7 +169,60 @@ for (auto [C, O] : CTSmarts::captures<"C=O">(mol)) {
 }
 ```
 
-### Memory usage
+### Performance
+
+#### Optimized for simple cases
+
+Simple cases are optimized to match the perormance of handwritten code. In most of these cases the generated assembly is actually the same.
+
+The optimized cases are currently:
+- A single SMARTS atom (e.g. `C`, `[O-]`, `[CD2,CD3;R]`)
+- A single SMARTS bond (e.g. `*=*`, `C=O`, `C-,=N`)
+- SMARTS with central atom (e.g. `CC=O`, `CC(=O)O`, `C(C)([O-])=O`)
+    - The are SMARTS with a [graph radius](https://en.wikipedia.org/wiki/Distance_(graph_theory)) of 1
+    - ***Not implemented yet***
+
+##### Example of single atom SMARTS
+
+The two functions generate the same assembly code. More complex examples can be found here
+together with a link to compiler exlorer to try out your own SMARTS expressions.
+
+```c++
+namespace ctse = Kitimar::CTSmarts;
+
+bool isCarbonDegree3_v1(auto &mol, auto atom)
+{
+    return get_element(mol, atom) == 6 && get_degree(mol, atom) == 3;    
+}
+
+bool isCarbonDegree3_v2(auto &mol, auto atom)
+{
+    return ctse::atom<"[#6D3]">(mol, atom);
+}
+```
+
+```assembly
+isCarbonDegree3_v1<Kitimar::Molecule::MockMolecule, unsigned int>(Kitimar::Molecule::MockMolecule&, unsigned int)::
+ xor    eax,eax
+ cmp    BYTE PTR [rdx+0x7],0x6
+ jne    4010f6 <main+0x16>
+ cmp    BYTE PTR [rdx+0xa],0x3
+ sete   al
+ movzx  eax,al
+ ret
+ 
+# isCarbonDegree3_v2
+Kitimar::CTSmarts::matchAtomExpr<Kitimar::CTSmarts::Element<6>, Kitimar::CTSmarts::Degree<3>, Kitimar::Molecule::MockMolecule, unsigned int>(Kitimar::Molecule::MockMolecule const&, unsigned int const&, Kitimar::CTSmarts::And<Kitimar::CTSmarts::Element<6>, Kitimar::CTSmarts::Degree<3> >)::
+ xor    eax,eax
+ cmp    BYTE PTR [rdx+0x7],0x6
+ jne    4010f6 <main+0x16>
+ cmp    BYTE PTR [rdx+0xa],0x3
+ sete   al
+ movzx  eax,al
+ ret 
+```
+
+#### Memory usage
 
 CTSmarts uses a **minimal amount of memory** at runtime.
 Currently a `std::vector<bool>` is used to keep track of mapped atoms in the molecule.
@@ -165,7 +234,7 @@ NOTES:
 - See `Isomorphism` class
 - Optimizations for special cases could be added to reduce this even further (see features).
 
-### Supported compiler
+### Supported compilers
 
 CTSmarts requires a `C++20` compiler and associated standard template library.
 
