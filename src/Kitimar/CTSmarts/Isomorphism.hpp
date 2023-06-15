@@ -110,7 +110,6 @@ namespace Kitimar::CTSmarts {
 
             bool matchAtom(auto &mol, const auto &atom)
             {
-                reset(mol);
                 matchComponent(mol, atom, nullptr);
                 return isDone();
             }
@@ -134,7 +133,6 @@ namespace Kitimar::CTSmarts {
                         return true;
                 }
 
-                reset(mol); // FIXME: needed?
                 if (matchAtom(mol, target, 0, get<0>(smarts.atoms))) {
                     auto index = get_index(mol, target);
                     m_map[0] = index;
@@ -152,7 +150,6 @@ namespace Kitimar::CTSmarts {
 
             auto count(auto &mol, const auto &atom)
             {
-                reset(mol);
                 auto n = 0;
                 matchComponent(mol, atom, [&n] (const auto &array) { ++n; });
                 return n;
@@ -160,7 +157,6 @@ namespace Kitimar::CTSmarts {
 
             auto single(auto &mol, const auto &atom)
             {
-                reset(mol);
                 IsomorphismMapping map;
                 matchComponent(mol, atom, [&map] (const auto &array) {
                     map.resize(array.size());
@@ -171,7 +167,6 @@ namespace Kitimar::CTSmarts {
 
             auto all(auto &mol, const auto &atom)
             {
-                reset(mol);
                 IsomorphismMappings maps;
                 matchComponent(mol, atom, [&maps] (const auto &array) {
                     maps.emplace_back(IsomorphismMapping(array.begin(), array.end()));
@@ -309,7 +304,6 @@ namespace Kitimar::CTSmarts {
 
                             if constexpr (DEBUG_ISOMORPHISM)
                                 std::cout << "start atom: " <<  get_index(mol, atom) << std::endl;
-
 
                             if (!matchAtom(mol, atom, queryAtom, queryBond.sourceExpr))
                                 continue;
