@@ -199,8 +199,8 @@ namespace Kitimar::CTSmarts {
             }
 
 
-
-            void matchDfs(auto &mol, auto callback, auto startAtom, auto bonds)
+            template<typename Bonds = decltype(dfsBonds)>
+            void matchDfs(auto &mol, auto callback, int startAtom = -1, Bonds bonds = dfsBonds)
             {
                 if constexpr (!smarts.numBonds)
                     return;
@@ -334,12 +334,12 @@ namespace Kitimar::CTSmarts {
 
             void matchComponent(auto &mol, const auto &atom, auto callback)
             {
-                matchDfs(mol, callback, get_index(mol, atom), dfsBonds);
+                matchDfs(mol, callback, get_index(mol, atom));
             }
 
             void matchComponents(auto &mol, auto callback)
             {
-                matchDfs(mol, callback, -1, dfsBonds);
+                matchDfs(mol, callback);
             }
 
             constexpr auto reset(auto &mol) noexcept
