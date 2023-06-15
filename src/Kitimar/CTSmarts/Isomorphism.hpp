@@ -292,8 +292,10 @@ namespace Kitimar::CTSmarts {
                         if constexpr (DEBUG_ISOMORPHISM)
                             std::cout << "no mapped atom" << std::endl;
 
-                        reset(mol);
+                        if (num_atoms(mol) < smarts.numAtoms || num_bonds(mol) < smarts.numBonds)
+                            return;
 
+                        reset(mol);
 
                         for (auto atom : get_atoms(mol)) {
                             if (startAtom != -1)
