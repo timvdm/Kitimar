@@ -483,9 +483,6 @@ TEST(TestCTSmarts, GetCentralAtom)
 }
 
 
-
-
-
 TEST(TestCTSmarts, MACCS)
 {
     /*
@@ -780,6 +777,39 @@ TEST(TestCTSmarts, CTSmarts_bond)
     EXPECT_FALSE(CTSmarts::bond<"C(=O)O">(mol, CO2));
 }
 
+
+void compare_maps(const auto &maps, const auto &refMaps)
+{
+    auto i = 0;
+    for (const auto &refMap : refMaps)
+        EXPECT_TRUE(std::ranges::equal(maps[i++], refMap));
+}
+
+template<ctll::fixed_string SMARTS>
+void test_unique(auto &mol, std::initializer_list<std::array<int, Smarts<SMARTS>::numAtoms>> refMaps)
+{
+    compare_maps(CTSmarts::multi<SMARTS>(mol), refMaps);
+}
+
+template<ctll::fixed_string SMARTS>
+void test_all(auto &mol, std::initializer_list<std::array<int, Smarts<SMARTS>::numAtoms>> refMaps)
+{
+    compare_maps(CTSmarts::multi<SMARTS>(mol, CTSmarts::All), refMaps);
+}
+
+TEST(TestCTSmarts, CTSmarts_multi)
+{
+    auto mol = mockAcetateAnion(); // CC(=O)[O-]
+
+    test_unique<"*~*">(mol, { {0, 1}, {1, 2}, {1, 3} });
+    test_unique<"*~*~*">(mol, { {0, 1, 2}, {0, 1, 3}, {2, 1, 3} });
+    test_unique<"*~*(~*)~*">(mol, { {0, 1, 2, 3} });
+
+    test_all<"*~*">(mol, { {0, 1}, {1, 0}, {1, 2}, {1, 3}, {2, 1}, {3, 1} });
+    test_all<"*~*~*">(mol, { {0, 1, 2}, {0, 1, 3}, {2, 1, 0}, {2, 1, 3}, {3, 1, 0}, {3, 1, 2} });
+    test_all<"*~*(~*)~*">(mol, { {0, 1, 2, 3}, {0, 1, 3, 2}, {2, 1, 0, 3}, {2, 1, 3, 0}, {3, 1, 0, 2}, {3, 1, 2, 0} });
+}
+
 TEST(TestCTSmarts, CTSmarts_capture)
 {
     auto mol = mockAcetateAnion(); // CC(=O)[O-]
@@ -865,7 +895,6 @@ TEST(TestCTSmarts, CTSmarts_captureAtom)
     EXPECT_EQ(CTSmarts::captureAtom<"CC(=O)[O:1]">(mol), O3);
 
     EXPECT_EQ(CTSmarts::captureAtom<"CC(=O)N">(mol), null_atom(mol));
-
 }
 
 auto chembl_smi_filename()

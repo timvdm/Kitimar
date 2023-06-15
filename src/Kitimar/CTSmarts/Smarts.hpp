@@ -144,18 +144,6 @@ namespace Kitimar::CTSmarts {
         return ctll::rotate(DfsSearch::visit(smarts, atomVisitor, DfsSearch::NoBondVisitor));
     }
 
-    constexpr auto getDfsBonds(auto smarts) noexcept
-    {
-        constexpr auto bondVisitor = [] (auto smarts, auto sourceIdx, auto targetIdx, auto expr, auto isRingClosure, auto ctx) {
-            auto sourceExpr = get<sourceIdx.value>(smarts.atoms);
-            auto targetExpr = get<targetIdx.value>(smarts.atoms);
-            return ctll::push_front(DfsBond<sourceIdx.value, targetIdx.value, false, isRingClosure.value,
-                                            decltype(sourceExpr), decltype(targetExpr), decltype(expr)>(), ctx);
-        };
-        auto dfsBonds = ctll::rotate(DfsSearch::visit(smarts, DfsSearch::NoAtomVisitor, bondVisitor));
-        return addCycleMembership<0>(dfsBonds, getCycleMembership(smarts).bonds);
-    }
-
     //
     // Cycle-membership
     //
@@ -248,6 +236,18 @@ namespace Kitimar::CTSmarts {
         return ctll::push_front(dfsBond, addCycleMembership<BondIdx+1>(ctll::list<CycleBonds...>{}, cyclicBondIdxs));
     }
 
+    constexpr auto getDfsBonds(auto smarts) noexcept
+    {
+        constexpr auto bondVisitor = [] (auto smarts, auto sourceIdx, auto targetIdx, auto expr, auto isRingClosure, auto ctx) {
+            auto sourceExpr = get<sourceIdx.value>(smarts.atoms);
+            auto targetExpr = get<targetIdx.value>(smarts.atoms);
+            return ctll::push_front(DfsBond<sourceIdx.value, targetIdx.value, false, isRingClosure.value,
+                                            decltype(sourceExpr), decltype(targetExpr), decltype(expr)>(), ctx);
+        };
+        auto dfsBonds = ctll::rotate(DfsSearch::visit(smarts, DfsSearch::NoAtomVisitor, bondVisitor));
+        return addCycleMembership<0>(dfsBonds, getCycleMembership(smarts).bonds);
+    }
+
     //
     // Degrees
     //
@@ -319,7 +319,7 @@ namespace Kitimar::CTSmarts {
     constexpr auto captureMapping(auto smarts)
     {
         constexpr auto mapping = captureMappingHelper<1>(smarts.context.params.classes, ctll::empty_list());
-        return to_array(mapping);
+        return toArray(mapping);
     }
 
     //

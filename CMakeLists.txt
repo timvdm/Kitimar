@@ -2,6 +2,11 @@ cmake_minimum_required(VERSION 3.16)
 
 project(Kitimar LANGUAGES CXX)
 
+option(KITIMAR_WITH_OPENBABEL "Build with OpenBabel support" OFF)
+option(KITIMAR_WITH_RDKIT "Build with RDKit support" OFF)
+option(KITIMAR_WITH_COROUTINES "Build with c++20 coroutines support" ON)
+
+
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules")
 
 set(CMAKE_CXX_STANDARD 20)
@@ -44,8 +49,6 @@ include(GoogleTest)
 enable_testing()
 add_custom_target(RunTests ctest)
 
-option(KITIMAR_WITH_OPENBABEL "Build with OpenBabel support" OFF)
-option(KITIMAR_WITH_RDKIT "Build with RDKit support" OFF)
 
 add_subdirectory(src)
 add_subdirectory(test)

@@ -7,21 +7,22 @@ namespace Kitimar::CTSmarts {
 
     namespace detail {
 
-        template<typename Smarts, auto N>
-        auto captureAtoms(Molecule::Molecule auto &mol, Smarts, const IsomorphismMapping &map, const std::array<int, N> &cap)
+        template<typename Smarts, auto NumCaptures>
+        auto captureAtoms(Molecule::Molecule auto &mol, Smarts, bool found, const auto &map,
+                          const std::array<int, NumCaptures> &cap)
         {
             using Atom = decltype(get_atom(mol, 0));
-            if constexpr (N) {
-                std::array<Atom, N> atoms = {};
-                if (map.empty())
+            if constexpr (NumCaptures) {
+                std::array<Atom, NumCaptures> atoms = {};
+                if (!found)
                     atoms.fill(null_atom(mol));
                 else
-                    for (auto i = 0; i < N; ++i)
+                    for (auto i = 0; i < NumCaptures; ++i)
                         atoms[i] = get_atom(mol, map[cap[i]]);
                 return atoms;
             } else {
                 std::array<Atom, Smarts::numAtoms> atoms = {};
-                if (map.empty())
+                if (!found)
                     atoms.fill(null_atom(mol));
                 else
                     for (auto i = 0; i < Smarts::numAtoms; ++i)
@@ -30,12 +31,11 @@ namespace Kitimar::CTSmarts {
             }
         }
 
-
-        template<typename Smarts, auto N>
-        auto captureMatchAtoms(Molecule::Molecule auto &mol, Smarts smarts, const IsomorphismMapping &map, const std::array<int, N> &cap)
+        auto captureMatchAtoms(Molecule::Molecule auto &mol, auto smarts, bool found, const auto &map, const auto &cap)
         {
-            return std::tuple_cat(std::make_tuple(!map.empty()), captureAtoms(mol, smarts, map, cap));
+            return std::tuple_cat(std::make_tuple(found), captureAtoms(mol, smarts, found, map, cap));
         }
+
 
         template<auto N>
         auto copyCapture(Molecule::Molecule auto &mol, const auto &iso, const std::array<int, N> &cap, const auto &caps) noexcept
@@ -44,7 +44,7 @@ namespace Kitimar::CTSmarts {
             static constexpr auto M = N ? N : iso.smarts.numAtoms;
             std::vector<std::array<Atom, M>> v;
             auto r = caps | std::views::transform([&] (const auto &map) {
-                return captureAtoms(mol, iso.smarts, map, cap);
+                return captureAtoms(mol, iso.smarts, true, map, cap);
             });
             std::ranges::copy(r, std::back_inserter(v));
             return v;
@@ -305,8 +305,8 @@ namespace Kitimar::CTSmarts {
         } else {
             auto iso = Isomorphism{smarts, Single};
             constexpr auto cap = captureMapping(smarts);
-            auto map = iso.single(mol);
-            return detail::captureMatchAtoms(mol, smarts, map, cap);
+            auto [found, map] = iso.single(mol);
+            return detail::captureMatchAtoms(mol, smarts, found, map, cap);
         }
     }
 
@@ -330,11 +330,10 @@ namespace Kitimar::CTSmarts {
     auto capture(Molecule::Molecule auto &mol, const auto &atom)
     {
         auto smarts = Smarts<SMARTS>{};
-
         auto iso = Isomorphism{smarts, Single};
         constexpr auto cap = captureMapping(smarts);
-        auto map = iso.single(mol, atom);
-        return detail::captureMatchAtoms(mol, smarts, map, cap);
+        auto [found, map] = iso.single(mol);
+        return detail::captureMatchAtoms(mol, smarts, found, map, cap);
     }
 
     //
@@ -349,7 +348,7 @@ namespace Kitimar::CTSmarts {
         static constexpr auto cap = captureMapping(smarts);
         if constexpr (__cpp_lib_ranges >= 202110L)
             return iso.all(mol) | std::views::transform([&] (const auto &map) {
-                return detail::captureAtoms(mol, smarts, map, cap);
+                return detail::captureAtoms(mol, smarts, true, map, cap);
             });
         else
             // missing std::ranges::owning_view
@@ -368,7 +367,7 @@ namespace Kitimar::CTSmarts {
         static constexpr auto cap = captureMapping(smarts);
         if constexpr (__cpp_lib_ranges >= 202110L)
             return iso.all(mol, atom) | std::views::transform([&] (const auto &map) {
-                return detail::captureAtoms(mol, smarts, map, cap);
+                return detail::captureAtoms(mol, smarts, true, map, cap);
             });
         else
             // missing std::ranges::owning_view

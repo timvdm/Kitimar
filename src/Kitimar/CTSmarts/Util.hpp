@@ -5,8 +5,6 @@
 #include <tuple>
 #include <stdexcept>
 
-
-
 namespace Kitimar::CTSmarts {
 
 
@@ -77,11 +75,10 @@ namespace Kitimar::CTSmarts {
 
 
     template<int ...N>
-    constexpr auto to_array(ctll::list<Number<N>...>)
+    constexpr auto toArray(ctll::list<Number<N>...>)
     {
         return std::array<int, sizeof...(N)>({ N... });
     }
-
 
     //
     // Helper functions to create runtime variable from compile time type in ctll::list

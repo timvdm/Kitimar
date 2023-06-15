@@ -16,16 +16,17 @@ int main()
 {
     // Find a single mapping.
 
-    std::vector<int> single = CTSmarts::single<"c1ccccc1">(molecule);
+    auto [match, single] = CTSmarts::single<"c1ccccc1">(molecule);
 
     std::cout << "Mapping from SMARTS \"c1ccccc1\" in SMILES \"Nc1ccc(N)cc1\":" << std::endl;
-    for (auto i = 0; i < single.size(); ++i)
-        std::cout << i << " -> " << single[i] << std::endl;
+    if (match)
+        for (auto i = 0; i < single.size(); ++i)
+            std::cout << i << " -> " << single[i] << std::endl;
 
     // Find all unique mappings.
     // A mapping is considered unique if it's atom set is unique.
 
-    std::vector<std::vector<int>> unique = CTSmarts::multi<"Nc1ccccc1">(molecule);
+    auto unique = CTSmarts::multi<"Nc1ccccc1">(molecule);
 
     std::cout << "Unique mappings from SMARTS \"Nc1ccccc1\" to SMILES \"Nc1ccc(N)cc1\":" << std::endl;
     for (auto i = 0; i < unique.size(); ++i) {
@@ -37,7 +38,7 @@ int main()
 
     // Find all mappings.
 
-    std::vector<std::vector<int>> all = CTSmarts::multi<"Nc1ccccc1">(molecule, CTSmarts::All);
+    auto all = CTSmarts::multi<"Nc1ccccc1">(molecule, CTSmarts::All);
 
     std::cout << "All mappings from SMARTS \"Nc1ccccc1\" to SMILES \"Nc1ccc(N)cc1\":" << std::endl;
     for (auto i = 0; i < all.size(); ++i) {

@@ -51,9 +51,12 @@ namespace Kitimar::CTSmarts {
     {
 
         public:
+            using Map = std::array<int, SmartsT::numAtoms>;
+
             static constexpr inline auto smarts = SmartsT{};
             static constexpr inline auto dfsBonds = getDfsBonds(smarts);
 
+            static_assert(ctll::size(smarts.bonds));
             static_assert(ctll::size(smarts.bonds) == ctll::size(dfsBonds));
 
             Isomorphism(SmartsT, MapTypeTag<Type>)
@@ -76,7 +79,7 @@ namespace Kitimar::CTSmarts {
             }
 
             auto count(auto &mol)
-            {                
+            {
                 auto n = 0;
                 matchComponents(mol, [&n] (const auto &array) { ++n; });
                 return n;
@@ -89,7 +92,7 @@ namespace Kitimar::CTSmarts {
                     map.resize(array.size());
                     std::ranges::copy(array, map.begin());
                 });
-                return map;
+                return std::make_tuple(isDone(), map);
             }
 
             auto all(auto &mol)
@@ -97,7 +100,6 @@ namespace Kitimar::CTSmarts {
                 IsomorphismMappings maps;
                 matchComponents(mol, [&maps] (const auto &array) {
                     maps.emplace_back(IsomorphismMapping(array.begin(), array.end()));
-
                 });
                 return maps;
             }
@@ -109,7 +111,7 @@ namespace Kitimar::CTSmarts {
             bool matchAtom(auto &mol, const auto &atom)
             {
                 reset(mol);
-                matchComponent(mol, atom,  nullptr);
+                matchComponent(mol, atom, nullptr);
                 return isDone();
             }
 
@@ -164,7 +166,7 @@ namespace Kitimar::CTSmarts {
                     map.resize(array.size());
                     std::ranges::copy(map, map.begin());
                 });
-                return map;
+                return std::make_tuple(isDone(), map);
             }
 
             auto all(auto &mol, const auto &atom)
@@ -189,86 +191,140 @@ namespace Kitimar::CTSmarts {
                 return matchAtomExpr(mol, molAtom, atomExpr);
             }
 
+            void next(auto &mol, auto begin, auto end, auto bonds)
+            {
+                // - begin not null
+                //     - begin == end -> isDone, backtrack, return (null, null, pop(bonds))
+                //     - match bond
+                //         - match: return (begin+1, end, pop(bonds))
+                // - get_source()
+                //     - unmapped -> map atom
+
+
+            }
+
+
+
             void matchDfs(auto &mol, auto callback, auto bonds)
             {
-                static_assert(!ctll::empty(bonds));
-                auto queryBond = ctll::front(bonds);
-                auto querySource = queryBond.source;
-                auto queryTarget = queryBond.target;
+                if constexpr (!smarts.numBonds)
+                    return;
 
-                auto source = get_atom(mol, m_map[querySource]);
+                if (isDone())
+                    return;
 
-                //if (DEBUG_ISOMORPHISM)
-                //    std::cout << "mapping bond: " << get_index(m_query, querySource) << "-" << get_index(m_query, queryTarget) << std::endl;
+                if constexpr (DEBUG_ISOMORPHISM)
+                    std::cout << "matchDfs()" << std::endl;
 
-                for (auto bond : get_bonds(mol, source)) {
+                if constexpr (ctll::empty(bonds)) { // Found mapping?
+                    //if (stereoMatches())
 
-                    if constexpr (queryBond.isCyclic)
-                        if (!is_cyclic_bond(mol, bond))
-                            continue;
+                    if constexpr(DEBUG_ISOMORPHISM)
+                        std::cout << "found map: " << m_map << std::endl;
 
-                    if (!matchBondExpr(mol, bond, queryBond.bondExpr))
-                        continue;
+                    if constexpr (Type == MapType::Unique) {
+                        // create bit mask of atoms (to ensure uniqueness of mapping)
+                        std::vector<bool> atoms(num_atoms(mol));
+                        for (auto index : m_map)
+                            atoms[index] = true;
+                        // add the mapping to the result if it is unique
+                        auto hash = std::hash<std::vector<bool>>()(atoms);
+                        if (m_maps.find(hash) == m_maps.end()) {
+                            m_maps.insert(hash);
+                            addMapping(callback);
+                        }
+                    } else
+                        addMapping(callback);
+                } else {
+                    auto queryBond = ctll::front(bonds);
+                    auto querySource = queryBond.source;
+                    auto queryTarget = queryBond.target;
 
-                    auto target = Molecule::get_nbr(mol, bond, source);
-                    auto targetIndex = get_index(mol, target);
+                    if constexpr (queryBond.isRingClosure) { // Ring closure?
+                        auto source = get_atom(mol, m_map[querySource]);
+                        auto target = get_atom(mol, m_map[queryTarget]);
+                        if (!m_mapped[get_index(mol, target)])
+                            return;
+                        auto bond = Molecule::get_bond(mol, source, target);
+                        if (matchBondExpr(mol, bond, queryBond.bondExpr))
+                            matchDfs(mol, callback, ctll::pop_front(bonds));
 
+                    } else if (m_map[querySource] != -1) { // Source atom mapped?
 
-                    if constexpr (queryBond.isRingClosure) {
-                        if (m_map[queryTarget] != targetIndex)
-                            continue;
-                    } else {
-                        assert(targetIndex < m_mapped.size());
-                        if (m_mapped[targetIndex])
-                            continue;
+                        auto source = get_atom(mol, m_map[querySource]);
 
-                        // match target atom
-                        //if (!matchAtomExpr(mol, target, queryBond.targetExpr))
-                        if (!matchAtom(mol, target, queryTarget, queryBond.targetExpr))
-                            continue;
+                        for (auto bond : get_bonds(mol, source)) {
+                            if constexpr (queryBond.isCyclic)
+                                if (!is_cyclic_bond(mol, bond))
+                                    continue;
+                            if (!matchBondExpr(mol, bond, queryBond.bondExpr))
+                                continue;
+
+                            auto target = Molecule::get_nbr(mol, bond, source);
+                            auto targetIndex = get_index(mol, target);
+
+                            assert(targetIndex < m_mapped.size());
+                            if (m_mapped[targetIndex])
+                                continue;
+
+                            // match target atom
+                            //if (!matchAtomExpr(mol, target, queryBond.targetExpr))
+                            if (!matchAtom(mol, target, queryTarget, queryBond.targetExpr))
+                                continue;
+
+                            if constexpr (DEBUG_ISOMORPHISM)
+                                std::cout << "    " << queryTarget << " -> " << targetIndex << '\n';
+
+                            // map target atom
+                            m_map[queryTarget] = targetIndex;
+                            m_mapped[targetIndex] = true;
+
+                            matchDfs(mol, callback, ctll::pop_front(bonds));
+
+                            // exit as soon as possible if only one match is required
+                            // (single mapping stored in m_map after returning)
+                            if (isDone())
+                                return;
+
+                            // bracktrack target atom
+                            if constexpr (!queryBond.isRingClosure) {
+                                m_map[queryTarget] = -1;
+                                m_mapped[targetIndex] = false;
+                            }
+                        }
+
+                    } else { // No mapped atoms
 
                         if constexpr (DEBUG_ISOMORPHISM)
-                            std::cout << "    " << queryTarget << " -> " << targetIndex << '\n';
+                            std::cout << "no mapped atom" << std::endl;
 
-                        // map target atom
-                        m_map[queryTarget] = targetIndex;
-                        m_mapped[targetIndex] = true;
-                    }
+                        reset(mol);
 
-                    if constexpr (ctll::size(bonds) == 1) {
-                        // Found mapping...
+                        for (auto atom : get_atoms(mol)) {
+                            auto queryBond = ctll::front(dfsBonds);
+                            auto queryAtom = queryBond.source;
 
-                        //if (stereoMatches())
+                            if constexpr (DEBUG_ISOMORPHISM)
+                                std::cout << "start atom: " <<  get_index(mol, atom) << std::endl;
 
-                        //if (DEBUG_ISOMORPHISM)
-                        //    std::cout << "found map: " << m_map << std::endl;
 
-                        if constexpr (Type == MapType::Unique) {
-                            // create bit mask of atoms (to ensure uniqueness of mapping)
-                            std::vector<bool> atoms(num_atoms(mol));
-                            for (auto index : m_map)
-                                atoms[index] = true;
-                            // add the mapping to the result if it is unique
-                            auto hash = std::hash<std::vector<bool>>()(atoms);
-                            if (m_maps.find(hash) == m_maps.end()) {
-                                m_maps.insert(hash);
-                                addMapping(callback);
-                            }
-                        } else
-                            addMapping(callback);
-                    } else {
-                        matchDfs(mol, callback, ctll::pop_front(bonds));
-                    }
+                            if (!matchAtom(mol, atom, queryAtom, queryBond.sourceExpr))
+                                continue;
 
-                    // exit as soon as possible if only one match is required
-                    // (single mapping stored in m_map after returning)
-                    if (isDone())
-                        return;
+                            if constexpr (DEBUG_ISOMORPHISM)
+                                std::cout << queryAtom << " -> " << get_index(mol, atom) << '\n';
 
-                    // bracktrack target atom
-                    if constexpr (!queryBond.isRingClosure) {
-                        m_map[queryTarget] = -1;
-                        m_mapped[targetIndex] = false;
+                            // map source atom, recursive dfs, backtrack
+                            auto index = get_index(mol, atom);
+                            m_map[queryAtom] = index;
+                            m_mapped[index] = true;
+                            matchDfs(mol, callback, dfsBonds);
+                            if (isDone())
+                                return;
+                            m_map[queryAtom] = -1;
+                            m_mapped[index] = false;
+                        }
+
                     }
                 }
             }
@@ -285,7 +341,6 @@ namespace Kitimar::CTSmarts {
                 if constexpr (!smarts.numBonds) {
                     constexpr auto queryAtom = 0;
 
-                    //if (!matchAtomExpr(mol, atom, get<0>(smarts.atoms)))
                     if (!matchAtom(mol, atom, 0, get<0>(smarts.atoms)))
                         return;
 
@@ -305,7 +360,6 @@ namespace Kitimar::CTSmarts {
                     auto queryAtom = queryBond.source;
 
 
-                    //if (!matchAtomExpr(mol, atom, queryBond.sourceExpr))
                     if (!matchAtom(mol, atom, queryAtom, queryBond.sourceExpr))
                         return;
 
@@ -317,6 +371,8 @@ namespace Kitimar::CTSmarts {
                     m_map[queryAtom] = index;
                     m_mapped[index] = true;
                     matchDfs(mol, callback, dfsBonds);
+                    if (isDone())
+                        return;
                     m_map[queryAtom] = -1;
                     m_mapped[index] = false;
                 }
@@ -324,24 +380,13 @@ namespace Kitimar::CTSmarts {
 
             void matchComponents(auto &mol, auto callback)
             {
-                if constexpr (!smarts.numAtoms)
-                    return;
-
-                reset(mol);
-
-                if constexpr (!smarts.numBonds) {
-                    for (auto atom : get_atoms(mol))
-                        matchComponent(mol, atom, callback);
-                } else {
-                    // try to match each atom in the molecule against the first atom
-                    // epxression in the SMARTS
-                    for (auto atom : get_atoms(mol))
-                        matchComponent(mol, atom, callback);
-                }
+                matchDfs(mol, callback, dfsBonds);
             }
 
             constexpr auto reset(auto &mol) noexcept
             {
+                if constexpr (DEBUG_ISOMORPHISM)
+                    std::cout << "reset()" << std::endl;
                 setDone(false);
                 m_mapped.clear();
                 m_mapped.resize(num_atoms(mol));
@@ -389,7 +434,7 @@ namespace Kitimar::CTSmarts {
 
 
 
-            std::array<int, smarts.numAtoms> m_map; // current mapping: query atom index -> queried atom index
+            Map m_map; // current mapping: query atom index -> queried atom index
             std::array<uint8_t, smarts.numAtoms> m_degrees; // degree of query atoms
 
             //std::array<bool, smarts.numAtoms> m_mapped; // current mapping: queried atom index -> true if mapped

@@ -127,10 +127,24 @@ namespace Kitimar::Molecule {
 
 
 
-    constexpr auto get_nbr(const auto &mol, auto bond, auto atom) noexcept
+    constexpr auto get_nbr(const auto &mol, auto bond, auto atom) noexcept -> decltype(get_atom(mol, 0))
     {
         auto source = get_source(mol, bond);
         return source != atom ? source : get_target(mol, bond);
+    }
+
+    constexpr auto get_bond(const auto &mol, auto source, auto target) noexcept -> decltype(get_bond(mol, 0))
+    {
+        auto sourceIndex1 = get_index(mol, source);
+        auto targetIndex1 = get_index(mol, target);
+        for (auto bond : get_bonds(mol, source)) {
+            auto sourceIndex2 = get_index(mol, get_source(mol, bond));
+            auto targetIndex2 = get_index(mol, get_target(mol, bond));
+            if ((sourceIndex1 == sourceIndex2 && targetIndex1 == targetIndex2) ||
+                (sourceIndex1 == targetIndex2 && targetIndex1 == sourceIndex2))
+                return bond;
+        }
+        return null_bond(mol);
     }
 
 

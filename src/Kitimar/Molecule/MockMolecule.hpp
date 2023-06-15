@@ -46,7 +46,7 @@ namespace Kitimar::Molecule {
 
     inline uint32_t num_bonds(const MockMolecule &mol) noexcept
     {
-        return mol.atoms.size();
+        return mol.bonds.size();
     }
 
     inline auto get_atoms(const MockMolecule &mol) noexcept
@@ -181,7 +181,7 @@ namespace Kitimar::Molecule {
         return mol.bonds[bond].aromatic;
     }
 
-    inline auto null_bond(const MockMolecule &mol) noexcept
+    inline uint32_t null_bond(const MockMolecule &mol) noexcept
     {
         return -1;
     }
