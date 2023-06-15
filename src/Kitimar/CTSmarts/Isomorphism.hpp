@@ -71,9 +71,6 @@ namespace Kitimar::CTSmarts {
 
             bool match(auto &mol)
             {
-                //if (num_atoms(mol) < smarts.numAtoms || num_bonds(mol) < smarts.numBonds)
-                if (num_atoms(mol) < smarts.numAtoms)
-                    return false;
                 matchComponents(mol, nullptr);
                 return isDone();
             }
@@ -110,7 +107,7 @@ namespace Kitimar::CTSmarts {
 
             bool matchAtom(auto &mol, const auto &atom)
             {
-                matchComponent(mol, atom, nullptr);
+                matchDfs(mol, nullptr, get_index(mol, atom));
                 return isDone();
             }
 
@@ -151,27 +148,29 @@ namespace Kitimar::CTSmarts {
             auto count(auto &mol, const auto &atom)
             {
                 auto n = 0;
-                matchComponent(mol, atom, [&n] (const auto &array) { ++n; });
+                auto cb = [&n] (const auto &array) { ++n; };
+                matchDfs(mol, cb, get_index(mol, atom));
                 return n;
             }
 
             auto single(auto &mol, const auto &atom)
             {
                 IsomorphismMapping map;
-                matchComponent(mol, atom, [&map] (const auto &array) {
+                auto cb = [&map] (const auto &array) {
                     map.resize(array.size());
                     std::ranges::copy(map, map.begin());
-                });
+                };
+                matchDfs(mol, cb, get_index(mol, atom));
                 return std::make_tuple(isDone(), map);
             }
 
             auto all(auto &mol, const auto &atom)
             {
                 IsomorphismMappings maps;
-                matchComponent(mol, atom, [&maps] (const auto &array) {
+                auto cb = [&maps] (const auto &array) {
                     maps.emplace_back(IsomorphismMapping(array.begin(), array.end()));
-
-                });
+                };
+                matchDfs(mol, cb, get_index(mol, atom));
                 return maps;
             }
 
@@ -329,12 +328,6 @@ namespace Kitimar::CTSmarts {
 
                     }
                 }
-            }
-
-
-            void matchComponent(auto &mol, const auto &atom, auto callback)
-            {
-                matchDfs(mol, callback, get_index(mol, atom));
             }
 
             void matchComponents(auto &mol, auto callback)
