@@ -71,21 +71,21 @@ namespace Kitimar::CTSmarts {
 
             bool match(auto &mol)
             {
-                matchComponents(mol, nullptr);
+                matchDfs(mol, nullptr);
                 return isDone();
             }
 
             auto count(auto &mol)
             {
                 auto n = 0;
-                matchComponents(mol, [&n] (const auto &array) { ++n; });
+                matchDfs(mol, [&n] (const auto &array) { ++n; });
                 return n;
             }
 
             auto single(auto &mol)
             {
                 IsomorphismMapping map;
-                matchComponents(mol, [&map] (const auto &array) {
+                matchDfs(mol, [&map] (const auto &array) {
                     map.resize(array.size());
                     std::ranges::copy(array, map.begin());
                 });
@@ -95,7 +95,7 @@ namespace Kitimar::CTSmarts {
             auto all(auto &mol)
             {
                 IsomorphismMappings maps;
-                matchComponents(mol, [&maps] (const auto &array) {
+                matchDfs(mol, [&maps] (const auto &array) {
                     maps.emplace_back(IsomorphismMapping(array.begin(), array.end()));
                 });
                 return maps;
@@ -328,11 +328,6 @@ namespace Kitimar::CTSmarts {
 
                     }
                 }
-            }
-
-            void matchComponents(auto &mol, auto callback)
-            {
-                matchDfs(mol, callback);
             }
 
             constexpr auto reset(auto &mol) noexcept
