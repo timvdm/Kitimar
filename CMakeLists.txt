@@ -48,6 +48,15 @@ CPMAddPackage(
     OPTIONS "BENCHMARK_ENABLE_TESTING Off"
 )
 
+if(KITIMAR_WITH_COROUTINES)
+    add_compile_definitions(KITIMAR_WITH_COROUTINES)
+    CPMAddPackage(
+        NAME cppcoro
+        GITHUB_REPOSITORY andreasbuhr/cppcoro
+        GIT_TAG 10bbcdbf2be3ad3aa56febcf4c7662d771460a99
+        OPTIONS "BUILD_TESTING OFF"
+    )
+endif()
 
 add_custom_target(AdditionalFiles ALL SOURCES
     README.md

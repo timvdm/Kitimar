@@ -23,11 +23,52 @@ auto mol = Kitimar::Molecule::MockMolecule{
 
 
 
+/*
+
+  - Access query bond (A)
+    - Recursive matchDfs(..., ctll::pop_front(bonds));
+    - Non-recursive
+        - Util::with_n
+        - Optimize < N + Util::with_n
+
+  - Return mappings (B)
+    - Callback
+        - A...
+    - Coroutine
+        - A...
+    - Range?
+
+
+
+
+  Callback + Recursive:
+
+------------------------------------------------------------------------
+Benchmark                              Time             CPU   Iterations
+------------------------------------------------------------------------
+BM_count_CC                        0.000 ns        0.000 ns   1000000000
+BM_count_c1ccccc1                    532 ns          532 ns      1231650
+BM_count_c1ccccc1CCN                 465 ns          465 ns      1494366
+BM_count_CCCCCCCCCCCCCCCCCCCC      33903 ns        33900 ns        20642
+BM_count_c1ccccc1CCCc1ccccc1         493 ns          492 ns      1422575
+BM_count_AAAAAAAAAAAAAAAAAAA      764141 ns       764065 ns          916
+
+  Coroutine + Recursive:
+
+
+
+
+
+*/
+
+
 
 BM_COUNT("CC", CC);
 BM_COUNT("c1ccccc1", c1ccccc1);
 BM_COUNT("c1ccccc1CCN", c1ccccc1CCN);
-BM_COUNT("CCCCCCCCCCCCCCCCCCCC", CCCCCCCCCCCCCCCCCCCC);
+BM_COUNT("CCCCCCCCCCCCCCCCCCC", CCCCCCCCCCCCCCCCCCCC);
+BM_COUNT("c1ccccc1CCCc1ccccc1", c1ccccc1CCCc1ccccc1);
+BM_COUNT("AAAAAAAAAAAAAAAAAAA", AAAAAAAAAAAAAAAAAAA);
 
 
 // Register the function as a benchmark

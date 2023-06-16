@@ -21,6 +21,9 @@ target_include_directories(CTSmarts INTERFACE
 )
 
 target_link_libraries(CTSmarts INTERFACE ctre::ctre Molecule)
+if(KITIMAR_WITH_COROUTINES)
+    target_link_libraries(CTSmarts INTERFACE cppcoro)
+endif()
 
 # Install
 

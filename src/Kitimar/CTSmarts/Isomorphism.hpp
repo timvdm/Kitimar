@@ -16,7 +16,49 @@
 #include <cassert>
 
 
-#define DEBUG_ISOMORPHISM 0
+#define ISOMORPHISM_DEBUG 0
+
+#define ISOMORPHISM_DFS_RECURSIVE
+//#define ISOMORPHISM_DFS_WITH_N
+//#define ISOMORPHISM_DFS_OPTIMIZED_WITH_N
+
+#define ISOMORPHISM_MAP_CALLBACK
+//#define ISOMORPHISM_MAP_COROUTINE
+//#define ISOMORPHISM_MAP_RANGE
+
+#if defined(ISOMORPHISM_DFS_RECURSIVE) + defined(ISOMORPHISM_DFS_WITH_N) + defined(ISOMORPHISM_DFS_OPTIMIZED_WITH_N) != 1
+#error Only one ISOMORPHISM_DFS implementation can be used
+#endif
+
+#if defined(ISOMORPHISM_MAP_CALLBACK) + defined(ISOMORPHISM_MAP_COROUTINE) + defined(ISOMORPHISM_MAP_RANGE) != 1
+#error Only one ISOMORPHISM_MAP implementation can be used
+#endif
+
+// ISOMORPHISM_DFS_RETURN_TYPE
+#if defined(ISOMORPHISM_DFS_RECURSIVE)
+    #define ISOMORPHISM_DFS_RETURN_TYPE void
+#elif defined(ISOMORPHISM_MAP_COROUTINE)
+    #define ISOMORPHISM_DFS_RETURN_TYPE cppcoro::recursive_generator<Map>
+#endif
+
+// ISOMORPHISM_DFS_BACKTRACK
+#if defined(ISOMORPHISM_DFS_RECURSIVE)
+    #define ISOMORPHISM_DFS_BACKTRACK return
+#else
+    #define ISOMORPHISM_DFS_BACKTRACK continue
+#endif
+
+// ISOMORPHISM_DFS_ABORT
+#if defined(ISOMORPHISM_DFS_RECURSIVE)
+    #define ISOMORPHISM_DFS_ABORT return
+#elif defined(ISOMORPHISM_MAP_COROUTINE)
+    #define ISOMORPHISM_DFS_ABORT co_return
+#endif
+
+#ifdef ISOMORPHISM_MAP_COROUTINE
+#include <cppcoro/recursive_generator.hpp>
+#endif
+
 
 namespace Kitimar::CTSmarts {
 
@@ -197,23 +239,30 @@ namespace Kitimar::CTSmarts {
 
             }
 
-
+#if defined(ISOMORPHISM_DFS_RECURSIVE)
             template<typename Bonds = decltype(dfsBonds)>
+#endif
+#if defined(ISOMORPHISM_DFS_RECURSIVE) && defined(ISOMORPHISM_MAP_CALLBACK)
             void matchDfs(auto &mol, auto callback, int startAtom = -1, Bonds bonds = dfsBonds)
+#elif defined(ISOMORPHISM_DFS_RECURSIVE) // && !defined(ISOMORPHISM_MAP_CALLBACK)
+            void matchDfs(auto &mol, int startAtom = -1, Bonds bonds = dfsBonds)
+#elif defined(ISOMORPHISM_MAP_CALLBACK) // && !defined(ISOMORPHISM_DFS_RECURSIVE)
+            void matchDfs(auto &mol, auto callback, int startAtom = -1)
+#endif
             {
                 if constexpr (!smarts.numBonds)
-                    return;
+                    ISOMORPHISM_DFS_ABORT;
 
                 if (isDone())
-                    return;
+                    ISOMORPHISM_DFS_ABORT;
 
-                if constexpr (DEBUG_ISOMORPHISM)
+                if constexpr (ISOMORPHISM_DEBUG)
                     std::cout << "matchDfs()" << std::endl;
 
                 if constexpr (ctll::empty(bonds)) { // Found mapping?
                     //if (stereoMatches())
 
-                    if constexpr(DEBUG_ISOMORPHISM)
+                    if constexpr(ISOMORPHISM_DEBUG)
                         std::cout << "found map: " << m_map << std::endl;
 
                     if constexpr (Type == MapType::Unique) {
@@ -223,12 +272,13 @@ namespace Kitimar::CTSmarts {
                             atoms[index] = true;
                         // add the mapping to the result if it is unique
                         auto hash = std::hash<std::vector<bool>>()(atoms);
-                        if (m_maps.find(hash) == m_maps.end()) {
-                            m_maps.insert(hash);
-                            addMapping(callback);
-                        }
-                    } else
-                        addMapping(callback);
+                        if (m_maps.find(hash) != m_maps.end())
+                            ISOMORPHISM_DFS_BACKTRACK;
+                        m_maps.insert(hash);
+                    }
+#if defined(ISOMORPHISM_MAP_CALLBACK)
+                    addMapping(callback);
+#endif
                 } else {
                     auto queryBond = ctll::front(bonds);
                     auto querySource = queryBond.source;
@@ -238,7 +288,7 @@ namespace Kitimar::CTSmarts {
                         auto source = get_atom(mol, m_map[querySource]);
                         auto target = get_atom(mol, m_map[queryTarget]);
                         if (!m_mapped[get_index(mol, target)])
-                            return;
+                            ISOMORPHISM_DFS_BACKTRACK;
                         auto bond = Molecule::get_bond(mol, source, target);
                         if (matchBondExpr(mol, bond, queryBond.bondExpr))
                             matchDfs(mol, callback, startAtom, ctll::pop_front(bonds));
@@ -265,7 +315,7 @@ namespace Kitimar::CTSmarts {
                             if (!matchAtom(mol, target, queryTarget, queryBond.targetExpr))
                                 continue;
 
-                            if constexpr (DEBUG_ISOMORPHISM)
+                            if constexpr (ISOMORPHISM_DEBUG)
                                 std::cout << "    " << queryTarget << " -> " << targetIndex << '\n';
 
                             // map target atom
@@ -277,7 +327,7 @@ namespace Kitimar::CTSmarts {
                             // exit as soon as possible if only one match is required
                             // (single mapping stored in m_map after returning)
                             if (isDone())
-                                return;
+                                ISOMORPHISM_DFS_ABORT;
 
                             // bracktrack target atom
                             if constexpr (!queryBond.isRingClosure) {
@@ -288,11 +338,11 @@ namespace Kitimar::CTSmarts {
 
                     } else { // No mapped atoms
 
-                        if constexpr (DEBUG_ISOMORPHISM)
+                        if constexpr (ISOMORPHISM_DEBUG)
                             std::cout << "no mapped atom" << std::endl;
 
                         if (num_atoms(mol) < smarts.numAtoms || num_bonds(mol) < smarts.numBonds)
-                            return;
+                            ISOMORPHISM_DFS_ABORT;
 
                         reset(mol);
 
@@ -303,13 +353,13 @@ namespace Kitimar::CTSmarts {
                             auto queryBond = ctll::front(dfsBonds);
                             auto queryAtom = queryBond.source;
 
-                            if constexpr (DEBUG_ISOMORPHISM)
+                            if constexpr (ISOMORPHISM_DEBUG)
                                 std::cout << "start atom: " <<  get_index(mol, atom) << std::endl;
 
                             if (!matchAtom(mol, atom, queryAtom, queryBond.sourceExpr))
                                 continue;
 
-                            if constexpr (DEBUG_ISOMORPHISM)
+                            if constexpr (ISOMORPHISM_DEBUG)
                                 std::cout << queryAtom << " -> " << get_index(mol, atom) << '\n';
 
                             // map source atom, recursive dfs, backtrack
@@ -318,12 +368,12 @@ namespace Kitimar::CTSmarts {
                             m_mapped[index] = true;
                             matchDfs(mol, callback, startAtom, dfsBonds);
                             if (isDone())
-                                return;
+                                ISOMORPHISM_DFS_ABORT;
                             m_map[queryAtom] = -1;
                             m_mapped[index] = false;
 
                             if (startAtom != -1)
-                                break;
+                                ISOMORPHISM_DFS_ABORT;;
                         }
 
                     }
@@ -332,7 +382,7 @@ namespace Kitimar::CTSmarts {
 
             constexpr auto reset(auto &mol) noexcept
             {
-                if constexpr (DEBUG_ISOMORPHISM)
+                if constexpr (ISOMORPHISM_DEBUG)
                     std::cout << "reset()" << std::endl;
                 setDone(false);
                 m_mapped.clear();
@@ -383,8 +433,6 @@ namespace Kitimar::CTSmarts {
 
             Map m_map; // current mapping: query atom index -> queried atom index
             std::array<uint8_t, smarts.numAtoms> m_degrees; // degree of query atoms
-
-            //std::array<bool, smarts.numAtoms> m_mapped; // current mapping: queried atom index -> true if mapped
             std::vector<bool> m_mapped; // current mapping: queried atom index -> true if mapped
             std::conditional_t<Type == MapType::Unique, std::unordered_set<std::size_t>, std::monostate> m_maps;
             bool m_done = false;

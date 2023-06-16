@@ -82,6 +82,7 @@ namespace Kitimar::CTSmarts {
 
     //
     // Helper functions to create runtime variable from compile time type in ctll::list
+    // See: https://www.scs.stanford.edu/~dm/blog/param-pack.html#array-of-function-pointers
     //
 
     namespace detail {
@@ -97,11 +98,11 @@ namespace Kitimar::CTSmarts {
     template<std::size_t N, typename R = void, typename F>
     inline constexpr R with_n(int n, F &&f)
     {
-        constexpr auto invoke_array = [] <std::size_t...I> (std::index_sequence<I...>) {
+        constexpr auto invokeArray = [] <std::size_t...I> (std::index_sequence<I...>) {
             return std::array{ detail::with_integral_constant<I, R, F&&>... };
         }(std::make_index_sequence<N>{});
 
-        return invoke_array.at(n)(std::forward<F>(f));
+        return invokeArray.at(n)(std::forward<F>(f));
     }
 
 

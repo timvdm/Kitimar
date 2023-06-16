@@ -1,6 +1,5 @@
 #include <Kitimar/CTLayout/Molecule.hpp>
 #include <Kitimar/CTLayout/Sink.hpp>
-#include <Kitimar/CTSmarts/Isomorphism.hpp>
 
 #ifdef KITIMAR_WITH_OPENBABEL
 #include <Kitimar/OpenBabel/OpenBabel.hpp>
@@ -15,7 +14,6 @@
 
 using namespace Kitimar;
 using namespace Kitimar::CTLayout;
-using namespace Kitimar::CTSmarts;
 
 template<typename Layout, typename Sink>
 void serialize(Molecule::Molecule auto &mol, Sink &sink)
