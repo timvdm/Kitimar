@@ -79,3 +79,7 @@ endif()
 if(KITIMAR_WITH_RDKIT)
     target_link_libraries(BenchmarkSerialize KitimarRDKit)
 endif()
+
+add_executable(BenchmarkCTSmarts BenchmarkCTSmarts.cpp)
+target_link_libraries(BenchmarkCTSmarts CTSmarts benchmark::benchmark)
+

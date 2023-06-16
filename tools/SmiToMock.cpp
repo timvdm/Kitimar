@@ -6,15 +6,13 @@ using namespace Kitimar;
 
 int main(int argc, char **argv)
 {
-    /*
     if (argc < 2) {
         std::cout << "Usage: " << argv[0] << " <SMILES>" << std::endl;
         return -1;
     }
 
     auto SMILES = argv[1];
-    */
-    auto SMILES = "OCC(O)CO";
+    //auto SMILES = "OCC(O)CO";
     auto mol = readSmilesOpenBabel(SMILES);
 
     fmt::println("// SMILES: {}", SMILES);

@@ -41,6 +41,14 @@ CPMAddPackage("gh:hanickadot/compile-time-regular-expressions@3.7.2")
 CPMAddPackage("gh:mandreyel/mio#8b6b7d878c89e81614d05edca7936de41ccdd2da")
 CPMAddPackage("gh:google/googletest@1.13.0")
 
+CPMAddPackage(
+    NAME benchmark
+    GITHUB_REPOSITORY google/benchmark
+    VERSION 1.8.0
+    OPTIONS "BENCHMARK_ENABLE_TESTING Off"
+)
+
+
 add_custom_target(AdditionalFiles ALL SOURCES
     README.md
 )

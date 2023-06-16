@@ -907,9 +907,7 @@ auto chembl_smi_filename()
 template<ctll::fixed_string SMARTS>
 auto test_match(auto &mol)
 {
-    auto smarts = Smarts<SMARTS>{};
-    auto iso = Isomorphism{smarts, Single};
-    auto ctMatch = iso.match(mol);
+    auto ctMatch = CTSmarts::contains<SMARTS>(mol);
 
     OpenBabel::OBSmartsPattern obsmarts;
     obsmarts.Init(std::string{SMARTS.begin(), SMARTS.end()});
