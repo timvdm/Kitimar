@@ -55,7 +55,15 @@ BM_count_AAAAAAAAAAAAAAAAAAA      764141 ns       764065 ns          916
 
   Coroutine + Recursive:
 
-
+------------------------------------------------------------------------
+Benchmark                              Time             CPU   Iterations
+------------------------------------------------------------------------
+BM_count_CC                        0.000 ns        0.000 ns   1000000000
+BM_count_c1ccccc1                    705 ns          705 ns       986543
+BM_count_c1ccccc1CCN                 692 ns          692 ns      1026477
+BM_count_CCCCCCCCCCCCCCCCCCCC      41740 ns        41737 ns        16609
+BM_count_c1ccccc1CCCc1ccccc1         718 ns          718 ns       997583
+BM_count_AAAAAAAAAAAAAAAAAAA     1003420 ns      1003349 ns          700
 
 
 

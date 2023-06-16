@@ -29,9 +29,9 @@ int main()
     auto unique = CTSmarts::multi<"Nc1ccccc1">(molecule);
 
     std::cout << "Unique mappings from SMARTS \"Nc1ccccc1\" to SMILES \"Nc1ccc(N)cc1\":" << std::endl;
-    for (auto i = 0; i < unique.size(); ++i) {
-        const auto &map = unique[i];
-        std::cout << "mapping " << i << ":" << std::endl;
+    auto i = 0;
+    for (const auto &map : unique) {
+        std::cout << "mapping " << i++ << ":" << std::endl;
         for (auto j = 0; j < map.size(); ++j)
             std::cout << "    " << j << " -> " << map[j] << std::endl;
     }
@@ -41,9 +41,9 @@ int main()
     auto all = CTSmarts::multi<"Nc1ccccc1">(molecule, CTSmarts::All);
 
     std::cout << "All mappings from SMARTS \"Nc1ccccc1\" to SMILES \"Nc1ccc(N)cc1\":" << std::endl;
-    for (auto i = 0; i < all.size(); ++i) {
-        const auto &map = all[i];
-        std::cout << "mapping " << i << ":" << std::endl;
+    i = 0;
+    for (const auto &map : unique) {
+        std::cout << "mapping " << i++ << ":" << std::endl;
         for (auto j = 0; j < map.size(); ++j)
             std::cout << "    " << j << " -> " << map[j] << std::endl;
     }

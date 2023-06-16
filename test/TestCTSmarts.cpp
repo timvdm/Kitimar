@@ -778,11 +778,17 @@ TEST(TestCTSmarts, CTSmarts_bond)
 }
 
 
-void compare_maps(const auto &maps, const auto &refMaps)
+void compare_maps(auto &&maps, const auto &refMaps)
 {
-    auto i = 0;
-    for (const auto &refMap : refMaps)
-        EXPECT_TRUE(std::ranges::equal(maps[i++], refMap));
+    auto map = std::begin(maps);
+    auto refMap = std::begin(refMaps);
+    while (map != std::end(maps) && refMap != std::end(refMaps)) {
+        EXPECT_TRUE(std::ranges::equal(*map, *refMap));
+        ++map;
+        ++refMap;
+    }
+    EXPECT_EQ(map, std::end(maps));
+    EXPECT_EQ(refMap, std::end(refMaps));
 }
 
 template<ctll::fixed_string SMARTS>
