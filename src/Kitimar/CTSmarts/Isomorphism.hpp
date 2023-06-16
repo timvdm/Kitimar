@@ -22,8 +22,8 @@
 //#define ISOMORPHISM_DFS_WITH_N
 //#define ISOMORPHISM_DFS_OPTIMIZED_WITH_N
 
-//#define ISOMORPHISM_MAP_CALLBACK
-#define ISOMORPHISM_MAP_COROUTINE
+#define ISOMORPHISM_MAP_CALLBACK
+//#define ISOMORPHISM_MAP_COROUTINE
 //#define ISOMORPHISM_MAP_RANGE
 
 #if defined(ISOMORPHISM_DFS_RECURSIVE) + defined(ISOMORPHISM_DFS_WITH_N) + defined(ISOMORPHISM_DFS_OPTIMIZED_WITH_N) != 1
@@ -46,7 +46,7 @@
     #if defined(ISOMORPHISM_MAP_COROUTINE)
         #define ISOMORPHISM_DFS_BACKTRACK co_return
     #else
-        #define ISOMORPHISM_DFS_ABORT return
+        #define ISOMORPHISM_DFS_BACKTRACK return
     #endif
 #else
     #define ISOMORPHISM_DFS_BACKTRACK continue
@@ -101,7 +101,7 @@ namespace Kitimar::CTSmarts {
         public:
             using Map = std::array<int, SmartsT::numAtoms>;
             #ifdef ISOMORPHISM_MAP_CALLBACK
-            using MapGenerator = void;
+            using MapGenerator = IsomorphismMappings;
             #else
             using MapGenerator = cppcoro::recursive_generator<Map>;
             #endif
@@ -136,7 +136,7 @@ namespace Kitimar::CTSmarts {
                 auto n = 0;
                 #ifdef ISOMORPHISM_MAP_CALLBACK
                 auto cb = [&n] (const auto &array) { ++n; };
-                matchDfs(mol, cb, get_index(mol, atom));
+                matchDfs(mol, cb, startAtom);
                 #else
                 for (const auto &map : matchDfs(mol, startAtom))
                     ++n;
@@ -147,13 +147,13 @@ namespace Kitimar::CTSmarts {
             auto single(auto &mol, int startAtom = -1)
             {
                 #ifdef ISOMORPHISM_MAP_CALLBACK
-                IsomorphismMapping map;
-                auto cb = [&map] (const auto &array) {
-                    map.resize(array.size());
-                    std::ranges::copy(map, map.begin());
+                IsomorphismMapping mapCopy;
+                auto cb = [&mapCopy] (const auto &map) {
+                    mapCopy.resize(map.size());
+                    std::ranges::copy(map, mapCopy.begin());
                 };
                 matchDfs(mol, cb, startAtom);
-                return std::make_tuple(isDone(), map);
+                return std::make_tuple(isDone(), mapCopy);
                 #else
                 IsomorphismMapping mapCopy; // FIXME
                 for (const auto &map : matchDfs(mol, startAtom)) {
@@ -174,7 +174,6 @@ namespace Kitimar::CTSmarts {
                 };
                 matchDfs(mol, cb, startAtom);
                 return maps;
-
                 #else
                 co_yield matchDfs(mol,  get_index(mol, startAtom));
                 #endif
