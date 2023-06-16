@@ -100,9 +100,11 @@ namespace Kitimar::CTSmarts {
 
         public:
             using Map = std::array<int, SmartsT::numAtoms>;
-#ifdef ISOMORPHISM_MAP_COROUTINE
+    #ifdef ISOMORPHISM_MAP_CALLBACK
+            using MapGenerator = void;
+    #else
             using MapGenerator = cppcoro::recursive_generator<Map>;
-#endif
+    #endif
 
             static constexpr inline auto smarts = SmartsT{};
             static constexpr inline auto dfsBonds = getDfsBonds(smarts);
@@ -116,69 +118,67 @@ namespace Kitimar::CTSmarts {
                 m_map.fill(-1);
             }
 
-            //
-            // Molecule
-            //
 
             bool match(auto &mol)
             {
-#ifdef ISOMORPHISM_MAP_CALLBACK
+            #ifdef ISOMORPHISM_MAP_CALLBACK
                 matchDfs(mol, nullptr);
                 return isDone();
-#else
+            #else
                 for (const auto &map : matchDfs(mol))
                     return true;
                 return false;
-#endif
+            #endif
             }
 
-            auto count(auto &mol)
+            auto count(auto &mol, int startAtom = - 1)
             {
                 auto n = 0;
-#ifdef ISOMORPHISM_MAP_CALLBACK
-                matchDfs(mol, [&n] (const auto &array) { ++n; });
-#else
-                for (const auto &map : matchDfs(mol))
+            #ifdef ISOMORPHISM_MAP_CALLBACK
+                auto cb = [&n] (const auto &array) { ++n; };
+                matchDfs(mol, cb, get_index(mol, atom));
+            #else
+                for (const auto &map : matchDfs(mol, startAtom))
                     ++n;
-#endif
+            #endif
                 return n;
             }
 
-            auto single(auto &mol)
+            auto single(auto &mol, int startAtom = -1)
             {
-#ifdef ISOMORPHISM_MAP_CALLBACK
+            #ifdef ISOMORPHISM_MAP_CALLBACK
                 IsomorphismMapping map;
-                matchDfs(mol, [&map] (const auto &array) {
+                auto cb = [&map] (const auto &array) {
                     map.resize(array.size());
-                    std::ranges::copy(array, map.begin());
-                });
+                    std::ranges::copy(map, map.begin());
+                };
+                matchDfs(mol, cb, startAtom);
                 return std::make_tuple(isDone(), map);
-#else
+            #else
                 IsomorphismMapping mapCopy; // FIXME
-                for (const auto &map : matchDfs(mol)) {
+                for (const auto &map : matchDfs(mol, startAtom)) {
                     mapCopy.resize(map.size());
                     std::ranges::copy(map, mapCopy.begin());
                     return std::make_tuple(true, mapCopy);
                 }
                 return std::make_tuple(false, mapCopy);
-#endif
+            #endif
             }
 
-#ifdef ISOMORPHISM_MAP_CALLBACK
-            auto all(auto &mol)
+            MapGenerator all(auto &mol, int startAtom = -1)
             {
+            #ifdef ISOMORPHISM_MAP_CALLBACK
                 IsomorphismMappings maps;
-                matchDfs(mol, [&maps] (const auto &array) {
+                auto cb = [&maps] (const auto &array) {
                     maps.emplace_back(IsomorphismMapping(array.begin(), array.end()));
-                });
+                };
+                matchDfs(mol, cb, startAtom);
                 return maps;
+
+            #else
+                co_yield matchDfs(mol,  get_index(mol, startAtom));
+            #endif
             }
-#else
-            MapGenerator all(auto &mol)
-            {
-                co_yield matchDfs(mol);
-            }
-#endif
 
             //
             // Atom
@@ -186,14 +186,14 @@ namespace Kitimar::CTSmarts {
 
             bool matchAtom(auto &mol, const auto &atom)
             {
-#ifdef ISOMORPHISM_MAP_CALLBACK
+            #ifdef ISOMORPHISM_MAP_CALLBACK
                 matchDfs(mol, nullptr, get_index(mol, atom));
                 return isDone();
-#else
+            #else
                 for (const auto &map : matchDfs(mol, get_index(mol, atom)))
                     return true;
                 return false;
-#endif
+            #endif
             }
 
             bool matchBond(auto &mol, const auto &bond)
@@ -206,7 +206,7 @@ namespace Kitimar::CTSmarts {
                     auto index = get_index(mol, source);
                     m_map[0] = index;
                     m_mapped[index] = true;
-#ifdef ISOMORPHISM_MAP_CALLBACK
+                #ifdef ISOMORPHISM_MAP_CALLBACK
                     auto callback = [this, &mol, target] (const auto &map) {
                         if (m_map[1] == get_index(mol, target))
                             setDone(true);
@@ -214,85 +214,33 @@ namespace Kitimar::CTSmarts {
                     matchDfs(mol, callback, -1, dfsBonds); // FIXME: remove default params
                     if (isDone() && m_map[1] == get_index(mol, target))
                         return true;
-#else
+                #else
                     for (const auto &map : matchDfs(mol))
                         if (m_map[1] == get_index(mol, target))
                             return true;
-#endif
+                #endif
                 }
 
                 if (matchAtom(mol, target, 0, get<0>(smarts.atoms))) {
                     auto index = get_index(mol, target);
                     m_map[0] = index;
                     m_mapped[index] = true;
-#ifdef ISOMORPHISM_MAP_CALLBACK
+                #ifdef ISOMORPHISM_MAP_CALLBACK
                     auto callback = [this, &mol, source] (const auto &map) {
                         if (m_map[1] == get_index(mol, source))
                             setDone(true);
                     };
                     matchDfs(mol, callback, -1, dfsBonds);
                     return isDone() && m_map[1] == get_index(mol, source);
-#else
+                #else
                     for (const auto &map : matchDfs(mol))
                         if (m_map[1] == get_index(mol, source))
                             return true;
-#endif
+                #endif
                 }
 
                 return false;
             }
-
-            auto count(auto &mol, const auto &atom)
-            {
-                auto n = 0;
-#ifdef ISOMORPHISM_MAP_CALLBACK
-                auto cb = [&n] (const auto &array) { ++n; };
-                matchDfs(mol, cb, get_index(mol, atom));
-#else
-                for (const auto &map : matchDfs(mol, get_index(mol, atom)))
-                    ++n;
-#endif
-                return n;
-            }
-
-            auto single(auto &mol, const auto &atom)
-            {
-#ifdef ISOMORPHISM_MAP_CALLBACK
-                IsomorphismMapping map;
-                auto cb = [&map] (const auto &array) {
-                    map.resize(array.size());
-                    std::ranges::copy(map, map.begin());
-                };
-                matchDfs(mol, cb, get_index(mol, atom));
-                return std::make_tuple(isDone(), map);
-#else
-                IsomorphismMapping mapCopy; // FIXME
-                for (const auto &map : matchDfs(mol, get_index(mol, atom))) {
-                    mapCopy.resize(map.size());
-                    std::ranges::copy(map, mapCopy.begin());
-                    return std::make_tuple(true, mapCopy);
-                }
-                return std::make_tuple(false, mapCopy);
-#endif
-            }
-
-#ifdef ISOMORPHISM_MAP_CALLBACK
-            auto all(auto &mol, const auto &atom)
-            {
-                IsomorphismMappings maps;
-                auto cb = [&maps] (const auto &array) {
-                    maps.emplace_back(IsomorphismMapping(array.begin(), array.end()));
-                };
-                matchDfs(mol, cb, get_index(mol, atom));
-                return maps;
-            }
-#else
-            MapGenerator all(auto &mol, const auto &atom)
-            {
-                co_yield matchDfs(mol,  get_index(mol, atom));
-            }
-#endif
-
 
         private:
 
