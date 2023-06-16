@@ -34,12 +34,6 @@
 #error Only one ISOMORPHISM_MAP implementation can be used
 #endif
 
-// ISOMORPHISM_DFS_RETURN_TYPE
-#ifdef ISOMORPHISM_MAP_COROUTINE
-    #define ISOMORPHISM_DFS_RETURN_TYPE cppcoro::recursive_generator<Map>
-#else
-    #define ISOMORPHISM_DFS_RETURN_TYPE void
-#endif
 
 // ISOMORPHISM_DFS_BACKTRACK
 #if defined(ISOMORPHISM_DFS_RECURSIVE)
@@ -102,8 +96,10 @@ namespace Kitimar::CTSmarts {
             using Map = std::array<int, SmartsT::numAtoms>;
             #ifdef ISOMORPHISM_MAP_CALLBACK
             using MapGenerator = IsomorphismMappings;
+            using DfsReturnType = void;
             #else
             using MapGenerator = cppcoro::recursive_generator<Map>;
+            using DfsReturnType = cppcoro::recursive_generator<Map>;
             #endif
 
             static constexpr inline auto smarts = SmartsT{};
@@ -263,16 +259,18 @@ namespace Kitimar::CTSmarts {
 
             }
 
-            #if defined(ISOMORPHISM_DFS_RECURSIVE)
+            #ifdef ISOMORPHISM_DFS_RECURSIVE
             template<typename Bonds = decltype(dfsBonds)>
             #endif
-            #if defined(ISOMORPHISM_DFS_RECURSIVE) && defined(ISOMORPHISM_MAP_CALLBACK)
-            void matchDfs(auto &mol, auto callback, int startAtom = -1, Bonds bonds = dfsBonds)
-            #elif defined(ISOMORPHISM_DFS_RECURSIVE) // && !defined(ISOMORPHISM_MAP_CALLBACK)
-            ISOMORPHISM_DFS_RETURN_TYPE matchDfs(auto &mol, int startAtom = -1, Bonds bonds = dfsBonds)
-            #elif defined(ISOMORPHISM_MAP_CALLBACK) // && !defined(ISOMORPHISM_DFS_RECURSIVE)
-            void matchDfs(auto &mol, auto callback, int startAtom = -1)
+            DfsReturnType matchDfs(auto &mol,
+            #ifdef ISOMORPHISM_MAP_CALLBACK
+                                   auto callback,
             #endif
+                                   int startAtom = -1
+            #ifdef ISOMORPHISM_DFS_RECURSIVE
+                                    , Bonds bonds = dfsBonds
+            #endif
+            )
             {
                 if constexpr (!smarts.numBonds)
                     ISOMORPHISM_DFS_ABORT;
