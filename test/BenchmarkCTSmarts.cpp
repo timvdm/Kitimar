@@ -110,11 +110,11 @@ First iterative implementation
 
     * Overall slower vs A -> optimize access to bond info w/o using with_n
 
-        ------------------------------------------------------------------------
-        Benchmark                              Time             CPU   Iterations
-        ------------------------------------------------------------------------
-        BM_count_CC                          515 ns          515 ns      1349903
-        BM_count_xxx                       11230 ns        11230 ns        61668 ---+
+        ------------------------------------------------------------------------         A
+        Benchmark                              Time             CPU   Iterations         .
+        ------------------------------------------------------------------------         . 28 %
+        BM_count_CC                          515 ns          515 ns      1349903         |
+        BM_count_xxx                       11230 ns        11230 ns        61668 ---+ <--+
         BM_count_xxxx                      20463 ns        20462 ns        33853    |
         BM_count_xxxxx                     29033 ns        29032 ns        24172    |
         BM_count_c1ccccc1                   1637 ns         1637 ns       419762    |
@@ -163,10 +163,10 @@ First iterative implementation
 
 
 
-Optimize getQueryBondInfo
-=========================
+Optimize getQueryBondInfo, matchAtom & matchBond
+================================================
 
-    git commit: ???
+    git commit: 7f0e5e96dfb90fed74074e17ef7261da2832f6f1
 
     Callback + Iterative (E)
     ------------------------
@@ -193,6 +193,29 @@ Optimize getQueryBondInfo
         BM_all_CCCCCCCCCCCCCCCCCCCC        11378 ns        11378 ns        60725
         BM_all_c1ccccc1CCCc1ccccc1          1617 ns         1616 ns       426399
         BM_all_AAAAAAAAAAAAAAAAAAA        243840 ns       243818 ns         2870
+
+        ------------------------------------------------------------------------    A       C
+        Benchmark                              Time             CPU   Iterations    .       .
+        ------------------------------------------------------------------------    . 43 %  . 153 %
+        BM_count_CC                          520 ns          520 ns      1349761    |       |
+        BM_count_xxx                        7432 ns         7431 ns        94431 <--+-------+
+        BM_count_xxxx                      13097 ns        13097 ns        53541
+        BM_count_xxxxx                     19807 ns        19806 ns        35189
+        BM_count_c1ccccc1                   1621 ns         1621 ns       426993
+        BM_count_c1ccccc1CCN                1584 ns         1584 ns       439589
+        BM_count_CCCCCCCCCCCCCCCCCCCC      11536 ns        11536 ns        60775
+        BM_count_c1ccccc1CCCc1ccccc1        1638 ns         1638 ns       426888
+        BM_count_AAAAAAAAAAAAAAAAAAA      203106 ns       203094 ns         3429
+        ------------------------------------------------------------------------
+        BM_all_CC                           6260 ns         6260 ns       111388
+        BM_all_xxx                         14385 ns        14384 ns        48662
+        BM_all_xxxx                        21285 ns        21284 ns        32724
+        BM_all_xxxxx                       28928 ns        28926 ns        24164
+        BM_all_c1ccccc1                     1583 ns         1583 ns       441394
+        BM_all_c1ccccc1CCN                  1687 ns         1686 ns       417778
+        BM_all_CCCCCCCCCCCCCCCCCCCC        11751 ns        11750 ns        59451
+        BM_all_c1ccccc1CCCc1ccccc1          1684 ns         1684 ns       414877
+        BM_all_AAAAAAAAAAAAAAAAAAA        223613 ns       223601 ns         3103
 
 
 */

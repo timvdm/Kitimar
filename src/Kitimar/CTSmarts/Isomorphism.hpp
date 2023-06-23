@@ -96,7 +96,7 @@ namespace Kitimar::CTSmarts {
     static constexpr auto Unique = MapTypeTag<MapType::Unique>{};
     static constexpr auto All    = MapTypeTag<MapType::All>{};
 
-    template<typename SmartsT, MapType Type>
+    template<Molecule::Molecule Mol, typename SmartsT, MapType Type>
     class Isomorphism
     {
 
@@ -116,22 +116,24 @@ namespace Kitimar::CTSmarts {
             static_assert(ctll::size(smarts.bonds));
             static_assert(ctll::size(smarts.bonds) == ctll::size(dfsBonds));
 
-            struct BondIters {
+            struct BondIters
+            {
                 int begin = 0;
                 int bond = -1;
                 int end = 0;
+                //std::ranges::iterator_t<decltype(get_bonds(Mol{}, 0))> bond;
             };
 
 
 
-            Isomorphism(SmartsT, MapTypeTag<Type>)
+            Isomorphism()
             {
                 m_degrees = getDegrees<smarts.numAtoms>(smarts.bonds);
                 m_map.fill(-1);
             }
 
 
-            bool match(auto &mol)
+            bool match(Mol &mol)
             {
                 #ifdef ISOMORPHISM_MAP_CALLBACK
                 matchDfs(mol, nullptr);
@@ -143,7 +145,7 @@ namespace Kitimar::CTSmarts {
                 #endif
             }
 
-            auto count(auto &mol, int startAtom = - 1)
+            auto count(Mol &mol, int startAtom = - 1)
             {
                 auto n = 0;
                 #ifdef ISOMORPHISM_MAP_CALLBACK
@@ -156,7 +158,7 @@ namespace Kitimar::CTSmarts {
                 return n;
             }
 
-            auto single(auto &mol, int startAtom = -1)
+            auto single(Mol &mol, int startAtom = -1)
             {
                 #ifdef ISOMORPHISM_MAP_CALLBACK
                 IsomorphismMapping mapCopy;
@@ -177,7 +179,7 @@ namespace Kitimar::CTSmarts {
                 #endif
             }
 
-            MapGenerator all(auto &mol, int startAtom = -1)
+            MapGenerator all(Mol &mol, int startAtom = -1)
             {
                 #ifdef ISOMORPHISM_MAP_CALLBACK
                 IsomorphismMappings maps;
@@ -195,7 +197,7 @@ namespace Kitimar::CTSmarts {
             // Atom
             //
 
-            bool matchAtom(auto &mol, const auto &atom)
+            bool matchAtom(Mol &mol, const auto &atom)
             {
                 #ifdef ISOMORPHISM_MAP_CALLBACK
                 matchDfs(mol, nullptr, get_index(mol, atom));
@@ -207,7 +209,7 @@ namespace Kitimar::CTSmarts {
                 #endif
             }
 
-            bool matchBond(auto &mol, const auto &bond)
+            bool matchBond(Mol &mol, const auto &bond)
             {
                 reset(mol);
                 auto source = get_source(mol, bond);
@@ -257,7 +259,7 @@ namespace Kitimar::CTSmarts {
 
         private:
 
-            bool matchAtom(auto &mol, const auto &molAtom, int qryAtom, auto atomExpr) const noexcept
+            bool matchAtom(Mol &mol, const auto &molAtom, int qryAtom, auto atomExpr) const noexcept
             {
                 if (get_degree(mol, molAtom) < m_degrees[qryAtom])
                     return false;
@@ -403,7 +405,7 @@ namespace Kitimar::CTSmarts {
 #ifdef ISOMORPHISM_DFS_RECURSIVE
 
             template<typename Bonds = decltype(dfsBonds)>            
-            DfsReturnType matchDfs(auto &mol,
+            DfsReturnType matchDfs(Mol &mol,
                                    #ifdef ISOMORPHISM_MAP_CALLBACK
                                    auto callback,
                                    #endif
@@ -622,7 +624,7 @@ namespace Kitimar::CTSmarts {
 
 #ifdef ISOMORPHISM_DFS_ITERATIVE
 
-            DfsReturnType matchDfs(auto &mol,
+            DfsReturnType matchDfs(Mol &mol,
                                    #ifdef ISOMORPHISM_MAP_CALLBACK
                                    auto callback,
                                    #endif
@@ -834,7 +836,7 @@ namespace Kitimar::CTSmarts {
 #endif // ISOMORPHISM_DFS_ITERATIVE
 
 
-            constexpr auto reset(auto &mol) noexcept
+            constexpr auto reset(Mol &mol) noexcept
             {
                 //if constexpr (ISOMORPHISM_DEBUG)
                 //    std::cout << "reset()" << std::endl;
@@ -865,7 +867,7 @@ namespace Kitimar::CTSmarts {
 
 
 
-            constexpr auto matchAtom(auto &mol, const auto &atom, std::size_t queryAtomIndex) const noexcept
+            constexpr auto matchAtom(Mol &mol, const auto &atom, std::size_t queryAtomIndex) const noexcept
             {
                 if (get_degree(mol, atom) < m_degrees[queryAtomIndex])
                     return false;
@@ -941,7 +943,7 @@ namespace Kitimar::CTSmarts {
                 }
             }
 
-            constexpr auto matchBond(auto &mol, const auto &bond, std::size_t queryBondIndex) const noexcept
+            constexpr auto matchBond(Mol &mol, const auto &bond, std::size_t queryBondIndex) const noexcept
             {
                 switch (queryBondIndex) {
                     case 0:
