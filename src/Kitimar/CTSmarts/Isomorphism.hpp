@@ -18,8 +18,8 @@
 
 #define ISOMORPHISM_DEBUG 0
 
-#define ISOMORPHISM_DFS_RECURSIVE
-//#define ISOMORPHISM_DFS_ITERATIVE
+//#define ISOMORPHISM_DFS_RECURSIVE
+#define ISOMORPHISM_DFS_ITERATIVE
 //#define ISOMORPHISM_DFS_ITERATIVE_OPTIMIZED
 
 #define ISOMORPHISM_MAP_CALLBACK
@@ -257,7 +257,7 @@ namespace Kitimar::CTSmarts {
 
         private:
 
-            bool matchAtom(auto &mol, const auto &molAtom, int qryAtom, auto atomExpr) noexcept
+            bool matchAtom(auto &mol, const auto &molAtom, int qryAtom, auto atomExpr) const noexcept
             {
                 if (get_degree(mol, molAtom) < m_degrees[qryAtom])
                     return false;
@@ -265,25 +265,94 @@ namespace Kitimar::CTSmarts {
                 return matchAtomExpr(mol, molAtom, atomExpr);
             }
 
-            void next(auto &mol, auto begin, auto end, auto bonds)
+            constexpr auto makeQueryBondInfo(auto queryBond) const noexcept
             {
-                // - begin not null
-                //     - begin == end -> isDone, backtrack, return (null, null, pop(bonds))
-                //     - match bond
-                //         - match: return (begin+1, end, pop(bonds))
-                // - get_source()
-                //     - unmapped -> map atom
-
-
+                return std::make_tuple(queryBond.source, queryBond.target, queryBond.isCyclic, queryBond.isRingClosure);
             }
 
-            constexpr auto queryBondInfo(auto queryBondIndex)
+            constexpr auto getQueryBondInfo(int queryBondIndex) const noexcept
             {
-                using R = std::tuple<int, int, bool, bool>;
-                return with_n<ctll::size(dfsBonds), R>(queryBondIndex, [] (auto i) {
-                    auto queryBond = get<i>(dfsBonds);
-                    return std::make_tuple(queryBond.source, queryBond.target, queryBond.isCyclic, queryBond.isRingClosure);
-                });
+                switch (queryBondIndex) {
+                    case 0:
+                        if constexpr (smarts.numBonds > 0)
+                            return makeQueryBondInfo(get<0>(dfsBonds));
+                    case 1:
+                        if constexpr (smarts.numBonds > 1)
+                            return makeQueryBondInfo(get<1>(dfsBonds));
+                    case 2:
+                        if constexpr (smarts.numBonds > 2)
+                            return makeQueryBondInfo(get<2>(dfsBonds));
+                    case 3:
+                        if constexpr (smarts.numBonds > 3)
+                            return makeQueryBondInfo(get<3>(dfsBonds));
+                    case 4:
+                        if constexpr (smarts.numBonds > 4)
+                            return makeQueryBondInfo(get<4>(dfsBonds));
+                    case 5:
+                        if constexpr (smarts.numBonds > 5)
+                            return makeQueryBondInfo(get<5>(dfsBonds));
+                    case 6:
+                        if constexpr (smarts.numBonds > 6)
+                            return makeQueryBondInfo(get<6>(dfsBonds));
+                    case 7:
+                        if constexpr (smarts.numBonds > 7)
+                            return makeQueryBondInfo(get<7>(dfsBonds));
+                    case 8:
+                        if constexpr (smarts.numBonds > 8)
+                            return makeQueryBondInfo(get<8>(dfsBonds));
+                    case 9:
+                        if constexpr (smarts.numBonds > 9)
+                            return makeQueryBondInfo(get<9>(dfsBonds));
+                    case 10:
+                        if constexpr (smarts.numBonds > 10)
+                            return makeQueryBondInfo(get<10>(dfsBonds));
+                    case 11:
+                        if constexpr (smarts.numBonds > 11)
+                            return makeQueryBondInfo(get<11>(dfsBonds));
+                    case 12:
+                        if constexpr (smarts.numBonds > 12)
+                            return makeQueryBondInfo(get<12>(dfsBonds));
+                    case 13:
+                        if constexpr (smarts.numBonds > 13)
+                            return makeQueryBondInfo(get<13>(dfsBonds));
+                    case 14:
+                        if constexpr (smarts.numBonds > 14)
+                            return makeQueryBondInfo(get<14>(dfsBonds));
+                    case 15:
+                        if constexpr (smarts.numBonds > 15)
+                            return makeQueryBondInfo(get<15>(dfsBonds));
+                    case 16:
+                        if constexpr (smarts.numBonds > 16)
+                            return makeQueryBondInfo(get<16>(dfsBonds));
+                    case 17:
+                        if constexpr (smarts.numBonds > 17)
+                            return makeQueryBondInfo(get<17>(dfsBonds));
+                    case 18:
+                        if constexpr (smarts.numBonds > 18)
+                            return makeQueryBondInfo(get<18>(dfsBonds));
+                    case 19:
+                        if constexpr (smarts.numBonds > 19)
+                            return makeQueryBondInfo(get<19>(dfsBonds));
+                    case 20:
+                        if constexpr (smarts.numBonds > 20)
+                            return makeQueryBondInfo(get<20>(dfsBonds));
+                    default:
+                        using R = std::tuple<int, int, bool, bool>;
+                        return with_n<ctll::size(dfsBonds), R>(queryBondIndex, [this] (auto i) {
+                            auto queryBond = get<i>(dfsBonds);
+                            return makeQueryBondInfo(queryBond);
+                        });
+                }
+            }
+
+            constexpr auto getQueryBondSource(int queryBondIndex) const noexcept
+            {
+                return std::get<0>(getQueryBondInfo(queryBondIndex));
+            }
+
+            constexpr auto getQueryBondTarget(int queryBondIndex) const noexcept
+            {
+                return std::get<1>(getQueryBondInfo(queryBondIndex));
             }
 
             void debugPoint(int queryBondIndex)
@@ -297,7 +366,7 @@ namespace Kitimar::CTSmarts {
 
                 if (queryBondIndex >= 0 && queryBondIndex < smarts.numBonds) {
                     // query
-                    auto [querySource, queryTarget, isCyclic, isRingClosure] = queryBondInfo(queryBondIndex);
+                    auto [querySource, queryTarget, isCyclic, isRingClosure] = getQueryBondInfo(queryBondIndex);
                     std::cout << "    query bond: " << querySource << " - " << queryTarget << std::endl;
 
                     auto source = m_map[querySource];
@@ -613,7 +682,7 @@ namespace Kitimar::CTSmarts {
 
                     }
 
-                    auto [querySource, queryTarget, isCyclic, isRingClosure] = queryBondInfo(queryBondIndex);
+                    auto [querySource, queryTarget, isCyclic, isRingClosure] = getQueryBondInfo(queryBondIndex);
 
                     if (isRingClosure) { // Ring closure?
 
@@ -658,7 +727,7 @@ namespace Kitimar::CTSmarts {
                                 --queryBondIndex;
                                 ++m_stack[queryBondIndex].bond;
 
-                                auto [prevQuerySource, prevQueryTarget, prevIsCyclic, prevIsRingClosure] = queryBondInfo(queryBondIndex);
+                                auto prevQueryTarget = getQueryBondTarget(queryBondIndex);
                                 if (m_map[prevQueryTarget] != -1) {
                                     if constexpr (ISOMORPHISM_DEBUG)
                                         std::cout << "    backtrack (target): " << m_map[prevQueryTarget] << std::endl;
@@ -722,7 +791,7 @@ namespace Kitimar::CTSmarts {
                         ++queryBondIndex;
 
                         if (queryBondIndex < smarts.numBonds) {
-                            auto [nextQuerySource, nextQueryTarget, nextIsCyclic, nextIsRingClosure] = queryBondInfo(queryBondIndex);
+                            auto nextQuerySource = getQueryBondSource(queryBondIndex);
                             m_stack[queryBondIndex] = {0, 0, get_degree(mol, get_atom(mol, m_map[nextQuerySource]))};
                         }
 
@@ -801,16 +870,148 @@ namespace Kitimar::CTSmarts {
                 if (get_degree(mol, atom) < m_degrees[queryAtomIndex])
                     return false;
 
-                return with_n<ctll::size(smarts.atoms), bool>(queryAtomIndex, [&mol, &atom] (auto i) {
-                    return matchAtomExpr(mol, atom, get<i>(smarts.atoms));
-                });
+                switch (queryAtomIndex) {
+                    case 0:
+                        if constexpr (smarts.numAtoms > 0)
+                            return matchAtomExpr(mol, atom, get<0>(smarts.atoms));
+                    case 1:
+                        if constexpr (smarts.numAtoms > 1)
+                            return matchAtomExpr(mol, atom, get<1>(smarts.atoms));
+                    case 2:
+                        if constexpr (smarts.numAtoms > 2)
+                            return matchAtomExpr(mol, atom, get<2>(smarts.atoms));
+                    case 3:
+                        if constexpr (smarts.numAtoms > 3)
+                            return matchAtomExpr(mol, atom, get<3>(smarts.atoms));
+                    case 4:
+                        if constexpr (smarts.numAtoms > 4)
+                            return matchAtomExpr(mol, atom, get<4>(smarts.atoms));
+                    case 5:
+                        if constexpr (smarts.numAtoms > 5)
+                            return matchAtomExpr(mol, atom, get<5>(smarts.atoms));
+                    case 6:
+                        if constexpr (smarts.numAtoms > 6)
+                            return matchAtomExpr(mol, atom, get<6>(smarts.atoms));
+                    case 7:
+                        if constexpr (smarts.numAtoms > 7)
+                            return matchAtomExpr(mol, atom, get<7>(smarts.atoms));
+                    case 8:
+                        if constexpr (smarts.numAtoms > 8)
+                            return matchAtomExpr(mol, atom, get<8>(smarts.atoms));
+                    case 9:
+                        if constexpr (smarts.numAtoms > 9)
+                            return matchAtomExpr(mol, atom, get<9>(smarts.atoms));
+                    case 10:
+                        if constexpr (smarts.numAtoms > 10)
+                            return matchAtomExpr(mol, atom, get<10>(smarts.atoms));
+                    case 11:
+                        if constexpr (smarts.numAtoms > 11)
+                            return matchAtomExpr(mol, atom, get<11>(smarts.atoms));
+                    case 12:
+                        if constexpr (smarts.numAtoms > 12)
+                            return matchAtomExpr(mol, atom, get<12>(smarts.atoms));
+                    case 13:
+                        if constexpr (smarts.numAtoms > 13)
+                            return matchAtomExpr(mol, atom, get<13>(smarts.atoms));
+                    case 14:
+                        if constexpr (smarts.numAtoms > 14)
+                            return matchAtomExpr(mol, atom, get<14>(smarts.atoms));
+                    case 15:
+                        if constexpr (smarts.numAtoms > 15)
+                            return matchAtomExpr(mol, atom, get<15>(smarts.atoms));
+                    case 16:
+                        if constexpr (smarts.numAtoms > 16)
+                            return matchAtomExpr(mol, atom, get<16>(smarts.atoms));
+                    case 17:
+                        if constexpr (smarts.numAtoms > 17)
+                            return matchAtomExpr(mol, atom, get<17>(smarts.atoms));
+                    case 18:
+                        if constexpr (smarts.numAtoms > 18)
+                            return matchAtomExpr(mol, atom, get<18>(smarts.atoms));
+                    case 19:
+                        if constexpr (smarts.numAtoms > 19)
+                            return matchAtomExpr(mol, atom, get<19>(smarts.atoms));
+                    case 20:
+                        if constexpr (smarts.numAtoms > 20)
+                            return matchAtomExpr(mol, atom, get<20>(smarts.atoms));
+                    default:
+                        return with_n<ctll::size(smarts.atoms), bool>(queryAtomIndex, [&mol, &atom] (auto i) {
+                            return matchAtomExpr(mol, atom, get<i>(smarts.atoms));
+                        });
+                }
             }
 
             constexpr auto matchBond(auto &mol, const auto &bond, std::size_t queryBondIndex) const noexcept
             {
-                return with_n<ctll::size(smarts.bonds), bool>(queryBondIndex, [&mol, &bond] (auto i) {
-                    return matchBondExpr(mol, bond, get<i>(smarts.bonds).expr);
-                });
+                switch (queryBondIndex) {
+                    case 0:
+                        if constexpr (smarts.numBonds > 0)
+                            return matchBondExpr(mol, bond, get<0>(dfsBonds).bondExpr);
+                    case 1:
+                        if constexpr (smarts.numBonds > 1)
+                            return matchBondExpr(mol, bond, get<1>(dfsBonds).bondExpr);
+                    case 2:
+                        if constexpr (smarts.numBonds > 2)
+                            return matchBondExpr(mol, bond, get<2>(dfsBonds).bondExpr);
+                    case 3:
+                        if constexpr (smarts.numBonds > 3)
+                            return matchBondExpr(mol, bond, get<3>(dfsBonds).bondExpr);
+                    case 4:
+                        if constexpr (smarts.numBonds > 4)
+                            return matchBondExpr(mol, bond, get<4>(dfsBonds).bondExpr);
+                    case 5:
+                        if constexpr (smarts.numBonds > 5)
+                            return matchBondExpr(mol, bond, get<5>(dfsBonds).bondExpr);
+                    case 6:
+                        if constexpr (smarts.numBonds > 6)
+                            return matchBondExpr(mol, bond, get<6>(dfsBonds).bondExpr);
+                    case 7:
+                        if constexpr (smarts.numBonds > 7)
+                            return matchBondExpr(mol, bond, get<7>(dfsBonds).bondExpr);
+                    case 8:
+                        if constexpr (smarts.numBonds > 8)
+                            return matchBondExpr(mol, bond, get<8>(dfsBonds).bondExpr);
+                    case 9:
+                        if constexpr (smarts.numBonds > 9)
+                            return matchBondExpr(mol, bond, get<9>(dfsBonds).bondExpr);
+                    case 10:
+                        if constexpr (smarts.numBonds > 10)
+                            return matchBondExpr(mol, bond, get<10>(dfsBonds).bondExpr);
+                    case 11:
+                        if constexpr (smarts.numBonds > 11)
+                            return matchBondExpr(mol, bond, get<11>(dfsBonds).bondExpr);
+                    case 12:
+                        if constexpr (smarts.numBonds > 12)
+                            return matchBondExpr(mol, bond, get<12>(dfsBonds).bondExpr);
+                    case 13:
+                        if constexpr (smarts.numBonds > 13)
+                            return matchBondExpr(mol, bond, get<13>(dfsBonds).bondExpr);
+                    case 14:
+                        if constexpr (smarts.numBonds > 14)
+                            return matchBondExpr(mol, bond, get<14>(dfsBonds).bondExpr);
+                    case 15:
+                        if constexpr (smarts.numBonds > 15)
+                            return matchBondExpr(mol, bond, get<15>(dfsBonds).bondExpr);
+                    case 16:
+                        if constexpr (smarts.numBonds > 16)
+                            return matchBondExpr(mol, bond, get<16>(dfsBonds).bondExpr);
+                    case 17:
+                        if constexpr (smarts.numBonds > 17)
+                            return matchBondExpr(mol, bond, get<17>(dfsBonds).bondExpr);
+                    case 18:
+                        if constexpr (smarts.numBonds > 18)
+                            return matchBondExpr(mol, bond, get<18>(dfsBonds).bondExpr);
+                    case 19:
+                        if constexpr (smarts.numBonds > 19)
+                            return matchBondExpr(mol, bond, get<19>(dfsBonds).bondExpr);
+                    case 20:
+                        if constexpr (smarts.numBonds > 20)
+                            return matchBondExpr(mol, bond, get<20>(dfsBonds).bondExpr);
+                    default:
+                        return with_n<ctll::size(smarts.bonds), bool>(queryBondIndex, [&mol, &bond] (auto i) {
+                            return matchBondExpr(mol, bond, get<i>(dfsBonds).bondExpr);
+                        });
+                }
             }
 
 
