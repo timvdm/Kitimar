@@ -271,12 +271,25 @@ namespace Kitimar::CTSmarts {
     // CTSmarts::multi<"SMARTS">(mol, CTSmarts::[Unique, All]) -> std::vector<std::vector<int>>
     //
 
+    #ifdef ISOMORPHISM_MAP_COROUTINE
+    template<ctll::fixed_string SMARTS>
+    using MapGenerator = cppcoro::recursive_generator<std::array<int, Smarts<SMARTS>::numAtoms>>;
+    #endif
+
     template<ctll::fixed_string SMARTS, MapType M = MapType::Unique>
+    #ifdef ISOMORPHISM_MAP_COROUTINE
+    MapGenerator<SMARTS> multi(Molecule::Molecule auto &mol, MapTypeTag<M> mapType = {})
+    #else
     constexpr auto multi(Molecule::Molecule auto &mol, MapTypeTag<M> mapType = {})
+    #endif
     {
         auto smarts = Smarts<SMARTS>{};
         auto iso = Isomorphism{smarts, mapType};
+        #ifdef ISOMORPHISM_MAP_COROUTINE
+        co_yield iso.all(mol);
+        #else
         return iso.all(mol);
+        #endif
     }
 
     //

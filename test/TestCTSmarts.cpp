@@ -780,6 +780,16 @@ TEST(TestCTSmarts, CTSmarts_bond)
 
 void compare_maps(auto &&maps, const auto &refMaps)
 {
+    /*
+    std::cout << "maps:" << std::endl;
+    for (const auto &map : maps)
+        std::cout << "    " << map << std::endl;
+
+    std::cout << "refMaps:" << std::endl;
+    for (const auto &map : refMaps)
+        std::cout << "    " << map << std::endl;
+    */
+
     auto map = std::begin(maps);
     auto refMap = std::begin(refMaps);
     while (map != std::end(maps) && refMap != std::end(refMaps)) {
@@ -1141,14 +1151,6 @@ constexpr auto carboxylCarbon = [] (Molecule &mol) { return captures<"C(=O)O", M
 
 
 
-std::ostream& operator<<(std::ostream &os, const IsomorphismMapping &map)
-{
-    os << "[ ";
-    for (auto i : map)
-        os << i << " ";
-    os << "]";
-    return os;
-}
 
 template<typename T, typename U>
 std::ostream& operator<<(std::ostream &os, const std::pair<T, U> &p)
