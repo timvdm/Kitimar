@@ -947,7 +947,18 @@ namespace Kitimar::CTSmarts {
             }
         }
 
-
+        template<int Source, int Target, typename Expr1, typename Expr2>
+        static constexpr auto makeRingBond(Expr1, Expr2)
+        {
+            if constexpr (std::is_same_v<Expr1, Expr2>)
+                return std::make_tuple(Bond<Source, Target, Expr1>{}, NoErrorTag{});
+            else if constexpr (std::is_same_v<Expr1, ImplicitBond>)
+                return std::make_tuple(Bond<Source, Target, Expr2>{}, NoErrorTag{});
+            else if constexpr (std::is_same_v<Expr2, ImplicitBond>)
+                return std::make_tuple(Bond<Source, Target, Expr1>{}, NoErrorTag{});
+            else
+                return std::make_tuple(Bond<Source, Target, Expr1>{}, ConflicingRingBondTag{});
+        }
 
         // ring_bond
         template <auto N, typename Context, typename Atoms>
@@ -961,18 +972,13 @@ namespace Kitimar::CTSmarts {
                 return SmartsContext{atoms, ctx.bonds, ctx.params.setRingBonds(ringBonds)};
             } else {
                 constexpr auto prevIndex = rb.atomIndex;
-
-                auto expr = makeBondAST(ctx.params.bondExpr);
-                auto bond = Bond<atomIndex, prevIndex, decltype(expr)>();
+                auto [bond, error] = makeRingBond<atomIndex, prevIndex>(makeBondAST(rb.bondExpr), makeBondAST(ctx.params.bondExpr));
                 auto bonds = ctll::push_front(bond, ctx.bonds);
-
-
-                //using BondExpr = decltype(ctx.params.bondExpr);
-                //using Expr = ctll::conditional<std::is_same_v<BondExpr, ImplicitBond>, BondOrder<1>, BondExpr>;
-                //auto bonds = ctll::push_front(Bond<atomIndex, prevIndex, BondExpr>(), ctx.bonds);
-                //auto ringBonds = ctll::pop_front(ctx.params.ringBonds); // FIXME: erase rb.... NOT FRONT!!
                 auto ringBonds = ctll::remove_item(rb, ctx.params.ringBonds); // FIXME: erase rb.... NOT FRONT!!
-                return SmartsContext{atoms, bonds, ctx.params.setRingBonds(ringBonds).setBondExpr(ctll::empty_list())};
+                if constexpr (std::is_same_v<NoErrorTag, decltype(error)>)
+                    return SmartsContext{atoms, bonds, ctx.params.setRingBonds(ringBonds).setBondExpr(ctll::empty_list())};
+                else
+                    return SmartsContext{atoms, bonds, ctx.params.setRingBonds(ringBonds).setBondExpr(ctll::empty_list()).setError(error)};
             }
         }
 

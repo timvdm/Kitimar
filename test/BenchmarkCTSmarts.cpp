@@ -225,6 +225,39 @@ Store range/iterators in BondIters
         BM_all_c1ccccc1CCCc1ccccc1          1713 ns         1713 ns       409208
         BM_all_AAAAAAAAAAAAAAAAAAA        218055 ns       218039 ns         3199
 
+
+Use std::array to store IsmorphismMap
+=====================================
+
+    git commit: 72303176cf8625998488c0ba6fab286ca9d7d5ac
+
+    Callback + Recursive (G)
+    ------------------------
+
+        ------------------------------------------------------------------------
+        Benchmark                              Time             CPU   Iterations
+        ------------------------------------------------------------------------
+        BM_count_CC                          520 ns          520 ns      1336128
+        BM_count_xxx                        3082 ns         3082 ns       227438 ---+
+        BM_count_xxxx                       5695 ns         5694 ns       119936    |
+        BM_count_xxxxx                      8240 ns         8239 ns        84883    |
+        BM_count_c1ccccc1                    285 ns          285 ns      2455715    |
+        BM_count_c1ccccc1CCN                 286 ns          286 ns      2454315    |
+        BM_count_CCCCCCCCCCCCCCCCCCCC       3375 ns         3374 ns       207754    | 89 % (was 31% for A)
+        BM_count_c1ccccc1CCCc1ccccc1         268 ns          268 ns      2603496    |
+        BM_count_AAAAAAAAAAAAAAAAAAA       65181 ns        65176 ns        10611    |
+        ------------------------------------------------------------------------    |
+        BM_all_CC                           1458 ns         1458 ns       479019    |
+        BM_all_xxx                          3474 ns         3473 ns       203396 <--+
+        BM_all_xxxx                         6334 ns         6333 ns       110512
+        BM_all_xxxxx                        8787 ns         8787 ns        79166
+        BM_all_c1ccccc1                      274 ns          274 ns      2561168
+        BM_all_c1ccccc1CCN                   277 ns          277 ns      2523717
+        BM_all_CCCCCCCCCCCCCCCCCCCC         3437 ns         3437 ns       204048
+        BM_all_c1ccccc1CCCc1ccccc1           286 ns          286 ns      2463427
+        BM_all_AAAAAAAAAAAAAAAAAAA         69791 ns        69786 ns         9985
+
+
 */
 
 

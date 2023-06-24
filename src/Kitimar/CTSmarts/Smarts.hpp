@@ -365,6 +365,9 @@ namespace Kitimar::CTSmarts {
     template<typename>
     struct EmptyBracketAtomError {};
 
+    //template<typename>
+    struct ConflicingRingBondError {};
+
     template<typename>
     constexpr auto UnmatchedRingBondError() { return false; }
 
@@ -423,6 +426,8 @@ namespace Kitimar::CTSmarts {
         {
             if constexpr (std::is_same_v<ErrorTag, EmptyBracketAtomTag>)
                 return EmptyBracketAtomError<Pos<position>>();
+            else if constexpr (std::is_same_v<ErrorTag, ConflicingRingBondTag>)
+                return ConflicingRingBondError{};
             else if constexpr (!ctll::empty(context.params.ringBonds))
                 return UnmatchedRingBondError<decltype(ringBondIds(context.params.ringBonds))>();
             else

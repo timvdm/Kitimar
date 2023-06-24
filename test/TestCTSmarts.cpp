@@ -10,14 +10,57 @@
 using namespace Kitimar;
 using namespace Kitimar::CTSmarts;
 
-template <ctll::fixed_string SMARTS, typename AtomExpr>
+template <ctll::fixed_string SMARTS, typename AtomExpr, int AtomIndex = 0>
 constexpr void test_atom_expr()
 {
     auto smarts = Smarts<SMARTS>{};
-    static_assert(ctll::size(smarts.atoms) >= 1);
-    auto expr = ctll::front(smarts.atoms);
+    static_assert(ctll::size(smarts.atoms) > AtomIndex);
+    auto expr = get<AtomIndex>(smarts.atoms);
     static_assert(std::is_same_v<decltype(expr), AtomExpr>);
 }
+
+template <ctll::fixed_string SMARTS, typename BondExpr, int BondIndex = 0>
+constexpr void test_bond_expr()
+{
+    auto smarts = Smarts<SMARTS>{};
+    static_assert(ctll::size(smarts.bonds) > BondIndex);
+    auto expr = get<BondIndex>(smarts.bonds);
+    static_assert(std::is_same_v<decltype(expr), Bond<0, 1, BondExpr>>);
+}
+
+
+template <ctll::fixed_string SMARTS, typename BondT, int BondIndex = 0>
+constexpr void test_bond()
+{
+    auto smarts = Smarts<SMARTS>{};
+    static_assert(ctll::size(smarts.bonds) > BondIndex);
+    auto expr = get<BondIndex>(smarts.bonds);
+    static_assert(std::is_same_v<decltype(expr), BondT>);
+}
+
+
+template <ctll::fixed_string SMARTS, typename Error>
+constexpr void test_parse_error()
+{
+    auto smarts = Smarts<SMARTS, true>();
+    static_assert(!smarts.valid);
+    auto error = smarts.error;
+    static_assert(std::is_same_v<decltype(error), Error>);
+}
+
+template <ctll::fixed_string SMARTS, typename Error>
+constexpr void test_error()
+{
+    auto smarts = Smarts<SMARTS, true>();
+    static_assert(smarts.valid);
+    auto error = smarts.error;
+    static_assert(std::is_same_v<decltype(error), Error>);
+}
+
+
+
+
+
 
 
 TEST(TestCTSmarts, AliphaticAtom)
@@ -324,13 +367,6 @@ TEST(TestCTSmarts, BracketAtom)
 
 }
 
-template <ctll::fixed_string SMARTS, typename BondExpr>
-constexpr void test_bond_expr()
-{
-    auto smarts = Smarts<SMARTS>();
-    auto expr = ctll::front(smarts.bonds);
-    static_assert(std::is_same_v<decltype(expr), Bond<0, 1, BondExpr>>);
-}
 
 TEST(TestCTSmarts, BondPrimitive)
 {
@@ -370,25 +406,32 @@ TEST(TestCTSmarts, BondExpr)
     */
 }
 
-/*
-template <ctll::fixed_string input, typename BondExpr>
-constexpr void test_bond()
-{
-    using AST = ctll::parser<SmartsGrammar, input, SmartsActions>::template output<SmartsContext<>>;
-    static_assert(AST::is_correct);
-    using smarts = AST::output_type;
-    static_assert(ctll::size(smarts::bonds) == 1);
-    auto expr = ctll::front(smarts::bonds);
-    static_assert(std::is_same_v<decltype(expr), Bond<0, 1, BondExpr>>);
-}
-*/
+
+
+
 
 TEST(TestCTSmarts, RingBond)
 {
-    //using Single = BondOrder<1>;
-    //using Double = BondOrder<2>;
+    using Single = BondOrder<1>;
+    using Double = BondOrder<2>;
 
-    //test_bond<"*1***1", Bond<3, 0, Single> >();
+    test_bond<"*1***1", Bond<3, 0, ImplicitBond>, 3 >();
+    test_bond<"*-1***1", Bond<3, 0, Single>, 3 >();
+    test_bond<"*1***-1", Bond<3, 0, Single>, 3 >();
+    test_bond<"*=1***=1", Bond<3, 0, Double>, 3 >();
+
+
+    //         0  2   4
+    test_bond<"*1**12**2", Bond<2, 0, ImplicitBond>, 2 >();
+    test_bond<"*1**12**2", Bond<4, 2, ImplicitBond>, 5 >();
+    test_bond<"*2**21**1", Bond<2, 0, ImplicitBond>, 2 >();
+    test_bond<"*2**21**1", Bond<4, 2, ImplicitBond>, 5 >();
+    test_bond<"*1**11**1", Bond<2, 0, ImplicitBond>, 2 >();
+    test_bond<"*1**11**1", Bond<4, 2, ImplicitBond>, 5 >();
+
+
+    // conflicing ring bonds
+    test_error<"*-1***=1", ConflicingRingBondError>();
 }
 
 TEST(TestCTSmarts, Operators)
@@ -965,6 +1008,13 @@ TEST(TestCTSmarts, ValidateOpenBabel)
 
 
 
+void test_Errors()
+{
+    test_parse_error<"CC[]", EmptyBracketAtomError<Pos<3>> >(); // FIXME: pos 2 = start
+    //SmartsT<"[]"> a;
+
+
+}
 
 
 
@@ -1018,26 +1068,6 @@ constexpr bool test()
 
 
 
-template <ctll::fixed_string SMARTS, typename Error>
-constexpr void test_error()
-{
-    auto smarts = Smarts<SMARTS, true>();
-    static_assert(!smarts.valid);
-    auto error = smarts.error;
-    static_assert(std::is_same_v<decltype(error), Error>);
-
-
-}
-
-
-
-void test_Errors()
-{
-    test_error<"CC[]", EmptyBracketAtomError<Pos<3>> >(); // FIXME: pos 2 = start
-    //SmartsT<"[]"> a;
-
-
-}
 
 
 
