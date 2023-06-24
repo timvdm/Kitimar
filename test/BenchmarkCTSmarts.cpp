@@ -197,7 +197,7 @@ Optimize getQueryBondInfo, matchAtom & matchBond
 Store range/iterators in BondIters
 ==================================
 
-    git commit: ???
+    git commit: 940bb1d81dc28379cbd8c6db71826dbc4878ecda
 
     Callback + Iterative (F)
     ------------------------

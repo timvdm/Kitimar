@@ -220,26 +220,27 @@ namespace Kitimar::CTSmarts {
     template<ctll::fixed_string SMARTS, Molecule::Molecule Mol>
     constexpr auto single(Mol &mol)
     {
+        using Map = IsomorphismMap<SMARTS>;
         auto smarts = Smarts<SMARTS>{};
         if constexpr (smarts.isSingleAtom) {
             // Optimize single atom SMARTS
             for (auto atom : get_atoms(mol))
                 if (detail::singleAtomMatch(smarts, mol, atom))
-                    return IsomorphismMapping{1, atom};
-            return IsomorphismMapping{};
+                    return Map{1, atom};
+            return Map{};
         } else if constexpr (smarts.isSingleBond) {
             // Optimize single bond SMARTS
             for (auto bond : get_bonds(mol)) {
                 switch (detail::singleBondMatch(smarts, mol, bond)) {
                     case 1:
-                        return IsomorphismMapping{1, get_source(mol, bond), get_target(mol, bond)};
+                        return Map{1, get_source(mol, bond), get_target(mol, bond)};
                     case 2:
-                        return IsomorphismMapping{1, get_target(mol, bond), get_source(mol, bond)};
+                        return Map{1, get_target(mol, bond), get_source(mol, bond)};
                     default:
                         break;
                 }
             }
-            return IsomorphismMapping{};
+            return Map{};
         } else {
             auto iso = Isomorphism<Mol, decltype(smarts), MapType::Single>{};
             return iso.single(mol);

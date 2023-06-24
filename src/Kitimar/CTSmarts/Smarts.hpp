@@ -394,6 +394,8 @@ namespace Kitimar::CTSmarts {
         using Result = ctll::parser<SmartsGrammar, SMARTS, SmartsActions>::template output<SmartsContext<>>;
         using Context = Result::output_type;
 
+        static constexpr inline auto smarts = SMARTS;
+
         static constexpr auto input()
         {
             auto str = SMARTS | std::views::transform([] (auto c) { return static_cast<char>(c); });

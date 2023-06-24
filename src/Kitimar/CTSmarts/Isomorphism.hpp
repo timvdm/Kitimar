@@ -78,16 +78,17 @@ std::ostream& operator<<(std::ostream &os, const std::vector<int> &v)
 
 namespace Kitimar::CTSmarts {
 
-    using IsomorphismMapping = std::vector<int>;
-    using IsomorphismMappings = std::vector<IsomorphismMapping>;
-
-
-
-    enum class MapType {
+    enum class MapType
+    {
         Single,
         Unique,
         All
     };
+
+    template<ctll::fixed_string SMARTS>
+    using IsomorphismMap = std::array<int, Smarts<SMARTS>::numAtoms>;
+    template<ctll::fixed_string SMARTS>
+    using IsomorphismMaps = std::vector<IsomorphismMap<SMARTS>>;
 
     template<MapType T>
     using MapTypeTag = std::integral_constant<MapType, T>;
@@ -101,9 +102,10 @@ namespace Kitimar::CTSmarts {
     {
 
         public:
-            using Map = std::array<int, SmartsT::numAtoms>;
+            using Map = IsomorphismMap<SmartsT::smarts>;
+            using Maps = IsomorphismMaps<SmartsT::smarts>;
             #ifdef ISOMORPHISM_MAP_CALLBACK
-            using MapGenerator = IsomorphismMappings;
+            using MapGenerator = Maps;
             using DfsReturnType = void;
             #else
             using MapGenerator = cppcoro::recursive_generator<Map>;
@@ -169,13 +171,8 @@ namespace Kitimar::CTSmarts {
             auto single(Mol &mol, int startAtom = -1)
             {
                 #ifdef ISOMORPHISM_MAP_CALLBACK
-                IsomorphismMapping mapCopy;
-                auto cb = [&mapCopy] (const auto &map) {
-                    mapCopy.resize(map.size());
-                    std::ranges::copy(map, mapCopy.begin());
-                };
-                matchDfs(mol, cb, startAtom);
-                return std::make_tuple(isDone(), mapCopy);
+                matchDfs(mol, nullptr, startAtom);
+                return std::make_tuple(isDone(), m_map);
                 #else
                 IsomorphismMapping mapCopy; // FIXME
                 for (const auto &map : matchDfs(mol, startAtom)) {
@@ -190,9 +187,9 @@ namespace Kitimar::CTSmarts {
             MapGenerator all(Mol &mol, int startAtom = -1)
             {
                 #ifdef ISOMORPHISM_MAP_CALLBACK
-                IsomorphismMappings maps;
-                auto cb = [&maps] (const auto &array) {
-                    maps.emplace_back(IsomorphismMapping(array.begin(), array.end()));
+                Maps maps;
+                auto cb = [&maps] (const auto &map) {
+                    maps.push_back(map);
                 };
                 matchDfs(mol, cb, startAtom);
                 return maps;
