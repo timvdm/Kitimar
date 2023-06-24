@@ -18,8 +18,8 @@
 
 #define ISOMORPHISM_DEBUG 0
 
-//#define ISOMORPHISM_DFS_RECURSIVE
-#define ISOMORPHISM_DFS_ITERATIVE
+#define ISOMORPHISM_DFS_RECURSIVE
+//#define ISOMORPHISM_DFS_ITERATIVE
 //#define ISOMORPHISM_DFS_ITERATIVE_OPTIMIZED
 
 #define ISOMORPHISM_MAP_CALLBACK
@@ -118,12 +118,20 @@ namespace Kitimar::CTSmarts {
 
             struct BondIters
             {
-                int begin = 0;
-                int bond = -1;
-                int end = 0;
-                //std::ranges::iterator_t<decltype(get_bonds(Mol{}, 0))> bond;
-            };
+                using Range = decltype(get_bonds(std::declval<Mol>(), 0));
+                using Iterator = std::ranges::iterator_t<Range>;
+                using Sentinel = std::ranges::sentinel_t<Range>;
 
+                BondIters() = default;
+                BondIters(const BondIters &other) = delete;
+                BondIters(BondIters &&other) = delete;
+                BondIters& operator=(const BondIters&) = delete;
+                BondIters& operator=(BondIters&&) = delete;
+
+                std::optional<Range> range;
+                Iterator bond;
+                Sentinel end;
+            };
 
 
             Isomorphism()
@@ -131,7 +139,6 @@ namespace Kitimar::CTSmarts {
                 m_degrees = getDegrees<smarts.numAtoms>(smarts.bonds);
                 m_map.fill(-1);
             }
-
 
             bool match(Mol &mol)
             {
@@ -157,6 +164,7 @@ namespace Kitimar::CTSmarts {
                 #endif
                 return n;
             }
+
 
             auto single(Mol &mol, int startAtom = -1)
             {
@@ -219,7 +227,7 @@ namespace Kitimar::CTSmarts {
                     auto index = get_index(mol, source);
                     m_map[0] = index;
                     m_mapped[index] = true;
-                    m_stack[0] = {0, 0, get_degree(mol, source)};
+                    pushStack(0, mol, source);
                     #ifdef ISOMORPHISM_MAP_CALLBACK
                     auto callback = [this, &mol, target] (const auto &map) {
                         if (m_map[1] == get_index(mol, target))
@@ -239,7 +247,7 @@ namespace Kitimar::CTSmarts {
                     auto index = get_index(mol, target);
                     m_map[0] = index;
                     m_mapped[index] = true;
-                    m_stack[0] = {0, 0, get_degree(mol, target)};
+                    pushStack(0, mol, target);
                     #ifdef ISOMORPHISM_MAP_CALLBACK
                     auto callback = [this, &mol, source] (const auto &map) {
                         if (m_map[1] == get_index(mol, source))
@@ -360,7 +368,7 @@ namespace Kitimar::CTSmarts {
             void debugPoint(int queryBondIndex)
             {
                 std::cout << "matchDfs<\"" << smarts.input() << "\">(queryBondIndex = " << queryBondIndex << "):" << std::endl;
-                std::cout << "    m_map: " << m_map << std::endl;            
+                std::cout << "    m_map: " << m_map << std::endl;
                 std::cout << "    m_mapped: [ ";
                 for (auto v : m_mapped)
                     std::cout << v << " ";
@@ -386,10 +394,12 @@ namespace Kitimar::CTSmarts {
                 }
 
                 std::cout << "    bond iters: ";
-                for (const auto &iters : m_stack)
-                    if (iters.bond >= 0)
-                        std::cout << "[ " << iters.bond << "/" << iters.end << " ]  ";
-                    else
+                for (auto &iters : m_stack)
+                    if (iters.range) {
+                        auto degree = std::ranges::distance(iters.range.value());
+                        auto i = degree - std::distance(std::begin(iters.range.value()), iters.end);
+                        std::cout << "[ " << i << "/" << degree << " ]  ";
+                     }else
                         std::cout << "[ - ]  ";
                 std::cout << std::endl;
 
@@ -404,7 +414,7 @@ namespace Kitimar::CTSmarts {
 
 #ifdef ISOMORPHISM_DFS_RECURSIVE
 
-            template<typename Bonds = decltype(dfsBonds)>            
+            template<typename Bonds = decltype(dfsBonds)>
             DfsReturnType matchDfs(Mol &mol,
                                    #ifdef ISOMORPHISM_MAP_CALLBACK
                                    auto callback,
@@ -533,7 +543,7 @@ namespace Kitimar::CTSmarts {
                             if (isDone())
                                 ISOMORPHISM_DFS_ABORT;
 
-                            // bracktrack target atom                            
+                            // bracktrack target atom
                             if constexpr (!queryBond.isRingClosure) {
 
                                 if constexpr (ISOMORPHISM_DEBUG) {
@@ -622,6 +632,24 @@ namespace Kitimar::CTSmarts {
 
 #endif // ISOMORPHISM_DFS_RECURSIVE
 
+            void pushStack(int queryBondIndex, Mol &mol, const auto &atom)
+            {
+                auto &bondIters = m_stack[queryBondIndex];
+                bondIters.range = get_bonds(mol, atom);
+                bondIters.bond = std::begin(bondIters.range.value());
+                bondIters.end = std::end(bondIters.range.value());
+            }
+
+            void popStack(int queryBondIndex)
+            {
+                assert(queryBondIndex < m_stack.size());
+                auto &bondIters = m_stack[queryBondIndex];
+                bondIters.range = std::nullopt;
+                bondIters.bond = {};
+                bondIters.end = {};
+            }
+
+
 #ifdef ISOMORPHISM_DFS_ITERATIVE
 
             DfsReturnType matchDfs(Mol &mol,
@@ -709,6 +737,7 @@ namespace Kitimar::CTSmarts {
 
                         assert(m_stack.size());
                         auto &bondIters = m_stack[queryBondIndex];
+                        assert(bondIters.range.has_value());
                         if (bondIters.bond == bondIters.end) { // Last incident molecule bond?
 
                             if (!queryBondIndex && startAtom != -1)
@@ -723,7 +752,7 @@ namespace Kitimar::CTSmarts {
                                 }
                             }
 
-                            m_stack[queryBondIndex] = {};
+                            popStack(queryBondIndex);
 
                             if (queryBondIndex) {
                                 --queryBondIndex;
@@ -746,11 +775,7 @@ namespace Kitimar::CTSmarts {
                             continue;
                         }
 
-                        auto bonds = get_bonds(mol, source);
-                        auto bondIter = std::begin(bonds);
-                        std::advance(bondIter, bondIters.bond);
-                        auto bond = *bondIter;
-
+                        auto bond = *bondIters.bond;
                         auto target = Molecule::get_nbr(mol, bond, source);
                         auto targetIndex = get_index(mol, target);
 
@@ -794,7 +819,8 @@ namespace Kitimar::CTSmarts {
 
                         if (queryBondIndex < smarts.numBonds) {
                             auto nextQuerySource = getQueryBondSource(queryBondIndex);
-                            m_stack[queryBondIndex] = {0, 0, get_degree(mol, get_atom(mol, m_map[nextQuerySource]))};
+                            auto nextAtom = get_atom(mol, m_map[nextQuerySource]);
+                            pushStack(queryBondIndex, mol, nextAtom);
                         }
 
                         continue;
@@ -811,7 +837,7 @@ namespace Kitimar::CTSmarts {
                         ISOMORPHISM_DFS_ABORT;
                     auto atom = get_atom(mol, startAtom == -1 ? atomIndex++ : startAtom);
 
-                    m_stack[queryBondIndex] = {0, 0, get_degree(mol, atom)};
+                    pushStack(queryBondIndex, mol, atom);
 
                     if constexpr (ISOMORPHISM_DEBUG)
                         std::cout << "    start atom: " <<  get_index(mol, atom) << std::endl;

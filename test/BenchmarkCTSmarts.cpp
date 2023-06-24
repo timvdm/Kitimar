@@ -162,7 +162,6 @@ First iterative implementation
         BM_all_AAAAAAAAAAAAAAAAAAA        279467 ns       279452 ns         2538
 
 
-
 Optimize getQueryBondInfo, matchAtom & matchBond
 ================================================
 
@@ -170,29 +169,6 @@ Optimize getQueryBondInfo, matchAtom & matchBond
 
     Callback + Iterative (E)
     ------------------------
-
-        ------------------------------------------------------------------------    C
-        Benchmark                              Time             CPU   Iterations    .
-        ------------------------------------------------------------------------    . 123 %
-        BM_count_CC                          519 ns          519 ns      1299528    |
-        BM_count_xxx                        8470 ns         8470 ns        81587 <--+
-        BM_count_xxxx                      15298 ns        15297 ns        46258
-        BM_count_xxxxx                     24512 ns        24510 ns        28122
-        BM_count_c1ccccc1                   1630 ns         1630 ns       432869
-        BM_count_c1ccccc1CCN                1561 ns         1561 ns       449287
-        BM_count_CCCCCCCCCCCCCCCCCCCC      10961 ns        10961 ns        63794
-        BM_count_c1ccccc1CCCc1ccccc1        1584 ns         1584 ns       447583
-        BM_count_AAAAAAAAAAAAAAAAAAA      180470 ns       180460 ns         3900
-        ------------------------------------------------------------------------
-        BM_all_CC                           6348 ns         6347 ns       109642
-        BM_all_xxx                         16111 ns        16110 ns        43037
-        BM_all_xxxx                        24204 ns        24202 ns        28608
-        BM_all_xxxxx                       35633 ns        35631 ns        19415
-        BM_all_c1ccccc1                     1630 ns         1630 ns       431529
-        BM_all_c1ccccc1CCN                  1665 ns         1665 ns       412365
-        BM_all_CCCCCCCCCCCCCCCCCCCC        11378 ns        11378 ns        60725
-        BM_all_c1ccccc1CCCc1ccccc1          1617 ns         1616 ns       426399
-        BM_all_AAAAAAAAAAAAAAAAAAA        243840 ns       243818 ns         2870
 
         ------------------------------------------------------------------------    A       C
         Benchmark                              Time             CPU   Iterations    .       .
@@ -217,6 +193,37 @@ Optimize getQueryBondInfo, matchAtom & matchBond
         BM_all_c1ccccc1CCCc1ccccc1          1684 ns         1684 ns       414877
         BM_all_AAAAAAAAAAAAAAAAAAA        223613 ns       223601 ns         3103
 
+
+Store range/iterators in BondIters
+==================================
+
+    git commit: ???
+
+    Callback + Iterative (F)
+    ------------------------
+
+        ------------------------------------------------------------------------
+        Benchmark                              Time             CPU   Iterations
+        ------------------------------------------------------------------------
+        BM_count_CC                          509 ns          509 ns      1337878
+        BM_count_xxx                        7455 ns         7455 ns        93307
+        BM_count_xxxx                      13138 ns        13137 ns        53270
+        BM_count_xxxxx                     19719 ns        19717 ns        35573
+        BM_count_c1ccccc1                   1675 ns         1675 ns       418384
+        BM_count_c1ccccc1CCN                1647 ns         1647 ns       424455
+        BM_count_CCCCCCCCCCCCCCCCCCCC      11533 ns        11532 ns        60669
+        BM_count_c1ccccc1CCCc1ccccc1        1672 ns         1672 ns       416413
+        BM_count_AAAAAAAAAAAAAAAAAAA      210795 ns       210780 ns         3317
+        ------------------------------------------------------------------------
+        BM_all_CC                           6072 ns         6072 ns       113878
+        BM_all_xxx                         14722 ns        14720 ns        47494
+        BM_all_xxxx                        20893 ns        20892 ns        33548
+        BM_all_xxxxx                       28993 ns        28991 ns        24021
+        BM_all_c1ccccc1                     1666 ns         1665 ns       420468
+        BM_all_c1ccccc1CCN                  1649 ns         1649 ns       424377
+        BM_all_CCCCCCCCCCCCCCCCCCCC        11657 ns        11656 ns        60012
+        BM_all_c1ccccc1CCCc1ccccc1          1713 ns         1713 ns       409208
+        BM_all_AAAAAAAAAAAAAAAAAAA        218055 ns       218039 ns         3199
 
 */
 
