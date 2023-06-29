@@ -55,7 +55,31 @@
 
 #ifdef ISOMORPHISM_MAP_COROUTINE
 #include <cppcoro/recursive_generator.hpp>
+#else
+namespace cppcoro {
+    template<typename>
+    struct recursive_generator {};
+}
 #endif
+
+constexpr bool isRecursive() noexcept
+{
+    #ifdef ISOMORPHISM_DFS_RECURSIVE
+    return true;
+    #else
+    return false;
+    #endif
+}
+
+constexpr bool isCallback() noexcept
+{
+    #ifdef ISOMORPHISM_MAP_CALLBACK
+    return true;
+    #else
+    return false;
+    #endif
+}
+
 
 template<auto N>
 std::ostream& operator<<(std::ostream &os, const std::array<int, N> &map)
@@ -85,10 +109,17 @@ namespace Kitimar::CTSmarts {
         All
     };
 
+
+
     template<ctll::fixed_string SMARTS>
     using IsomorphismMap = std::array<int, Smarts<SMARTS>::numAtoms>;
+
     template<ctll::fixed_string SMARTS>
     using IsomorphismMaps = std::vector<IsomorphismMap<SMARTS>>;
+
+    template<ctll::fixed_string SMARTS>
+    using IsomorphismMapRange = std::conditional_t<isCallback(),
+        IsomorphismMaps<SMARTS>, cppcoro::recursive_generator<IsomorphismMap<SMARTS>>>;
 
     template<MapType T>
     using MapTypeTag = std::integral_constant<MapType, T>;
@@ -105,10 +136,10 @@ namespace Kitimar::CTSmarts {
             using Map = IsomorphismMap<SmartsT::smarts>;
             using Maps = IsomorphismMaps<SmartsT::smarts>;
             #ifdef ISOMORPHISM_MAP_CALLBACK
-            using MapGenerator = Maps;
+            using MapRange = Maps;
             using DfsReturnType = void;
             #else
-            using MapGenerator = cppcoro::recursive_generator<Map>;
+            using MapRange = cppcoro::recursive_generator<Map>;
             using DfsReturnType = cppcoro::recursive_generator<Map>;
             #endif
 
@@ -144,26 +175,26 @@ namespace Kitimar::CTSmarts {
 
             bool match(Mol &mol)
             {
-                #ifdef ISOMORPHISM_MAP_CALLBACK
-                matchDfs(mol, nullptr);
-                return isDone();
-                #else
-                for (const auto &map : matchDfs(mol))
-                    return true;
-                return false;
-                #endif
+                if constexpr (isCallback()) {
+                    matchDfs(mol, nullptr);
+                    return isDone();
+                } else { // coroutine
+                    for (const auto &map : matchDfs(mol))
+                        return true;
+                    return false;
+                }
             }
 
             auto count(Mol &mol, int startAtom = - 1)
             {
                 auto n = 0;
-                #ifdef ISOMORPHISM_MAP_CALLBACK
-                auto cb = [&n] (const auto &array) { ++n; };
-                matchDfs(mol, cb, startAtom);
-                #else
-                for (const auto &map : matchDfs(mol, startAtom))
-                    ++n;
-                #endif
+                if constexpr (isCallback()) {
+                    auto cb = [&n] (const auto &array) { ++n; };
+                    matchDfs(mol, cb, startAtom);
+                } else { // coroutine
+                    for (const auto &map : matchDfs(mol, startAtom))
+                        ++n;
+                }
                 return n;
             }
 
@@ -174,17 +205,13 @@ namespace Kitimar::CTSmarts {
                 matchDfs(mol, nullptr, startAtom);
                 return std::make_tuple(isDone(), m_map);
                 #else
-                IsomorphismMapping mapCopy; // FIXME
-                for (const auto &map : matchDfs(mol, startAtom)) {
-                    mapCopy.resize(map.size());
-                    std::ranges::copy(map, mapCopy.begin());
-                    return std::make_tuple(true, mapCopy);
-                }
-                return std::make_tuple(false, mapCopy);
+                for (const auto &map : matchDfs(mol, startAtom))
+                    return std::make_tuple(true, m_map);
+                return std::make_tuple(false, m_map);
                 #endif
             }
 
-            MapGenerator all(Mol &mol, int startAtom = -1)
+            MapRange all(Mol &mol, int startAtom = -1)
             {
                 #ifdef ISOMORPHISM_MAP_CALLBACK
                 Maps maps;

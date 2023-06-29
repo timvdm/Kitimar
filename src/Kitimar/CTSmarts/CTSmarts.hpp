@@ -263,25 +263,51 @@ namespace Kitimar::CTSmarts {
     // CTSmarts::multi<"SMARTS">(mol, CTSmarts::[Unique, All]) -> std::vector<std::vector<int>>
     //
 
-    #ifdef ISOMORPHISM_MAP_COROUTINE
-    template<ctll::fixed_string SMARTS>
-    using MapGenerator = cppcoro::recursive_generator<std::array<int, Smarts<SMARTS>::numAtoms>>;
-    #endif
-
     template<ctll::fixed_string SMARTS, MapType M = MapType::Unique, Molecule::Molecule Mol>
-    #ifdef ISOMORPHISM_MAP_COROUTINE
-    MapGenerator<SMARTS> multi(Mol &mol, MapTypeTag<M> mapType = {})
-    #else
-    constexpr auto multi(Mol &mol, MapTypeTag<M> mapType = {})
-    #endif
+    /*constexpr*/ IsomorphismMapRange<SMARTS> multi(Mol &mol, MapTypeTag<M> mapType = {})
     {
+        using Maps = IsomorphismMaps<SMARTS>;
+        using Map = Maps::value_type;
+
         auto smarts = Smarts<SMARTS>{};
-        auto iso = Isomorphism<Mol, decltype(smarts), M>{};
-        #ifdef ISOMORPHISM_MAP_COROUTINE
-        co_yield iso.all(mol);
-        #else
-        return iso.all(mol);
-        #endif
+        if constexpr (smarts.isSingleAtom) {
+            // Optimize single atom SMARTS
+            Maps maps;
+            maps.reserve(num_atoms(mol));
+            for (auto atom : get_atoms(mol))
+                if (detail::singleAtomMatch(smarts, mol, atom))
+                    maps.push_back(Map{get_index(mol, atom)});
+            return maps;
+        } else if constexpr (smarts.isSingleBond) {
+            // Optimize single bond SMARTS
+            Maps maps;
+            maps.reserve(num_bonds(mol));
+            for (auto bond : get_bonds(mol)) {
+                switch (detail::singleBondMatch(smarts, mol, bond)) {
+                    case 1:
+                        maps.push_back(Map{get_index(mol, get_source(mol, bond)), get_index(mol, get_target(mol, bond))});
+                        if constexpr (M == MapType::All)
+                            maps.push_back(Map{get_index(mol, get_target(mol, bond)), get_index(mol, get_source(mol, bond))});
+                        break;
+                    case 2:
+                        maps.push_back(Map{get_index(mol, get_target(mol, bond)), get_index(mol, get_source(mol, bond))});
+                        if constexpr (M == MapType::All)
+                            maps.push_back(Map{get_index(mol, get_source(mol, bond)), get_index(mol, get_target(mol, bond))});
+
+                        break;
+                    default:
+                        break;
+                }
+            }
+            return maps;
+        } else {
+            auto iso = Isomorphism<Mol, decltype(smarts), M>{};
+            #ifdef ISOMORPHISM_MAP_COROUTINE
+            co_yield iso.all(mol);
+            #else
+            return iso.all(mol);
+            #endif
+        }
     }
 
     //
