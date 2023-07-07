@@ -18,68 +18,6 @@
 
 #define ISOMORPHISM_DEBUG 0
 
-#define ISOMORPHISM_DFS_RECURSIVE
-//#define ISOMORPHISM_DFS_ITERATIVE
-//#define ISOMORPHISM_DFS_ITERATIVE_OPTIMIZED
-
-#define ISOMORPHISM_MAP_CALLBACK
-//#define ISOMORPHISM_MAP_COROUTINE
-//#define ISOMORPHISM_MAP_RANGE
-
-#if defined(ISOMORPHISM_DFS_RECURSIVE) + defined(ISOMORPHISM_DFS_ITERATIVE) + defined(ISOMORPHISM_DFS_ITERATIVE_OPTIMIZED) != 1
-#error Only one ISOMORPHISM_DFS implementation can be used
-#endif
-
-#if defined(ISOMORPHISM_MAP_CALLBACK) + defined(ISOMORPHISM_MAP_COROUTINE) + defined(ISOMORPHISM_MAP_RANGE) != 1
-#error Only one ISOMORPHISM_MAP implementation can be used
-#endif
-
-
-// ISOMORPHISM_DFS_BACKTRACK
-#if defined(ISOMORPHISM_DFS_RECURSIVE)
-    #if defined(ISOMORPHISM_MAP_COROUTINE)
-        #define ISOMORPHISM_DFS_BACKTRACK co_return
-    #else
-        #define ISOMORPHISM_DFS_BACKTRACK return
-    #endif
-#else
-    #define ISOMORPHISM_DFS_BACKTRACK continue
-#endif
-
-// ISOMORPHISM_DFS_ABORT
-#ifdef ISOMORPHISM_MAP_COROUTINE
-    #define ISOMORPHISM_DFS_ABORT co_return
-#else
-    #define ISOMORPHISM_DFS_ABORT return
-#endif
-
-#ifdef ISOMORPHISM_MAP_COROUTINE
-#include <cppcoro/recursive_generator.hpp>
-#else
-namespace cppcoro {
-    template<typename>
-    struct recursive_generator {};
-}
-#endif
-
-constexpr bool isRecursive() noexcept
-{
-    #ifdef ISOMORPHISM_DFS_RECURSIVE
-    return true;
-    #else
-    return false;
-    #endif
-}
-
-constexpr bool isCallback() noexcept
-{
-    #ifdef ISOMORPHISM_MAP_CALLBACK
-    return true;
-    #else
-    return false;
-    #endif
-}
-
 
 template<auto N>
 std::ostream& operator<<(std::ostream &os, const std::array<int, N> &map)
@@ -109,17 +47,12 @@ namespace Kitimar::CTSmarts {
         All
     };
 
-
-
     template<ctll::fixed_string SMARTS>
     using IsomorphismMap = std::array<int, Smarts<SMARTS>::numAtoms>;
 
     template<ctll::fixed_string SMARTS>
     using IsomorphismMaps = std::vector<IsomorphismMap<SMARTS>>;
 
-    template<ctll::fixed_string SMARTS>
-    using IsomorphismMapRange = std::conditional_t<isCallback(),
-        IsomorphismMaps<SMARTS>, cppcoro::recursive_generator<IsomorphismMap<SMARTS>>>;
 
     template<MapType T>
     using MapTypeTag = std::integral_constant<MapType, T>;
@@ -128,44 +61,73 @@ namespace Kitimar::CTSmarts {
     static constexpr auto Unique = MapTypeTag<MapType::Unique>{};
     static constexpr auto All    = MapTypeTag<MapType::All>{};
 
-    template<Molecule::Molecule Mol, typename SmartsT, MapType Type>
-    class Isomorphism
+    template<typename Derived>
+    class MappedVector
+    {
+        public:
+            constexpr void resetMapped(auto numAtoms)
+            {
+                m_mapped.clear();
+                m_mapped.resize(numAtoms);
+            }
+
+            constexpr bool isMapped(auto atomIndex) const noexcept
+            {
+                assert(atomIndex < m_mapped.size());
+                return m_mapped[atomIndex];
+            }
+
+            constexpr void addMapped(auto atomIndex) noexcept
+            {
+                assert(atomIndex < m_mapped.size());
+                assert(!m_mapped[atomIndex]);
+                m_mapped[atomIndex] = true;
+            }
+
+            constexpr void removeMapped(auto atomIndex) noexcept
+            {
+                assert(atomIndex < m_mapped.size());
+                assert(m_mapped[atomIndex]);
+                m_mapped[atomIndex] = false;
+            }
+
+
+        private:
+            std::vector<uint8_t> m_mapped;
+    };
+
+    template<typename Derived>
+    class MappedLookup
+    {
+        public:
+            bool isMapped(auto atomIndex) const noexcept
+            {
+                const auto &map = static_cast<const Derived*>(this)->map();
+                return std::ranges::find(map, atomIndex) != map.end();
+            }
+
+            constexpr void resetMapped(auto numAtoms) const noexcept {}
+            constexpr void addMapped(auto atomIndex) const noexcept {}
+            constexpr void removeMapped(auto atomIndex) const noexcept {}
+    };
+
+
+
+
+    template<Molecule::Molecule Mol, typename SmartsT, MapType Type, template<typename> class MappedPolicy = MappedVector>
+    class Isomorphism : public MappedPolicy<Isomorphism<Mol, SmartsT, Type>>
     {
 
         public:
             using Map = IsomorphismMap<SmartsT::smarts>;
             using Maps = IsomorphismMaps<SmartsT::smarts>;
-            #ifdef ISOMORPHISM_MAP_CALLBACK
-            using MapRange = Maps;
-            using DfsReturnType = void;
-            #else
-            using MapRange = cppcoro::recursive_generator<Map>;
-            using DfsReturnType = cppcoro::recursive_generator<Map>;
-            #endif
 
             static constexpr inline auto smarts = SmartsT{};
             static constexpr inline auto dfsBonds = getDfsBonds(smarts);
 
-            static_assert(ctll::size(smarts.bonds));
+
+            static_assert(smarts.numBonds);
             static_assert(ctll::size(smarts.bonds) == ctll::size(dfsBonds));
-
-            struct BondIters
-            {
-                using Range = decltype(get_bonds(std::declval<Mol>(), 0));
-                using Iterator = std::ranges::iterator_t<Range>;
-                using Sentinel = std::ranges::sentinel_t<Range>;
-
-                BondIters() = default;
-                BondIters(const BondIters &other) = delete;
-                BondIters(BondIters &&other) = delete;
-                BondIters& operator=(const BondIters&) = delete;
-                BondIters& operator=(BondIters&&) = delete;
-
-                std::optional<Range> range;
-                Iterator bond;
-                Sentinel end;
-            };
-
 
             Isomorphism()
             {
@@ -173,56 +135,40 @@ namespace Kitimar::CTSmarts {
                 m_map.fill(-1);
             }
 
-            bool match(Mol &mol)
+            constexpr const Map& map() const noexcept
             {
-                if constexpr (isCallback()) {
-                    matchDfs(mol, nullptr);
-                    return isDone();
-                } else { // coroutine
-                    for (const auto &map : matchDfs(mol))
-                        return true;
-                    return false;
-                }
+                return m_map;
+            }
+
+            bool match(Mol &mol)
+            {                
+                matchDfs(mol, nullptr);
+                return isDone();
             }
 
             auto count(Mol &mol, int startAtom = - 1)
             {
-                auto n = 0;
-                if constexpr (isCallback()) {
-                    auto cb = [&n] (const auto &array) { ++n; };
-                    matchDfs(mol, cb, startAtom);
-                } else { // coroutine
-                    for (const auto &map : matchDfs(mol, startAtom))
-                        ++n;
-                }
+                auto n = 0;                
+                auto cb = [&n] (const auto &array) { ++n; };
+                matchDfs(mol, cb, startAtom);
                 return n;
             }
 
 
             auto single(Mol &mol, int startAtom = -1)
-            {
-                #ifdef ISOMORPHISM_MAP_CALLBACK
+            {                
                 matchDfs(mol, nullptr, startAtom);
-                return std::make_tuple(isDone(), m_map);
-                #else
-                for (const auto &map : matchDfs(mol, startAtom))
-                    return std::make_tuple(true, m_map);
-                return std::make_tuple(false, m_map);
-                #endif
+                return std::make_tuple(isDone(), m_map);                
             }
 
-            MapRange all(Mol &mol, int startAtom = -1)
-            {
-                #ifdef ISOMORPHISM_MAP_CALLBACK
+            Maps all(Mol &mol, int startAtom = -1)
+            {                
                 Maps maps;
                 auto cb = [&maps] (const auto &map) {
                     maps.push_back(map);
                 };
                 matchDfs(mol, cb, startAtom);
-                return maps;
-                #else
-                co_yield matchDfs(mol,  startAtom);
-                #endif
+                return maps;             
             }
 
             //
@@ -230,15 +176,9 @@ namespace Kitimar::CTSmarts {
             //
 
             bool matchAtom(Mol &mol, const auto &atom)
-            {
-                #ifdef ISOMORPHISM_MAP_CALLBACK
+            {                
                 matchDfs(mol, nullptr, get_index(mol, atom));
-                return isDone();
-                #else
-                for (const auto &map : matchDfs(mol, get_index(mol, atom)))
-                    return true;
-                return false;
-                #endif
+                return isDone();                
             }
 
             bool matchBond(Mol &mol, const auto &bond)
@@ -246,58 +186,82 @@ namespace Kitimar::CTSmarts {
                 reset(mol);
                 auto source = get_source(mol, bond);
                 auto target = get_target(mol, bond);
+                auto sourceIndex = get_index(mol, source);
+                auto targetIndex = get_index(mol, target);
 
-                if (matchAtom(mol, source, 0, get<0>(smarts.atoms))) {
-                    auto index = get_index(mol, source);
-                    m_map[0] = index;
-                    m_mapped[index] = true;
-                    pushStack(0, mol, source);
-                    #ifdef ISOMORPHISM_MAP_CALLBACK
-                    auto callback = [this, &mol, target] (const auto &map) {
-                        if (m_map[1] == get_index(mol, target))
-                            setDone(true);
-                    };
-                    matchDfs(mol, callback, index); // FIXME: remove default params
-                    if (isDone() && m_map[1] == get_index(mol, target))
-                        return true;
-                    #else
-                    for (const auto &map : matchDfs(mol))
-                        if (m_map[1] == get_index(mol, target))
-                            return true;
-                    #endif
-                }
+                auto sourceCallback = [this, &mol, targetIndex] (const auto &map) {
+                    if (m_map[1] == targetIndex)
+                        setDone(true);
+                };
+                matchDfs(mol, sourceCallback, sourceIndex);
+                if (isDone() && m_map[1] == targetIndex)
+                    return true;
 
-                if (matchAtom(mol, target, 0, get<0>(smarts.atoms))) {
-                    auto index = get_index(mol, target);
-                    m_map[0] = index;
-                    m_mapped[index] = true;
-                    pushStack(0, mol, target);
-                    #ifdef ISOMORPHISM_MAP_CALLBACK
-                    auto callback = [this, &mol, source] (const auto &map) {
-                        if (m_map[1] == get_index(mol, source))
-                            setDone(true);
-                    };
-                    matchDfs(mol, callback, index);
-                    return isDone() && m_map[1] == get_index(mol, source);
-                    #else
-                    for (const auto &map : matchDfs(mol))
-                        if (m_map[1] == get_index(mol, source))
-                            return true;
-                    #endif
-                }
-
-                return false;
+                auto targetCallback = [this, &mol, sourceIndex] (const auto &map) {
+                    if (m_map[1] == sourceIndex)
+                        setDone(true);
+                };
+                matchDfs(mol, targetCallback, targetIndex);
+                return isDone() && m_map[1] == sourceIndex;
             }
 
         private:
 
-            bool matchAtom(Mol &mol, const auto &molAtom, int qryAtom, auto atomExpr) const noexcept
+            template<typename Arg, typename ...Args>
+            void debug(Arg &&arg, Args &&...args)
             {
-                if (get_degree(mol, molAtom) < m_degrees[qryAtom])
+                if constexpr (ISOMORPHISM_DEBUG) {
+                    std::cout << std::forward<Arg>(arg);
+                    ((std::cout << std::forward<Args>(args)), ...);
+                    std::cout << '\n';
+                }
+            }
+
+
+            bool matchAtom(Mol &mol, const auto &atom, int queryAtomIndex, auto atomExpr) const noexcept
+            {
+                if (get_degree(mol, atom) < m_degrees[queryAtomIndex])
                     return false;
 
-                return matchAtomExpr(mol, molAtom, atomExpr);
+                return matchAtomExpr(mol, atom, atomExpr);
             }
+
+            bool matchBond(Mol &mol, const auto &bond, int queryBondIndex, auto queryBond) const noexcept
+            {
+                if constexpr (queryBond.isCyclic)
+                    if (!is_cyclic_bond(mol, bond))
+                        return false;
+
+                return matchBondExpr(mol, bond, queryBond.bondExpr);
+            }
+
+
+
+            void addAtom(auto atomIndex, int queryAtomIndex) noexcept
+            {
+                debug("    ", queryAtomIndex, " -> ", atomIndex);
+
+                assert(queryAtomIndex < m_map.size());
+                assert(m_map[queryAtomIndex] == -1);
+                m_map[queryAtomIndex] = atomIndex;
+
+                this->addMapped(atomIndex);
+            }
+
+            void removeAtom(auto atomIndex, int queryAtomIndex) noexcept
+            {
+                debug("    backtrack: ", m_map[queryAtomIndex]);
+
+                assert(queryAtomIndex < m_map.size());
+                assert(m_map[queryAtomIndex] == atomIndex);
+                m_map[queryAtomIndex] = -1;
+
+                this->removeMapped(atomIndex);
+            }
+
+
+
+
 
             constexpr auto makeQueryBondInfo(auto queryBond) const noexcept
             {
@@ -306,97 +270,24 @@ namespace Kitimar::CTSmarts {
 
             constexpr auto getQueryBondInfo(int queryBondIndex) const noexcept
             {
-                switch (queryBondIndex) {
-                    case 0:
-                        if constexpr (smarts.numBonds > 0)
-                            return makeQueryBondInfo(get<0>(dfsBonds));
-                    case 1:
-                        if constexpr (smarts.numBonds > 1)
-                            return makeQueryBondInfo(get<1>(dfsBonds));
-                    case 2:
-                        if constexpr (smarts.numBonds > 2)
-                            return makeQueryBondInfo(get<2>(dfsBonds));
-                    case 3:
-                        if constexpr (smarts.numBonds > 3)
-                            return makeQueryBondInfo(get<3>(dfsBonds));
-                    case 4:
-                        if constexpr (smarts.numBonds > 4)
-                            return makeQueryBondInfo(get<4>(dfsBonds));
-                    case 5:
-                        if constexpr (smarts.numBonds > 5)
-                            return makeQueryBondInfo(get<5>(dfsBonds));
-                    case 6:
-                        if constexpr (smarts.numBonds > 6)
-                            return makeQueryBondInfo(get<6>(dfsBonds));
-                    case 7:
-                        if constexpr (smarts.numBonds > 7)
-                            return makeQueryBondInfo(get<7>(dfsBonds));
-                    case 8:
-                        if constexpr (smarts.numBonds > 8)
-                            return makeQueryBondInfo(get<8>(dfsBonds));
-                    case 9:
-                        if constexpr (smarts.numBonds > 9)
-                            return makeQueryBondInfo(get<9>(dfsBonds));
-                    case 10:
-                        if constexpr (smarts.numBonds > 10)
-                            return makeQueryBondInfo(get<10>(dfsBonds));
-                    case 11:
-                        if constexpr (smarts.numBonds > 11)
-                            return makeQueryBondInfo(get<11>(dfsBonds));
-                    case 12:
-                        if constexpr (smarts.numBonds > 12)
-                            return makeQueryBondInfo(get<12>(dfsBonds));
-                    case 13:
-                        if constexpr (smarts.numBonds > 13)
-                            return makeQueryBondInfo(get<13>(dfsBonds));
-                    case 14:
-                        if constexpr (smarts.numBonds > 14)
-                            return makeQueryBondInfo(get<14>(dfsBonds));
-                    case 15:
-                        if constexpr (smarts.numBonds > 15)
-                            return makeQueryBondInfo(get<15>(dfsBonds));
-                    case 16:
-                        if constexpr (smarts.numBonds > 16)
-                            return makeQueryBondInfo(get<16>(dfsBonds));
-                    case 17:
-                        if constexpr (smarts.numBonds > 17)
-                            return makeQueryBondInfo(get<17>(dfsBonds));
-                    case 18:
-                        if constexpr (smarts.numBonds > 18)
-                            return makeQueryBondInfo(get<18>(dfsBonds));
-                    case 19:
-                        if constexpr (smarts.numBonds > 19)
-                            return makeQueryBondInfo(get<19>(dfsBonds));
-                    case 20:
-                        if constexpr (smarts.numBonds > 20)
-                            return makeQueryBondInfo(get<20>(dfsBonds));
-                    default:
-                        using R = std::tuple<int, int, bool, bool>;
-                        return with_n<ctll::size(dfsBonds), R>(queryBondIndex, [this] (auto i) {
-                            auto queryBond = get<i>(dfsBonds);
-                            return makeQueryBondInfo(queryBond);
-                        });
-                }
+                using R = std::tuple<int, int, bool, bool>;
+                return with_n<ctll::size(dfsBonds), R>(queryBondIndex, [this] (auto i) {
+                    auto queryBond = get<i>(dfsBonds);
+                    return makeQueryBondInfo(queryBond);
+                });
             }
 
-            constexpr auto getQueryBondSource(int queryBondIndex) const noexcept
-            {
-                return std::get<0>(getQueryBondInfo(queryBondIndex));
-            }
-
-            constexpr auto getQueryBondTarget(int queryBondIndex) const noexcept
-            {
-                return std::get<1>(getQueryBondInfo(queryBondIndex));
-            }
 
             void debugPoint(int queryBondIndex)
             {
                 std::cout << "matchDfs<\"" << smarts.input() << "\">(queryBondIndex = " << queryBondIndex << "):" << std::endl;
                 std::cout << "    m_map: " << m_map << std::endl;
+                /*
                 std::cout << "    m_mapped: [ ";
                 for (auto v : m_mapped)
                     std::cout << v << " ";
                 std::cout << "]" << std::endl;
+                */
 
                 if (queryBondIndex >= 0 && queryBondIndex < smarts.numBonds) {
                     // query
@@ -416,85 +307,46 @@ namespace Kitimar::CTSmarts {
                     else
                         std::cout << target << std::endl;
                 }
-
-                std::cout << "    bond iters: ";
-                for (auto &iters : m_stack)
-                    if (iters.range) {
-                        auto degree = std::ranges::distance(iters.range.value());
-                        auto i = degree - std::distance(std::begin(iters.range.value()), iters.end);
-                        std::cout << "[ " << i << "/" << degree << " ]  ";
-                     }else
-                        std::cout << "[ - ]  ";
-                std::cout << std::endl;
-
+                /*
                 if (m_mapped.size() == m_map.size()) {
                     for (auto i = 0; i < m_mapped.size(); ++i)
                         assert(std::ranges::count(m_map, i) == m_mapped[i]);
                     assert(std::ranges::count(m_map, -1) == std::ranges::count(m_mapped, false));
                 }
+                */
             }
 
 
 
-#ifdef ISOMORPHISM_DFS_RECURSIVE
-
             template<typename Bonds = decltype(dfsBonds)>
-            DfsReturnType matchDfs(Mol &mol,
-                                   #ifdef ISOMORPHISM_MAP_CALLBACK
-                                   auto callback,
-                                   #endif
-                                   int startAtom = -1, Bonds bonds = dfsBonds)
+            void matchDfs(Mol &mol, auto callback, int startAtom = -1, Bonds bonds = dfsBonds)
             {
-                if constexpr (!smarts.numBonds)
-                    ISOMORPHISM_DFS_ABORT;
-
                 if (isDone())
-                    ISOMORPHISM_DFS_ABORT;
+                    return;
 
                 constexpr auto queryBondIndex = smarts.numBonds - ctll::size(bonds);
                 if constexpr (ISOMORPHISM_DEBUG)
                     debugPoint(queryBondIndex);
 
-
                 if constexpr (ctll::empty(bonds)) { // Found mapping?
-                    //if (stereoMatches())
 
-                    if constexpr(ISOMORPHISM_DEBUG)
-                        std::cout << "    found map: " << m_map << std::endl;
+                    debug("    found map: ", m_map);
+                    addMapping(mol, callback);
 
-                    if constexpr (Type == MapType::Unique) {
-                        // create bit mask of atoms (to ensure uniqueness of mapping)
-                        std::vector<bool> atoms(num_atoms(mol));
-                        for (auto index : m_map)
-                            atoms[index] = true;
-                        // add the mapping to the result if it is unique
-                        auto hash = std::hash<std::vector<bool>>()(atoms);
-                        if (m_maps.find(hash) != m_maps.end())
-                            ISOMORPHISM_DFS_BACKTRACK;
-                        m_maps.insert(hash);
-                    }
-                    #ifdef ISOMORPHISM_MAP_CALLBACK
-                    addMapping(callback);
-                    #else
-                    co_yield m_map;
-                    #endif
                 } else {
                     auto queryBond = ctll::front(bonds);
                     auto querySource = queryBond.source;
                     auto queryTarget = queryBond.target;
 
                     if constexpr (queryBond.isRingClosure) { // Ring closure?
+
                         auto source = get_atom(mol, m_map[querySource]);
                         auto target = get_atom(mol, m_map[queryTarget]);
-                        if (!m_mapped[get_index(mol, target)])
-                            ISOMORPHISM_DFS_BACKTRACK;
+                        if (!this->isMapped(get_index(mol, target)))
+                            return;
                         auto bond = Molecule::get_bond(mol, source, target);
-                        if (matchBondExpr(mol, bond, queryBond.bondExpr))
-                            #ifdef ISOMORPHISM_MAP_CALLBACK
-                            matchDfs(mol, callback, startAtom, ctll::pop_front(bonds));
-                            #else
-                            co_yield matchDfs(mol, startAtom, ctll::pop_front(bonds));
-                            #endif
+                        if (matchBondExpr(mol, bond, queryBond.bondExpr))                            
+                            matchDfs(mol, callback, startAtom, ctll::pop_front(bonds));                            
 
                     } else if (m_map[querySource] != -1) { // Source atom mapped?
 
@@ -502,397 +354,85 @@ namespace Kitimar::CTSmarts {
 
                         for (auto bond : get_bonds(mol, source)) {
 
-                            if constexpr (ISOMORPHISM_DEBUG)
-                                if (m_stack[queryBondIndex].bond)
-                                    debugPoint(queryBondIndex);
-
-
                             auto target = Molecule::get_nbr(mol, bond, source);
                             auto targetIndex = get_index(mol, target);
 
-                            assert(targetIndex < m_mapped.size());
-
-                            if (m_mapped[targetIndex]) {
-                                if constexpr (ISOMORPHISM_DEBUG) {
-                                    std::cout << "    target already mapped: " << targetIndex << std::endl;
-                                    ++m_stack[queryBondIndex].bond;
-                                }
+                            if (this->isMapped(targetIndex)) {
+                                debug("    target already mapped: ", targetIndex);
                                 continue;
                             }
 
-                            if constexpr (queryBond.isCyclic) {
-                                if (!is_cyclic_bond(mol, bond)) {
-                                    if constexpr (ISOMORPHISM_DEBUG)
-                                        ++m_stack[queryBondIndex].bond;
-                                    continue;
-                                }
-                            }
-                            if (!matchBondExpr(mol, bond, queryBond.bondExpr)) {
-                                if constexpr (ISOMORPHISM_DEBUG) {
-                                    std::cout << "    bond does not match" << std::endl;
-                                    ++m_stack[queryBondIndex].bond;
-                                }
+                            // match bond
+                            if (!matchBond(mol, bond, queryBondIndex, queryBond)) {
+                                debug("    bond does not match");
                                 continue;
                             }
 
                             // match target atom
-                            if (!matchAtom(mol, target, queryTarget, queryBond.targetExpr)) {
-                                if constexpr (ISOMORPHISM_DEBUG) {
-                                    std::cout << "    atom does not match" << std::endl;
-                                    ++m_stack[queryBondIndex].bond;
-                                }
+                            if (!matchAtom(mol, target, queryTarget, queryBond.targetExpr)) {                                
+                                debug("    atom does not match");
                                 continue;
                             }
 
-                            if constexpr (ISOMORPHISM_DEBUG)
-                                std::cout << "    " << queryTarget << " -> " << targetIndex << '\n';
-
-                            // map target atom
-                            m_map[queryTarget] = targetIndex;
-                            m_mapped[targetIndex] = true;
-
-                            if constexpr (ISOMORPHISM_DEBUG && queryBondIndex + 1 < smarts.numBonds) {
-                                auto nextQueryBond = ctll::front(ctll::pop_front(bonds));
-                                m_stack[queryBondIndex + 1] = {0, 0, get_degree(mol, get_atom(mol, nextQueryBond.source))};
-                            }
-
-                            #ifdef ISOMORPHISM_MAP_CALLBACK
+                            // map target atom                            
+                            addAtom(targetIndex, queryTarget);
                             matchDfs(mol, callback, startAtom, ctll::pop_front(bonds));
-                            #else
-                            co_yield matchDfs(mol, startAtom, ctll::pop_front(bonds));
-                            #endif
-
                             // exit as soon as possible if only one match is required
                             // (single mapping stored in m_map after returning)
                             if (isDone())
-                                ISOMORPHISM_DFS_ABORT;
-
+                                return;
                             // bracktrack target atom
-                            if constexpr (!queryBond.isRingClosure) {
+                            if constexpr (!queryBond.isRingClosure)
+                                removeAtom(targetIndex, queryTarget);
 
-                                if constexpr (ISOMORPHISM_DEBUG) {
-                                    debugPoint(queryBondIndex);
-                                    std::cout << "    backtrack: " << m_map[queryTarget] << std::endl;
-                                }
-                                m_map[queryTarget] = -1;
-                                m_mapped[targetIndex] = false;
-                                if constexpr (ISOMORPHISM_DEBUG)
-                                    if (queryBondIndex + 1 < m_stack.size())
-                                        m_stack[queryBondIndex + 1] = {};
-                            }
-
-                            if constexpr (ISOMORPHISM_DEBUG)
-                                ++m_stack[queryBondIndex].bond;
                         }
-
-
 
                     } else { // No mapped atoms
 
-                        //if constexpr (ISOMORPHISM_DEBUG)
-                        //    std::cout << "no mapped atom" << std::endl;
-
                         if (num_atoms(mol) < smarts.numAtoms || num_bonds(mol) < smarts.numBonds)
-                            ISOMORPHISM_DFS_ABORT;
+                            return;
 
-                        reset(mol);
+                        assert(!isDone());
+
+                        assert(std::ranges::count(m_map, -1) == m_map.size());
+                        if constexpr (std::is_same_v<MappedPolicy<void>, MappedVector<void>>)
+                            assert(std::ranges::count(m_mapped, true) == 0);
+
+                        this->resetMapped(num_atoms(mol));
 
                         for (auto atom : get_atoms(mol)) {
                             if (startAtom != -1)
                                 atom = get_atom(mol, startAtom);
-                            else if (ISOMORPHISM_DEBUG && get_index(mol, atom))
-                                debugPoint(queryBondIndex);
-
-
+                            auto index = get_index(mol, atom);
 
                             auto queryBond = ctll::front(dfsBonds);
                             auto queryAtom = queryBond.source;
 
-                            if constexpr (ISOMORPHISM_DEBUG)
-                                std::cout << "    start atom: " <<  get_index(mol, atom) << std::endl;
-
+                            debug("    start atom: ",  index);
+                            
                             if (!matchAtom(mol, atom, queryAtom, queryBond.sourceExpr))
                                 continue;
 
-                            if constexpr (ISOMORPHISM_DEBUG)
-                                std::cout << "    " << queryAtom << " -> " << get_index(mol, atom) << '\n';
-
                             // map source atom, recursive dfs, backtrack
-                            auto index = get_index(mol, atom);
-                            m_map[queryAtom] = index;
-                            m_mapped[index] = true;
-
-                            if constexpr (ISOMORPHISM_DEBUG)
-                                m_stack[queryBondIndex] = {0, 0, get_degree(mol, atom)};
-
-                            #ifdef ISOMORPHISM_MAP_CALLBACK
+                            addAtom(index, queryAtom);
                             matchDfs(mol, callback, startAtom, dfsBonds);
-                            #else
-                            co_yield matchDfs(mol, startAtom, dfsBonds);
-                            #endif
-
                             if (isDone())
-                                ISOMORPHISM_DFS_ABORT;
-
-                            if constexpr (ISOMORPHISM_DEBUG) {
-                                debugPoint(queryBondIndex);
-                                std::cout << "    backtrack: " << m_map[queryAtom] << std::endl;
-                            }
-
-                            m_map[queryAtom] = -1;
-                            m_mapped[index] = false;
-
-                            if constexpr (ISOMORPHISM_DEBUG)
-                                m_stack[queryBondIndex] = {};
+                                return;
+                            removeAtom(index, queryAtom);
 
                             if (startAtom != -1)
-                                ISOMORPHISM_DFS_ABORT;;
+                                return;;
                         }
 
                     }
                 }
             }
 
-
-#endif // ISOMORPHISM_DFS_RECURSIVE
-
-            void pushStack(int queryBondIndex, Mol &mol, const auto &atom)
-            {
-                auto &bondIters = m_stack[queryBondIndex];
-                bondIters.range = get_bonds(mol, atom);
-                bondIters.bond = std::begin(bondIters.range.value());
-                bondIters.end = std::end(bondIters.range.value());
-            }
-
-            void popStack(int queryBondIndex)
-            {
-                assert(queryBondIndex < m_stack.size());
-                auto &bondIters = m_stack[queryBondIndex];
-                bondIters.range = std::nullopt;
-                bondIters.bond = {};
-                bondIters.end = {};
-            }
-
-
-#ifdef ISOMORPHISM_DFS_ITERATIVE
-
-            DfsReturnType matchDfs(Mol &mol,
-                                   #ifdef ISOMORPHISM_MAP_CALLBACK
-                                   auto callback,
-                                   #endif
-                                   int startAtom = -1)
-            {
-                if constexpr (!smarts.numBonds)
-                    ISOMORPHISM_DFS_ABORT;
-
-                if (num_atoms(mol) < smarts.numAtoms || num_bonds(mol) < smarts.numBonds)
-                    ISOMORPHISM_DFS_ABORT;
-
-                auto atomIndex = 0;
-                auto queryBondIndex = 0;
-
-                while (true) {
-
-                    if (isDone())
-                        ISOMORPHISM_DFS_ABORT;
-
-                    if constexpr (ISOMORPHISM_DEBUG)
-                        debugPoint(queryBondIndex);
-
-                    if (queryBondIndex == smarts.numBonds) { // Found mapping?
-                        //if (stereoMatches())
-
-                        if constexpr(ISOMORPHISM_DEBUG)
-                            std::cout << "    found map: " << m_map << std::endl;
-
-                        bool ignore = false;
-
-                        if constexpr (Type == MapType::Unique) {
-                            // create bit mask of atoms (to ensure uniqueness of mapping)
-                            std::vector<bool> atoms(num_atoms(mol));
-                            for (auto index : m_map)
-                                atoms[index] = true;
-                            // add the mapping to the result if it is unique
-                            auto hash = std::hash<std::vector<bool>>()(atoms);
-                            if (m_maps.find(hash) != m_maps.end())
-                                ignore = true;
-                            else
-                                m_maps.insert(hash);
-                        }
-                        if (!ignore) {
-                            #if defined(ISOMORPHISM_MAP_CALLBACK)
-                            addMapping(callback);
-                            #else
-                            co_yield m_map;
-                            #endif
-                        }
-
-                        if (isDone())
-                            ISOMORPHISM_DFS_ABORT;
-
-                        --queryBondIndex;
-                        ++m_stack[queryBondIndex].bond;
-                        continue;
-
-                    }
-
-                    auto [querySource, queryTarget, isCyclic, isRingClosure] = getQueryBondInfo(queryBondIndex);
-
-                    if (isRingClosure) { // Ring closure?
-
-                        auto source = get_atom(mol, m_map[querySource]);
-                        auto target = get_atom(mol, m_map[queryTarget]);
-                        if (!m_mapped[get_index(mol, target)]) {
-                            if constexpr (ISOMORPHISM_DEBUG)
-                                std::cout << "    target already mapped" << std::endl;
-                            ISOMORPHISM_DFS_BACKTRACK;
-                        }
-                        auto bond = Molecule::get_bond(mol, source, target);
-
-                        if (matchBond(mol, bond, queryBondIndex))
-                            ++queryBondIndex;
-
-                        continue;
-                    }
-
-                    if (m_map[querySource] != -1) { // Source atom mapped?
-
-                        auto source = get_atom(mol, m_map[querySource]);
-
-                        assert(m_stack.size());
-                        auto &bondIters = m_stack[queryBondIndex];
-                        assert(bondIters.range.has_value());
-                        if (bondIters.bond == bondIters.end) { // Last incident molecule bond?
-
-                            if (!queryBondIndex && startAtom != -1)
-                                ISOMORPHISM_DFS_ABORT;
-
-                            if (m_map[queryTarget] != -1) {
-                                if (queryBondIndex + 1 == smarts.numBonds) {
-                                    if constexpr (ISOMORPHISM_DEBUG)
-                                        std::cout << "    backtrack (final target): " << m_map[queryTarget] << std::endl;
-                                    m_mapped[m_map[queryTarget]] = false;
-                                    m_map[queryTarget] = -1;
-                                }
-                            }
-
-                            popStack(queryBondIndex);
-
-                            if (queryBondIndex) {
-                                --queryBondIndex;
-                                ++m_stack[queryBondIndex].bond;
-
-                                auto prevQueryTarget = getQueryBondTarget(queryBondIndex);
-                                if (m_map[prevQueryTarget] != -1) {
-                                    if constexpr (ISOMORPHISM_DEBUG)
-                                        std::cout << "    backtrack (target): " << m_map[prevQueryTarget] << std::endl;
-                                    m_mapped[m_map[prevQueryTarget]] = false;
-                                    m_map[prevQueryTarget] = -1;
-                                }
-                            } else {
-                                if constexpr (ISOMORPHISM_DEBUG)
-                                    std::cout << "    backtrack (source): " << m_map[querySource] << std::endl;
-                                m_mapped[m_map[querySource]] = false;
-                                m_map[querySource] = -1;
-                            }
-
-                            continue;
-                        }
-
-                        auto bond = *bondIters.bond;
-                        auto target = Molecule::get_nbr(mol, bond, source);
-                        auto targetIndex = get_index(mol, target);
-
-                        assert(targetIndex < m_mapped.size());
-                        if (m_mapped[targetIndex]) {
-                            if constexpr (ISOMORPHISM_DEBUG)
-                                std::cout << "    target already mapped: " << targetIndex << std::endl;
-                            ++m_stack[queryBondIndex].bond;
-                            continue;
-                        }
-
-                        if (isCyclic)
-                            if (!is_cyclic_bond(mol, bond)) {
-                                ++m_stack[queryBondIndex].bond;
-                                continue;
-                            }
-
-                        if (!matchBond(mol, bond, queryBondIndex)) {
-                            if constexpr (ISOMORPHISM_DEBUG)
-                                std::cout << "    bond does not match" << std::endl;
-                            ++m_stack[queryBondIndex].bond;
-                            continue;
-                        }
-
-                        // match target atom
-                        if (!matchAtom(mol, target, queryTarget)) {
-                            if constexpr (ISOMORPHISM_DEBUG)
-                                std::cout << "    atom does not match" << std::endl;
-                            ++m_stack[queryBondIndex].bond;
-                            continue;
-                        }
-
-                        if constexpr (ISOMORPHISM_DEBUG)
-                            std::cout << "    " << queryTarget << " -> " << targetIndex << '\n';
-
-                        // map target atom
-                        m_map[queryTarget] = targetIndex;
-                        m_mapped[targetIndex] = true;
-
-                        ++queryBondIndex;
-
-                        if (queryBondIndex < smarts.numBonds) {
-                            auto nextQuerySource = getQueryBondSource(queryBondIndex);
-                            auto nextAtom = get_atom(mol, m_map[nextQuerySource]);
-                            pushStack(queryBondIndex, mol, nextAtom);
-                        }
-
-                        continue;
-                    }
-
-                    // No mapped atoms
-                    assert(!queryBondIndex);
-                    reset(mol);
-
-                    auto queryBond = ctll::front(dfsBonds);
-                    auto queryAtom = queryBond.source;
-
-                    if (atomIndex >=  num_atoms(mol))
-                        ISOMORPHISM_DFS_ABORT;
-                    auto atom = get_atom(mol, startAtom == -1 ? atomIndex++ : startAtom);
-
-                    pushStack(queryBondIndex, mol, atom);
-
-                    if constexpr (ISOMORPHISM_DEBUG)
-                        std::cout << "    start atom: " <<  get_index(mol, atom) << std::endl;
-
-                    if (!matchAtom(mol, atom, queryAtom, queryBond.sourceExpr)) {
-                        if (startAtom != -1)
-                            ISOMORPHISM_DFS_ABORT;
-                        continue;
-                    }
-
-                    if constexpr (ISOMORPHISM_DEBUG)
-                        std::cout << "    " << queryAtom << " -> " << get_index(mol, atom) << '\n';
-
-                    // map source atom, recursive dfs, backtrack
-                    auto index = get_index(mol, atom);
-                    m_map[queryAtom] = index;
-                    m_mapped[index] = true;
-
-                } // while true
-            }
-
-#endif // ISOMORPHISM_DFS_ITERATIVE
-
-
             constexpr auto reset(Mol &mol) noexcept
-            {
-                //if constexpr (ISOMORPHISM_DEBUG)
-                //    std::cout << "reset()" << std::endl;
+            {                
+                //debug("reset()");
                 setDone(false);
-                m_mapped.clear();
-                m_mapped.resize(num_atoms(mol));
+                this->resetMapped(num_atoms(mol));
             }
 
             constexpr auto isDone() const noexcept
@@ -906,177 +446,86 @@ namespace Kitimar::CTSmarts {
             }
 
             template<typename Callback>
-            constexpr auto addMapping(Callback callback) noexcept
+            constexpr auto addMapping(Molecule::Molecule auto &mol, Callback callback) noexcept
             {
                 if constexpr (Type == MapType::Single)
                     setDone(true);
+                if constexpr (Type == MapType::Unique) {
+                    // create bit mask of atoms (to ensure uniqueness of mapping)
+                    std::vector<bool> atoms(num_atoms(mol));
+                    for (auto index : m_map)
+                        atoms[index] = true;
+                    // add the mapping to the result if it is unique
+                    auto hash = std::hash<std::vector<bool>>()(atoms);
+                    if (m_maps.find(hash) != m_maps.end())
+                        return;
+                    m_maps.insert(hash);
+                }
                 if constexpr (!std::is_same_v<std::nullptr_t, Callback>)
                     callback(m_map);
             }
 
 
-
-
-            constexpr auto matchAtom(Mol &mol, const auto &atom, std::size_t queryAtomIndex) const noexcept
-            {
-                if (get_degree(mol, atom) < m_degrees[queryAtomIndex])
-                    return false;
-
-                switch (queryAtomIndex) {
-                    case 0:
-                        if constexpr (smarts.numAtoms > 0)
-                            return matchAtomExpr(mol, atom, get<0>(smarts.atoms));
-                    case 1:
-                        if constexpr (smarts.numAtoms > 1)
-                            return matchAtomExpr(mol, atom, get<1>(smarts.atoms));
-                    case 2:
-                        if constexpr (smarts.numAtoms > 2)
-                            return matchAtomExpr(mol, atom, get<2>(smarts.atoms));
-                    case 3:
-                        if constexpr (smarts.numAtoms > 3)
-                            return matchAtomExpr(mol, atom, get<3>(smarts.atoms));
-                    case 4:
-                        if constexpr (smarts.numAtoms > 4)
-                            return matchAtomExpr(mol, atom, get<4>(smarts.atoms));
-                    case 5:
-                        if constexpr (smarts.numAtoms > 5)
-                            return matchAtomExpr(mol, atom, get<5>(smarts.atoms));
-                    case 6:
-                        if constexpr (smarts.numAtoms > 6)
-                            return matchAtomExpr(mol, atom, get<6>(smarts.atoms));
-                    case 7:
-                        if constexpr (smarts.numAtoms > 7)
-                            return matchAtomExpr(mol, atom, get<7>(smarts.atoms));
-                    case 8:
-                        if constexpr (smarts.numAtoms > 8)
-                            return matchAtomExpr(mol, atom, get<8>(smarts.atoms));
-                    case 9:
-                        if constexpr (smarts.numAtoms > 9)
-                            return matchAtomExpr(mol, atom, get<9>(smarts.atoms));
-                    case 10:
-                        if constexpr (smarts.numAtoms > 10)
-                            return matchAtomExpr(mol, atom, get<10>(smarts.atoms));
-                    case 11:
-                        if constexpr (smarts.numAtoms > 11)
-                            return matchAtomExpr(mol, atom, get<11>(smarts.atoms));
-                    case 12:
-                        if constexpr (smarts.numAtoms > 12)
-                            return matchAtomExpr(mol, atom, get<12>(smarts.atoms));
-                    case 13:
-                        if constexpr (smarts.numAtoms > 13)
-                            return matchAtomExpr(mol, atom, get<13>(smarts.atoms));
-                    case 14:
-                        if constexpr (smarts.numAtoms > 14)
-                            return matchAtomExpr(mol, atom, get<14>(smarts.atoms));
-                    case 15:
-                        if constexpr (smarts.numAtoms > 15)
-                            return matchAtomExpr(mol, atom, get<15>(smarts.atoms));
-                    case 16:
-                        if constexpr (smarts.numAtoms > 16)
-                            return matchAtomExpr(mol, atom, get<16>(smarts.atoms));
-                    case 17:
-                        if constexpr (smarts.numAtoms > 17)
-                            return matchAtomExpr(mol, atom, get<17>(smarts.atoms));
-                    case 18:
-                        if constexpr (smarts.numAtoms > 18)
-                            return matchAtomExpr(mol, atom, get<18>(smarts.atoms));
-                    case 19:
-                        if constexpr (smarts.numAtoms > 19)
-                            return matchAtomExpr(mol, atom, get<19>(smarts.atoms));
-                    case 20:
-                        if constexpr (smarts.numAtoms > 20)
-                            return matchAtomExpr(mol, atom, get<20>(smarts.atoms));
-                    default:
-                        return with_n<ctll::size(smarts.atoms), bool>(queryAtomIndex, [&mol, &atom] (auto i) {
-                            return matchAtomExpr(mol, atom, get<i>(smarts.atoms));
-                        });
-                }
-            }
-
-            constexpr auto matchBond(Mol &mol, const auto &bond, std::size_t queryBondIndex) const noexcept
-            {
-                switch (queryBondIndex) {
-                    case 0:
-                        if constexpr (smarts.numBonds > 0)
-                            return matchBondExpr(mol, bond, get<0>(dfsBonds).bondExpr);
-                    case 1:
-                        if constexpr (smarts.numBonds > 1)
-                            return matchBondExpr(mol, bond, get<1>(dfsBonds).bondExpr);
-                    case 2:
-                        if constexpr (smarts.numBonds > 2)
-                            return matchBondExpr(mol, bond, get<2>(dfsBonds).bondExpr);
-                    case 3:
-                        if constexpr (smarts.numBonds > 3)
-                            return matchBondExpr(mol, bond, get<3>(dfsBonds).bondExpr);
-                    case 4:
-                        if constexpr (smarts.numBonds > 4)
-                            return matchBondExpr(mol, bond, get<4>(dfsBonds).bondExpr);
-                    case 5:
-                        if constexpr (smarts.numBonds > 5)
-                            return matchBondExpr(mol, bond, get<5>(dfsBonds).bondExpr);
-                    case 6:
-                        if constexpr (smarts.numBonds > 6)
-                            return matchBondExpr(mol, bond, get<6>(dfsBonds).bondExpr);
-                    case 7:
-                        if constexpr (smarts.numBonds > 7)
-                            return matchBondExpr(mol, bond, get<7>(dfsBonds).bondExpr);
-                    case 8:
-                        if constexpr (smarts.numBonds > 8)
-                            return matchBondExpr(mol, bond, get<8>(dfsBonds).bondExpr);
-                    case 9:
-                        if constexpr (smarts.numBonds > 9)
-                            return matchBondExpr(mol, bond, get<9>(dfsBonds).bondExpr);
-                    case 10:
-                        if constexpr (smarts.numBonds > 10)
-                            return matchBondExpr(mol, bond, get<10>(dfsBonds).bondExpr);
-                    case 11:
-                        if constexpr (smarts.numBonds > 11)
-                            return matchBondExpr(mol, bond, get<11>(dfsBonds).bondExpr);
-                    case 12:
-                        if constexpr (smarts.numBonds > 12)
-                            return matchBondExpr(mol, bond, get<12>(dfsBonds).bondExpr);
-                    case 13:
-                        if constexpr (smarts.numBonds > 13)
-                            return matchBondExpr(mol, bond, get<13>(dfsBonds).bondExpr);
-                    case 14:
-                        if constexpr (smarts.numBonds > 14)
-                            return matchBondExpr(mol, bond, get<14>(dfsBonds).bondExpr);
-                    case 15:
-                        if constexpr (smarts.numBonds > 15)
-                            return matchBondExpr(mol, bond, get<15>(dfsBonds).bondExpr);
-                    case 16:
-                        if constexpr (smarts.numBonds > 16)
-                            return matchBondExpr(mol, bond, get<16>(dfsBonds).bondExpr);
-                    case 17:
-                        if constexpr (smarts.numBonds > 17)
-                            return matchBondExpr(mol, bond, get<17>(dfsBonds).bondExpr);
-                    case 18:
-                        if constexpr (smarts.numBonds > 18)
-                            return matchBondExpr(mol, bond, get<18>(dfsBonds).bondExpr);
-                    case 19:
-                        if constexpr (smarts.numBonds > 19)
-                            return matchBondExpr(mol, bond, get<19>(dfsBonds).bondExpr);
-                    case 20:
-                        if constexpr (smarts.numBonds > 20)
-                            return matchBondExpr(mol, bond, get<20>(dfsBonds).bondExpr);
-                    default:
-                        return with_n<ctll::size(smarts.bonds), bool>(queryBondIndex, [&mol, &bond] (auto i) {
-                            return matchBondExpr(mol, bond, get<i>(dfsBonds).bondExpr);
-                        });
-                }
-            }
-
-
-
-
-
-            std::array<BondIters, smarts.numBonds> m_stack; // FIXME: debug only
-
             Map m_map; // current mapping: query atom index -> queried atom index
             std::array<uint8_t, smarts.numAtoms> m_degrees; // degree of query atoms
-            std::vector<bool> m_mapped; // current mapping: queried atom index -> true if mapped
             std::conditional_t<Type == MapType::Unique, std::unordered_set<std::size_t>, std::monostate> m_maps;
             bool m_done = false;
+    };
+
+
+    template<Molecule::Molecule Mol, typename SmartsT, MapType Type>
+    class CentralAtomIsomorphism
+    {
+        public:
+            using Map = IsomorphismMap<SmartsT::smarts>;
+            using Maps = IsomorphismMaps<SmartsT::smarts>;
+
+            static constexpr inline auto smarts = SmartsT{};
+
+            static_assert(smarts.numBonds);
+
+            CentralAtomIsomorphism()
+            {
+                m_map.fill(-1);
+            }
+
+            auto count(Mol &mol, int startAtom = - 1)
+            {
+                auto n = 0;
+                auto cb = [&n] (const auto &array) { ++n; };
+                matchCentalAtom(mol, cb, startAtom);
+                return n;
+            }
+
+
+
+        private:
+            template<typename Bonds = decltype(smarts.bonds)>
+            void matchCentralAtom(Mol &mol, auto callback, int startAtom = -1, Bonds bonds = smarts.bonds)
+            {
+                auto queryBond = ctll::front(bonds);
+                auto querySource = queryBond.source;
+                auto queryTarget = queryBond.target;
+
+                //if constexpr (queryTarget == smarts.centralAtom)
+
+                for (auto atom : get_atoms(mol)) {
+                    if (startAtom != -1)
+                        atom = get_atom(mol, startAtom);
+                    auto index = get_index(mol, atom);
+
+                    debug("    start atom: ",  index);
+
+                    if (matchAtom(mol, atom, querySource, queryBond.sourceExpr))
+                        continue;
+
+                    if (startAtom != -1)
+                        return;;
+                }
+            }
+
+
+            Map m_map; // current mapping: query atom index -> queried atom index
     };
 
 } // namespace ctsmarts

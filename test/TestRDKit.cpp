@@ -4,17 +4,17 @@
 
 #include <gtest/gtest.h>
 
-static_assert(Kitimar::Molecule::IsAtomList<RDKit::ROMol*>);
-static_assert(Kitimar::Molecule::IsBondList<RDKit::ROMol*>);
-static_assert(Kitimar::Molecule::MoleculeGraph<RDKit::ROMol*>);
-static_assert(Kitimar::Molecule::IncidentBondList<RDKit::ROMol*>);
-static_assert(Kitimar::Molecule::AdjacentAtomList<RDKit::ROMol*>);
-static_assert(Kitimar::Molecule::ElementLayer<RDKit::ROMol*>);
-static_assert(Kitimar::Molecule::IsotopeLayer<RDKit::ROMol*>);
-static_assert(Kitimar::Molecule::ChargeLayer<RDKit::ROMol*>);
-static_assert(Kitimar::Molecule::BondOrderLayer<RDKit::ROMol*>);
-static_assert(Kitimar::Molecule::ImplicitHydrogensLayer<RDKit::ROMol*>);
-static_assert(Kitimar::Molecule::AromaticLayer<RDKit::ROMol*>);
+static_assert(Kitimar::Molecule::IsAtomList<RDKit::ROMol>);
+static_assert(Kitimar::Molecule::IsBondList<RDKit::ROMol>);
+static_assert(Kitimar::Molecule::MoleculeGraph<RDKit::ROMol>);
+static_assert(Kitimar::Molecule::IncidentBondList<RDKit::ROMol>);
+static_assert(Kitimar::Molecule::AdjacentAtomList<RDKit::ROMol>);
+static_assert(Kitimar::Molecule::ElementLayer<RDKit::ROMol>);
+static_assert(Kitimar::Molecule::IsotopeLayer<RDKit::ROMol>);
+static_assert(Kitimar::Molecule::ChargeLayer<RDKit::ROMol>);
+static_assert(Kitimar::Molecule::BondOrderLayer<RDKit::ROMol>);
+static_assert(Kitimar::Molecule::ImplicitHydrogensLayer<RDKit::ROMol>);
+static_assert(Kitimar::Molecule::AromaticLayer<RDKit::ROMol>);
 
 using namespace Kitimar;
 

@@ -264,7 +264,7 @@ namespace Kitimar::CTSmarts {
     //
 
     template<ctll::fixed_string SMARTS, MapType M = MapType::Unique, Molecule::Molecule Mol>
-    /*constexpr*/ IsomorphismMapRange<SMARTS> multi(Mol &mol, MapTypeTag<M> mapType = {})
+    constexpr IsomorphismMaps<SMARTS> multi(Mol &mol, MapTypeTag<M> mapType = {})
     {
         using Maps = IsomorphismMaps<SMARTS>;
         using Map = Maps::value_type;
@@ -300,13 +300,11 @@ namespace Kitimar::CTSmarts {
                 }
             }
             return maps;
+        //} else if constexpr (smarts.centralAtom != -1) {
+
         } else {
             auto iso = Isomorphism<Mol, decltype(smarts), M>{};
-            #ifdef ISOMORPHISM_MAP_COROUTINE
-            co_yield iso.all(mol);
-            #else
             return iso.all(mol);
-            #endif
         }
     }
 
