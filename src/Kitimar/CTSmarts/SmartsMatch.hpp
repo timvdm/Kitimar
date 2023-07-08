@@ -119,12 +119,12 @@ namespace Kitimar::CTSmarts {
 
     constexpr bool matchAtomExpr(const auto &mol, const auto &atom, Cyclic)
     {
-        return is_cyclic(mol, atom);
+        return is_cyclic_atom(mol, atom);
     }
 
     constexpr bool matchAtomExpr(const auto &mol, const auto &atom, Acyclic)
     {
-        return is_acyclic(mol, atom);
+        return !is_cyclic_atom(mol, atom);
     }
 
     template<int N>
@@ -184,7 +184,7 @@ namespace Kitimar::CTSmarts {
 
     constexpr bool matchBondExpr(const auto &mol, const auto &bond, RingBond)
     {
-        return is_cyclic(mol, bond);
+        return is_cyclic_bond(mol, bond);
     }
 
 } // namespace ctsmarts

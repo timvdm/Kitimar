@@ -358,7 +358,7 @@ namespace Kitimar::CTSmarts {
         // cyclic: 'R'
         // acyclic: 'R0'
         // ring count: 'R' NUMBER
-        static constexpr auto rule(atom_exprR,   ctll::term<'0'>) -> ctll::push<ctll::anything, make_acyclic, atom_expr2>;
+        static constexpr auto rule(atom_exprR,   ctll::term<'0'>) -> ctll::push<ctll::anything, pop_char, make_acyclic, atom_expr2>;
         static constexpr auto rule(atom_exprR,   ctll::range<'1', '9'>) -> ctll::push<ctll::anything, pop_char, start_number, atom_expr_ring_count>;
         static constexpr auto rule(atom_exprR,     ctll::set<'a', 'b', 'e', 'f', 'g', 'h', 'n', 'u'>) -> Symbol2;
         static constexpr auto rule(atom_exprR, ctll::neg_set<'a', 'b', 'e', 'f', 'g', 'h', 'n', 'u', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'>) -> ctll::push<pop_char, make_cyclic, atom_expr2>;

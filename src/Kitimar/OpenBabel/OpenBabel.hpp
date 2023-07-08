@@ -22,6 +22,13 @@ namespace Kitimar {
         return mol;
     }
 
+    inline std::string writeSmiles(OpenBabel::OBMol &mol)
+    {
+        OpenBabel::OBConversion conv;
+        conv.SetOutFormat("smi");
+        return conv.WriteString(&mol, true);
+    }
+
     class OpenBabelSmilesMolSource
     {
         public:
@@ -255,5 +262,33 @@ namespace OpenBabel {
     {
         return bond->IsInRing();
     }
+
+    // Smarts
+
+    inline auto get_connectivity(const OpenBabel::OBMol &mol, OpenBabel::OBAtom *atom)
+    {
+        return atom->GetTotalDegree();
+    }
+
+    inline auto get_total_hydrogens(const OpenBabel::OBMol &mol, OpenBabel::OBAtom *atom)
+    {
+        return atom->ExplicitHydrogenCount() + atom->GetImplicitHCount();
+    }
+
+    inline auto is_in_ring_size(const OpenBabel::OBMol &mol, OpenBabel::OBAtom *atom, int ringSize)
+    {
+        return atom->IsInRingSize(ringSize);
+    }
+
+    inline auto get_ring_count(const OpenBabel::OBMol &mol, OpenBabel::OBAtom *atom)
+    {
+        return atom->MemberOfRingCount();
+    }
+
+    inline auto get_ring_connectivity(const OpenBabel::OBMol &mol, OpenBabel::OBAtom *atom)
+    {
+        return atom->CountRingBonds();
+    }
+
 
 } // namespace OpenBabel

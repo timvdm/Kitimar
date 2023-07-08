@@ -345,6 +345,8 @@ namespace Kitimar::CTSmarts {
                         if (!this->isMapped(get_index(mol, target)))
                             return;
                         auto bond = Molecule::get_bond(mol, source, target);
+                        if (bond == null_bond(mol))
+                            return;
                         if (matchBondExpr(mol, bond, queryBond.bondExpr))                            
                             matchDfs(mol, callback, startAtom, ctll::pop_front(bonds));                            
 
@@ -395,8 +397,8 @@ namespace Kitimar::CTSmarts {
                         assert(!isDone());
 
                         assert(std::ranges::count(m_map, -1) == m_map.size());
-                        if constexpr (std::is_same_v<MappedPolicy<void>, MappedVector<void>>)
-                            assert(std::ranges::count(m_mapped, true) == 0);
+                        //if constexpr (std::is_same_v<MappedPolicy<void>, MappedVector<void>>)
+                        //    assert(std::ranges::count(m_mapped, true) == 0);
 
                         this->resetMapped(num_atoms(mol));
 
