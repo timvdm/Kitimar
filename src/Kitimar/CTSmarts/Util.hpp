@@ -73,6 +73,17 @@ namespace Kitimar::CTSmarts {
         }
     }
 
+    template<typename ...Ts, typename F>
+    constexpr auto transform(ctll::list<Ts...> list, F &&f)
+    {
+        if constexpr (ctll::empty(list)) {
+            return ctll::empty_list{};
+        } else {
+            auto [head, tail] = ctll::pop_and_get_front(list);
+            return ctll::push_front(f(head), transform(tail, std::forward<F>(f)));
+        }
+    }
+
 
     template<int ...N>
     constexpr auto toArray(ctll::list<Number<N>...>)

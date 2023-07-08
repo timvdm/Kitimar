@@ -733,6 +733,7 @@ namespace Kitimar::CTSmarts {
         static constexpr bool isTotalHExpr(AnyAromatic) { return true; }
         template<int Element>
         static constexpr bool isTotalHExpr(AliphaticAtom<Element>) { return true; }
+        static constexpr bool isTotalHExpr(AliphaticAtom<1>) { return false; }
         template<int Element>
         static constexpr bool isTotalHExpr(AromaticAtom<Element>) { return true; }
         // FIXME: operations
@@ -755,17 +756,38 @@ namespace Kitimar::CTSmarts {
             }
         }
 
+        template<typename Expr>
+        static constexpr auto toTotalHExpr(Expr) { return Expr{}; }
+        static constexpr auto toTotalHExpr(AliphaticAtom<1>) { return TotalH<1>{}; }
+        template<typename Expr>
+        static constexpr auto toTotalHExpr(Not<Expr>) { return Not<decltype(toTotalHExpr(Expr{}))>{}; }
+
+        template<typename ...Expr>
+        static constexpr auto toTotalHExpr(ctll::list<Expr...> expr)
+        {
+            return transform(expr, [] <typename Expr2> (Expr2 expr2) {
+                if constexpr (std::is_same_v<Expr2, AliphaticAtom<1>>)
+                    return TotalH<1>{};
+                else
+                    return expr2;
+            });
+        }
+
+        template<typename ...Expr>
+        static constexpr auto toTotalHExpr(And<Expr...> op) { return And(toTotalHExpr(op.expr)); }
+        template<typename ...Expr>
+        static constexpr auto toTotalHExpr(Or<Expr...> op) { return Or(toTotalHExpr(op.expr)); }
+
 
         // make_total_h
         template <auto V, typename Context>
         static constexpr auto apply(SmartsGrammar::make_total_h, ctll::term<V> term, Context ctx)
         {
-            if constexpr (!isTotalH(ctx.params.atomExpr)) {
+            if constexpr (V == 'H')
+                // Will be replaced by TotalH later if needed
                 return pushAtomExpr(ctx, ctx.atoms, AliphaticAtom<1>());
-            } else {
-                constexpr auto value = V == 'H' ? 1 : V - '0';
-                return pushAtomExpr(ctx, ctx.atoms, TotalH<value>());
-            }
+            else
+                return pushAtomExpr(ctx, ctx.atoms, TotalH<V - '0'>());
         }
 
         // make_neg_charge

@@ -271,10 +271,31 @@ TEST(TestCTSmarts, TotalH)
 {
     test_atom_expr<"[H]",   AliphaticAtom<1> >();
     test_atom_expr<"[rH]",  And<Cyclic, AliphaticAtom<1>> >();
+    test_atom_expr<"[H0]", TotalH<0> >();
+    test_atom_expr<"[H1]", TotalH<1> >();
+    test_atom_expr<"[H3]", TotalH<3> >();
     test_atom_expr<"[*H]",  And<AnyAtom, TotalH<1>> >();
     test_atom_expr<"[*H0]", And<AnyAtom, TotalH<0>> >();
     test_atom_expr<"[*H1]", And<AnyAtom, TotalH<1>> >();
     test_atom_expr<"[*H3]", And<AnyAtom, TotalH<3>> >();
+    test_atom_expr<"[*,H]",  Or<AnyAtom, TotalH<1>> >();
+    test_atom_expr<"[*,H0]", Or<AnyAtom, TotalH<0>> >();
+    test_atom_expr<"[*,H1]", Or<AnyAtom, TotalH<1>> >();
+    test_atom_expr<"[*,H3]", Or<AnyAtom, TotalH<3>> >();
+
+    static_assert(!SmartsActions::isTotalHExpr(AliphaticAtom<1>{}));
+    static_assert(!SmartsActions::isTotalHExpr(Cyclic{}));
+    static_assert(SmartsActions::isTotalHExpr(AnyAtom{}));
+    static_assert(SmartsActions::isTotalHExpr(AnyAliphatic{}));
+    static_assert(SmartsActions::isTotalHExpr(AnyAromatic{}));
+    static_assert(SmartsActions::isTotalHExpr(AliphaticAtom<6>{}));
+    static_assert(SmartsActions::isTotalHExpr(AromaticAtom<6>{}));
+    static_assert(SmartsActions::isTotalHExpr(Or<AliphaticAtom<1>, AliphaticAtom<6>>{}));
+    static_assert(SmartsActions::isTotalHExpr(And<AnyAtom, AliphaticAtom<1>>{}));
+
+    test_atom_expr<"[H,R]", Or<AliphaticAtom<1>, Cyclic> >();
+    test_atom_expr<"[C,H]", Or<AliphaticAtom<6>, TotalH<1>> >();
+    test_atom_expr<"[H,C]", Or<TotalH<1>, AliphaticAtom<6>> >();
 }
 
 TEST(TestCTSmarts, ImplicitH)
