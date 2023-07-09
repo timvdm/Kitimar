@@ -762,6 +762,13 @@ namespace Kitimar::CTSmarts {
         template<typename Expr>
         static constexpr auto toTotalHExpr(Not<Expr>) { return Not<decltype(toTotalHExpr(Expr{}))>{}; }
 
+
+
+        template<typename ...Expr>
+        static constexpr auto toTotalHExpr(And<Expr...> op) { return And(toTotalHExpr(op.expr)); }
+        template<typename ...Expr>
+        static constexpr auto toTotalHExpr(Or<Expr...> op) { return Or(toTotalHExpr(op.expr)); }
+
         template<typename ...Expr>
         static constexpr auto toTotalHExpr(ctll::list<Expr...> expr)
         {
@@ -769,14 +776,9 @@ namespace Kitimar::CTSmarts {
                 if constexpr (std::is_same_v<Expr2, AliphaticAtom<1>>)
                     return TotalH<1>{};
                 else
-                    return expr2;
+                    return toTotalHExpr(expr2);
             });
         }
-
-        template<typename ...Expr>
-        static constexpr auto toTotalHExpr(And<Expr...> op) { return And(toTotalHExpr(op.expr)); }
-        template<typename ...Expr>
-        static constexpr auto toTotalHExpr(Or<Expr...> op) { return Or(toTotalHExpr(op.expr)); }
 
 
         // make_total_h

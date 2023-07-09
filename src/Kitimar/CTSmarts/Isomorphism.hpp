@@ -19,8 +19,8 @@
 #define ISOMORPHISM_DEBUG 0
 
 
-template<auto N>
-std::ostream& operator<<(std::ostream &os, const std::array<int, N> &map)
+template<std::integral I, auto N>
+std::ostream& operator<<(std::ostream &os, const std::array<I, N> &map)
 {
     os << "[";
     for (auto i = 0; i < map.size(); ++i)
@@ -29,7 +29,8 @@ std::ostream& operator<<(std::ostream &os, const std::array<int, N> &map)
     return os;
 }
 
-std::ostream& operator<<(std::ostream &os, const std::vector<int> &v)
+template<std::integral I>
+std::ostream& operator<<(std::ostream &os, const std::vector<I> &v)
 {
     os << "[ ";
     for (auto i : v)
@@ -47,11 +48,11 @@ namespace Kitimar::CTSmarts {
         All
     };
 
-    template<ctll::fixed_string SMARTS>
-    using IsomorphismMap = std::array<int, Smarts<SMARTS>::numAtoms>;
+    template<std::integral Index, ctll::fixed_string SMARTS>
+    using IsomorphismMap = std::array<Index, Smarts<SMARTS>::numAtoms>;
 
-    template<ctll::fixed_string SMARTS>
-    using IsomorphismMaps = std::vector<IsomorphismMap<SMARTS>>;
+    template<std::integral Index, ctll::fixed_string SMARTS>
+    using IsomorphismMaps = std::vector<IsomorphismMap<Index, SMARTS>>;
 
 
     template<MapType T>
@@ -119,8 +120,9 @@ namespace Kitimar::CTSmarts {
     {
 
         public:
-            using Map = IsomorphismMap<SmartsT::smarts>;
-            using Maps = IsomorphismMaps<SmartsT::smarts>;
+            using Index = decltype(get_index(std::declval<Mol>(), get_atom(std::declval<Mol>(), 0)));
+            using Map = IsomorphismMap<Index, SmartsT::smarts>;
+            using Maps = IsomorphismMaps<Index, SmartsT::smarts>;
 
             static constexpr inline auto smarts = SmartsT{};
             static constexpr inline auto dfsBonds = getDfsBonds(smarts);
@@ -189,7 +191,7 @@ namespace Kitimar::CTSmarts {
                 auto sourceIndex = get_index(mol, source);
                 auto targetIndex = get_index(mol, target);
 
-                auto sourceCallback = [this, &mol, targetIndex] (const auto &map) {
+                auto sourceCallback = [this, targetIndex] (const auto &map) {
                     if (m_map[1] == targetIndex)
                         setDone(true);
                 };
@@ -197,7 +199,7 @@ namespace Kitimar::CTSmarts {
                 if (isDone() && m_map[1] == targetIndex)
                     return true;
 
-                auto targetCallback = [this, &mol, sourceIndex] (const auto &map) {
+                auto targetCallback = [this, sourceIndex] (const auto &map) {
                     if (m_map[1] == sourceIndex)
                         setDone(true);
                 };
@@ -475,6 +477,7 @@ namespace Kitimar::CTSmarts {
     };
 
 
+    /*
     template<Molecule::Molecule Mol, typename SmartsT, MapType Type>
     class CentralAtomIsomorphism
     {
@@ -529,5 +532,6 @@ namespace Kitimar::CTSmarts {
 
             Map m_map; // current mapping: query atom index -> queried atom index
     };
+    */
 
 } // namespace ctsmarts

@@ -292,10 +292,12 @@ TEST(TestCTSmarts, TotalH)
     static_assert(SmartsActions::isTotalHExpr(AromaticAtom<6>{}));
     static_assert(SmartsActions::isTotalHExpr(Or<AliphaticAtom<1>, AliphaticAtom<6>>{}));
     static_assert(SmartsActions::isTotalHExpr(And<AnyAtom, AliphaticAtom<1>>{}));
+    static_assert(SmartsActions::isTotalHExpr(Or<And<AliphaticAtom<7>, AliphaticAtom<1>>, And<AliphaticAtom<7>, TotalH<2>>>{}));
 
     test_atom_expr<"[H,R]", Or<AliphaticAtom<1>, Cyclic> >();
     test_atom_expr<"[C,H]", Or<AliphaticAtom<6>, TotalH<1>> >();
     test_atom_expr<"[H,C]", Or<TotalH<1>, AliphaticAtom<6>> >();
+    test_atom_expr<"[NH,NH2]", Or<And<AliphaticAtom<7>, TotalH<1>>, And<AliphaticAtom<7>, TotalH<2>>> >();
 }
 
 TEST(TestCTSmarts, ImplicitH)
