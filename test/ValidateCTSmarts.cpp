@@ -405,15 +405,12 @@ TEST(ValidateCTSmarts, SqcRDkit)
         validate_contains<"NC(=S)N">(mol);
         validate_contains<"[D2R0]-[D2R0]-[D2R0]-[D2R0]-[D2R0]">(mol);
         validate_contains<"NC(=O)N">(mol);
-
-
-        // ! in bonds -> bug
-        //validate_contains<"O=C-N!@N">(mol);
-        //validate_contains<"C!@N=*">(mol);
-        //validate_contains<"[C;R0;X4]!@[CH]!@[CH]!@[CH]!@[CH]!@[CH]!@[CH]!@[CH]!@[CH]!@[CH]!@[CH][CH2]">(mol);
-        //validate_contains<"[C;R0;X4]!@[CH2]!@[CH2]!@[CH2]!@[CH2]!@[CH2]!@[C;R0;X4]">(mol);
-        //validate_contains<"[C;R0;X4]!@[CX4]!@[CX4]!@[CX4]!@[CX4]!@[CX4]!@[C;R0;X4]">(mol);
-        //validate_contains<"[c,C]1(~[O;D1])~*!-*~[c,C](~[O;D1])~*!-*~1">(mol);
+        validate_contains<"O=C-N!@N">(mol);
+        validate_contains<"C!@N=*">(mol);
+        validate_contains<"[C;R0;X4]!@[CH]!@[CH]!@[CH]!@[CH]!@[CH]!@[CH]!@[CH]!@[CH]!@[CH]!@[CH][CH2]">(mol);
+        validate_contains<"[C;R0;X4]!@[CH2]!@[CH2]!@[CH2]!@[CH2]!@[CH2]!@[C;R0;X4]">(mol);
+        validate_contains<"[C;R0;X4]!@[CX4]!@[CX4]!@[CX4]!@[CX4]!@[CX4]!@[C;R0;X4]">(mol);
+        validate_contains<"[c,C]1(~[O;D1])~*!-*~[c,C](~[O;D1])~*!-*~1">(mol);
 
         // recursive SMARTS -> not yet supported
         //validate_contains<"[#6]C(=O)[CX4]C(=O)O[$([#6]);!$(C=[O,S,N])]">(mol);

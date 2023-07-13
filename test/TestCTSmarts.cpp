@@ -415,23 +415,18 @@ TEST(TestCTSmarts, BondPrimitive)
 
 TEST(TestCTSmarts, BondExpr)
 {
-    //using Single = BondOrder<1>;
-    //using Double = BondOrder<2>;
-    //using Ring = RingBond;
+    using Single = BondOrder<1>;
+    using Double = BondOrder<2>;
 
-    /* FIXME
-    test_bond_expr<"*-,=*", Or<Single, Double> >();
-    test_bond_expr<"*-@*", AndHigh<Single, Ring> >();
     test_bond_expr<"*!-*", Not<Single> >();
-    test_bond_expr<"*!-=*", AndHigh<Not<Single>, Double> >();
-    test_bond_expr<"*-!=*", AndHigh<Single, Not<Double>> >();
-    test_bond_expr<"*!-!=*", AndHigh<Not<Single>, Not<Double>> >();
-    */
+    test_bond_expr<"*-,=*", Or<Single, Double> >();
+    test_bond_expr<"*-@*", And<Single, RingBond> >();
+    test_bond_expr<"*-&@*", And<Single, RingBond> >();
+    test_bond_expr<"*-;@*", And<Single, RingBond> >();
+    test_bond_expr<"*-@,=@*", Or<And<Single, RingBond>, And<Double, RingBond>> >();
+    test_bond_expr<"*-&@,=&@*", Or<And<Single, RingBond>, And<Double, RingBond>> >();
+    test_bond_expr<"*-,=;@*", And<Or<Single, Double>, RingBond> >();
 }
-
-
-
-
 
 TEST(TestCTSmarts, RingBond)
 {

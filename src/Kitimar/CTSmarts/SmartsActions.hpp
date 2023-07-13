@@ -528,7 +528,7 @@ namespace Kitimar::CTSmarts {
                 return SmartsContext{atoms, bonds, params.nextAtom()};
             } else {
                 constexpr auto prevIndex = ctll::front(params.prevIndex).value;
-                auto expr = makeBondAST(params.bondExpr);
+                auto expr = makeBondAST(ctll::rotate(params.bondExpr));
                 auto bond = Bond<prevIndex, params.nextIndex, decltype(expr)>();
                 auto bonds2 = ctll::push_front(bond, bonds);
                 return SmartsContext{atoms, bonds2, params.nextAtom()};
@@ -996,7 +996,7 @@ namespace Kitimar::CTSmarts {
                 return SmartsContext{atoms, ctx.bonds, ctx.params.setRingBonds(ringBonds)};
             } else {
                 constexpr auto prevIndex = rb.atomIndex;
-                auto [bond, error] = makeRingBond<atomIndex, prevIndex>(makeBondAST(rb.bondExpr), makeBondAST(ctx.params.bondExpr));
+                auto [bond, error] = makeRingBond<atomIndex, prevIndex>(makeBondAST(ctll::rotate(rb.bondExpr)), makeBondAST(ctll::rotate(ctx.params.bondExpr)));
                 auto bonds = ctll::push_front(bond, ctx.bonds);
                 auto ringBonds = ctll::remove_item(rb, ctx.params.ringBonds); // FIXME: erase rb.... NOT FRONT!!
                 if constexpr (std::is_same_v<NoErrorTag, decltype(error)>)
