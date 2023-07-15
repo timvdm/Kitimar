@@ -447,6 +447,14 @@ TEST(TestCTSmarts, RingBond)
     test_bond<"*1**11**1", Bond<2, 0, ImplicitBond>, 2 >();
     test_bond<"*1**11**1", Bond<4, 2, ImplicitBond>, 5 >();
 
+    // adjacent ring bonds
+    test_bond<"*:1=2**:1*=2", Bond<2, 0, AromaticBond>, 2 >();
+    test_bond<"*:1=2**:1*=2", Bond<3, 0, Double>, 4 >();
+    test_bond<"*:1=2**1*2", Bond<2, 0, AromaticBond>, 2 >();
+    test_bond<"*:1=2**1*2", Bond<3, 0, Double>, 4 >();
+    test_bond<"*12**:1*=2", Bond<2, 0, AromaticBond>, 2 >();
+    test_bond<"*12**:1*=2", Bond<3, 0, Double>, 4 >();
+
 
     // conflicing ring bonds
     test_error<"*-1***=1", ConflicingRingBondError>();
@@ -990,54 +998,44 @@ TEST(TestCTSmarts, CTSmarts_captureAtom)
     EXPECT_EQ(CTSmarts::captureAtom<"CC(=O)N">(mol), null_atom(mol));
 }
 
-auto chembl_smi_filename()
+
+
+
+
+TEST(TestCTSmarts, Debug)
 {
-    return std::string(KITIMAR_DATA_DIR) + "/chembl_32.smi";
-}
+    //auto smarts = Smarts<"[#6]:1:2:[!#1]:[#7+](:[!#1]:[#6](:[!#1]:1:[#6]:[#6]:[#6]:[#6]:2)-[*])~[#6]:[#6]">{};
+                      //       1 2                                1                     2
 
-#ifdef KITIMAR_WITH_OPENBABEL
-
-template<ctll::fixed_string SMARTS>
-auto test_match(auto &mol)
-{
-    auto ctMatch = CTSmarts::contains<SMARTS>(mol);
-
-    OpenBabel::OBSmartsPattern obsmarts;
-    obsmarts.Init(std::string{SMARTS.begin(), SMARTS.end()});
-    auto obMatch = obsmarts.Match(mol);
-    EXPECT_EQ(ctMatch, obMatch);
-
-    return ctMatch == obMatch;
-}
-
-#define VALIDATE_OPENBABEL 0
+    //auto smarts = Smarts<"*:1:2*:1*:2">{};
+    //auto atoms = smarts.atoms;
 
 
-TEST(TestCTSmarts, ValidateOpenBabel)
-{
-    if (!VALIDATE_OPENBABEL)
-        return;
 
-    OpenBabelSmilesMolSource source{chembl_smi_filename()};
-    for (auto mol : source.molecules()) {
-        EXPECT_TRUE(test_match<"C">(mol));
 
-        EXPECT_TRUE(test_match<"*1~*~*~*~*~*~1">(mol));
-        EXPECT_TRUE(test_match<"c1ccccc1-c2ccccc2">(mol));
-        EXPECT_TRUE(test_match<"c1ccccc1CCCCc1ccccc1">(mol));
-        EXPECT_TRUE(test_match<"c1cc2c(cc1)cccc2">(mol));
-        EXPECT_TRUE(test_match<"Clc1ccccc1">(mol));
-        EXPECT_TRUE(test_match<"BrCCCCCCCCC">(mol));
-        //EXPECT_TRUE(test_match<"[nH]1ccc2c1cccc2">(mol));
-        //EXPECT_TRUE(test_match<"[nH]">(mol));
-        //EXPECT_TRUE(test_match<"c1cc(=O)cc[nH]1">(mol));
-        EXPECT_TRUE(test_match<"O1CCOC12CCNCC2">(mol));
-    }
+    /*
+    auto mol = readSmilesOpenBabel("CS");
+
+    auto S = mol.GetAtom(2);
+    EXPECT_EQ(S->GetAtomicNum(), 16);
+    std::cout << S->GetTotalDegree() << std::endl;
+
+    auto m = CTSmarts::contains<"[#16X2H]">(mol);
+
+    EXPECT_TRUE(m);
+*/
+
 
 }
 
 
-#endif // KITIMAR_WITH_OPENBABEL
+
+
+
+
+
+
+
 
 
 

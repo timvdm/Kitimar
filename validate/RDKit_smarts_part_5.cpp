@@ -1,0 +1,56 @@
+#include "Validate.hpp"
+
+void RDKit_smarts_part_5(OpenBabel::OBMol &mol)
+{
+    // SMARTS 201 - 250
+    validate_contains<"C(=O)-N-O-C(=O)">(mol);
+    validate_contains<"C1(=O)-C=C-C(=O)-C=C1">(mol);
+    validate_contains<"B">(mol);
+    validate_contains<"ONO">(mol);
+    validate_contains<"ON(~O)~O">(mol);
+    validate_contains<"C1(O)CC(O)CO1">(mol);
+    validate_contains<"C1(O)C(O)CCO1">(mol);
+    validate_contains<"C1(O)CC(O)CCO1">(mol);
+    validate_contains<"N=[N+]=N">(mol);
+    validate_contains<"N-C#N">(mol);
+    validate_contains<"[C;!R]=N-N=[C;!R]">(mol);
+    validate_contains<"N(C)(C)-[C;H2]-[C;H2]([F,Br,I,Cl])">(mol);
+    validate_contains<"[C;a]-[N;H1]-[N;H2]">(mol);
+    validate_contains<"[C;a]-[C;H2]([F,Br,I,Cl])">(mol);
+    validate_contains<"[S;!R]-[C;!R]-[O;!R]">(mol);
+    validate_contains<"N1-C-O1">(mol);
+    validate_contains<"[C;H2]-O-S(=O)(=O)-C">(mol);
+    validate_contains<"C1-C-O1">(mol);
+    validate_contains<"c1-[N;a]-c([F,Br,I,Cl])-c-c-c1">(mol);
+    validate_contains<"C=[C;H0]([F,Br,I,Cl])([F,Br,I,Cl])">(mol);
+    validate_contains<"[N+]#N">(mol);
+    validate_contains<"ON#C">(mol);
+    validate_contains<"OOO">(mol);
+    validate_contains<"OO">(mol);
+    validate_contains<"Cl(~O)(~O)(~O)">(mol);
+    validate_contains<"Cl(~O)(~O)(~O)(~O)">(mol);
+    validate_contains<"C(~O)(~O)(~[OH])">(mol);
+    validate_contains<"N[F,I,Br,Cl]">(mol);
+    validate_contains<"P[F,I,Br,Cl]">(mol);
+    validate_contains<"S[F,I,Br,Cl]">(mol);
+    validate_contains<"C=C-[C;!H0]([F,Br,I,Cl])([F,Br,I,Cl])([!F,!Br,!I,!Cl])">(mol);
+    validate_contains<"C=C-[C;!H0]([F,Br,I,Cl])([!F,!Br,!I,!Cl])([!F,!Br,!I,!Cl])">(mol);
+    validate_contains<"C=C-[C;H1]([F,Br,I,Cl])([!F,!Br,!I,!Cl])">(mol);
+    validate_contains<"C=C-[C;H2]([F,Br,I,Cl])">(mol);
+    validate_contains<"CN=C=O">(mol);
+    validate_contains<"CN=C=S">(mol);
+    validate_contains<"C(=O)([F,I,Br,Cl])">(mol);
+    validate_contains<"[N;!R]=[N;!R]">(mol);
+    validate_contains<"[S;!R]-[S;!R]">(mol);
+    validate_contains<"C1NC(=O)OC(=O)C1">(mol);
+    validate_contains<"[C;!R]C(=N)S[C;!R]">(mol);
+    validate_contains<"[C;!R]C(=N)O[C;!R]">(mol);
+    validate_contains<"C=C=C">(mol);
+    validate_contains<"C(=O)-O-C(=O)-[!N]">(mol);
+    validate_contains<"C=C-C#N">(mol);
+    validate_contains<"[C;H2]=C-C(=O)">(mol);
+    validate_contains<"[C;D1&H3,D2&H2,D3&H1,D4]-[C;H1]=C-C(=O)-C">(mol);
+    validate_contains<"[C;D1&H3,D2&H2,D3&H1,D4]-[C;H1]=C-C(=O)-O-C-C">(mol);
+    validate_contains<"C#C-C#N">(mol);
+    validate_contains<"C#C-C(=O)">(mol);
+}

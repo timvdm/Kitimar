@@ -85,7 +85,7 @@ namespace Kitimar::CTSmarts {
         static constexpr inline auto atomExpr = AtomExprT();
         static constexpr inline auto bondExpr = BondExprT();
         static constexpr inline auto ringBonds = RingBondsT();
-        static constexpr inline auto classes = ClassesT();        
+        static constexpr inline auto classes = ClassesT();
         static constexpr inline auto error = Error();
 
 
@@ -731,18 +731,20 @@ namespace Kitimar::CTSmarts {
         static constexpr bool isTotalHExpr(AnyAtom) { return true; }
         static constexpr bool isTotalHExpr(AnyAliphatic) { return true; }
         static constexpr bool isTotalHExpr(AnyAromatic) { return true; }
-        template<int Element>
-        static constexpr bool isTotalHExpr(AliphaticAtom<Element>) { return true; }
+        template<int AtomicNumber>
+        static constexpr bool isTotalHExpr(AliphaticAtom<AtomicNumber>) { return true; }
         static constexpr bool isTotalHExpr(AliphaticAtom<1>) { return false; }
-        template<int Element>
-        static constexpr bool isTotalHExpr(AromaticAtom<Element>) { return true; }
+        template<int AtomicNumber>
+        static constexpr bool isTotalHExpr(AromaticAtom<AtomicNumber>) { return true; }
+        template<int AtomicNumber>
+        static constexpr bool isTotalHExpr(Element<AtomicNumber>) { return true; }
         // FIXME: operations
         template<typename Expr>
         static constexpr bool isTotalHExpr(Not<Expr>) { return isTotalHExpr(Expr()); }
         template<typename ...Expr>
         static constexpr bool isTotalHExpr(And<Expr...>) { return (isTotalHExpr(Expr()) || ...); }
         template<typename ...Expr>
-        static constexpr bool isTotalHExpr(Or<Expr...>) { return (isTotalHExpr(Expr()) || ...); }        
+        static constexpr bool isTotalHExpr(Or<Expr...>) { return (isTotalHExpr(Expr()) || ...); }
 
         static constexpr bool isTotalH(auto atomExpr)
         {
@@ -823,7 +825,7 @@ namespace Kitimar::CTSmarts {
         // make_atom_not
         template <auto V, typename Context>
         static constexpr auto apply(SmartsGrammar::make_atom_not, ctll::term<V> term, Context ctx)
-        {            
+        {
             auto atomExpr = pushExpr(ctx.params.atomExpr, NotTag());
             return SmartsContext{ctx.atoms, ctx.bonds, ctx.params.setAtomExpr(atomExpr)};
         }
@@ -844,7 +846,7 @@ namespace Kitimar::CTSmarts {
         // make_atom_or
         template <auto V, typename Context>
         static constexpr auto apply(SmartsGrammar::make_atom_or, ctll::term<V> term, Context ctx)
-        {            
+        {
             return makeAtomOp(ctx, OrTag());
         }
 
@@ -993,7 +995,7 @@ namespace Kitimar::CTSmarts {
             if constexpr (std::is_same_v<decltype(rb), ctll::_nothing>) {
                 auto rb2 = RingBondHelper<N, atomIndex, decltype(ctx.params.bondExpr)>();
                 auto ringBonds = ctll::push_front(rb2, ctx.params.ringBonds);
-                return SmartsContext{atoms, ctx.bonds, ctx.params.setRingBonds(ringBonds)};
+                return SmartsContext{atoms, ctx.bonds, ctx.params.setRingBonds(ringBonds).setBondExpr(ctll::empty_list())};
             } else {
                 constexpr auto prevIndex = rb.atomIndex;
                 auto [bond, error] = makeRingBond<atomIndex, prevIndex>(makeBondAST(ctll::rotate(rb.bondExpr)), makeBondAST(ctll::rotate(ctx.params.bondExpr)));

@@ -1,0 +1,56 @@
+#include "Validate.hpp"
+
+void BindingDB_substructure_part_9(OpenBabel::OBMol &mol)
+{
+    // SMARTS 401 - 450
+    validate_contains<"NCC(=O)NCC(=O)NCC(=O)NCC(O)=O">(mol);
+    validate_contains<"NCCC1=CNC2=CC=CC=C12">(mol);
+    validate_contains<"NCCNC1=CC=C(C=N1)C1=NC(NC2=CC=CC=C2)=NC=C1">(mol);
+    validate_contains<"NN=C1C(=O)NC2=C1C=CC=C2">(mol);
+    validate_contains<"NNC1=CSC=N1">(mol);
+    validate_contains<"NP=O">(mol);
+    validate_contains<"NS(=O)(=O)C1=CC(NC2=NC=NC(=C2)C2=CC=CC3=C2OCO3)=CC=C1">(mol);
+    validate_contains<"NS(=O)(=O)C1=CC=C(NC2=CC(=NC3=CC=C(C=C3)S(N)(=O)=O)C3=C(C=CC=C3)C2=O)C=C1">(mol);
+    validate_contains<"NS(=O)(=O)C1=NC=CC=N1">(mol);
+    validate_contains<"N[S+]([O-])(=O)Cc1noc2ccccc12">(mol);
+    validate_contains<"Nc1cc(Cl)nc(N)n1">(mol);
+    validate_contains<"Nc1cc2[nH]cnc2c(OCC2CCCCC2)n1">(mol);
+    validate_contains<"Nc1ccnc(N)n1">(mol);
+    validate_contains<"Nc1nc(N)c2nc(CNc3ccc(Cl)c(Cl)c3)ccc2n1">(mol);
+    validate_contains<"Nc1nc(N)c2nc(CNc3ccccc3)ccc2n1">(mol);
+    validate_contains<"Nc1nc(N)c2nc(CSc3ccccc3)cnc2n1">(mol);
+    validate_contains<"Nc1nc(N)c2nc(NCc3ccccc3)cnc2n1">(mol);
+    validate_contains<"Nc1nc(N)c2nc(SCc3ccccc3)cnc2n1">(mol);
+    validate_contains<"O(C1=CC=CC=C1)C1=C2C=CC=NC2=CC=C1">(mol);
+    validate_contains<"O1C=CC2=C1C=CC=N2">(mol);
+    validate_contains<"O1C=CC2=C1C=CN=C2">(mol);
+    validate_contains<"O1C=CC2=C1C=NC=C2">(mol);
+    validate_contains<"O1C=CC2=C1C=NC=N2">(mol);
+    validate_contains<"O=C(C1CCCCN1)N1CCCC1">(mol);
+    validate_contains<"O=C(C1CCCN1)N1CCCC1">(mol);
+    validate_contains<"O=C(C=CC1=CC=CC=C1)C1=CCCCC1=O">(mol);
+    validate_contains<"O=C(CN1CCCC1C1=CC=CC=C1)NC1=NC2=CC=CC=C2S1">(mol);
+    validate_contains<"O=C(CN1CCCC1C1=CC=CC=C1)NC1=NC=CS1">(mol);
+    validate_contains<"O=C(CN1CCCC1C1=CC=CC=N1)NC1=NC2=CC=CC=C2S1">(mol);
+    validate_contains<"O=C(COC1=CC=C(CC2SC(=O)NC2=O)C=C1)C1=CC=CC=C1">(mol);
+    validate_contains<"O=C(Cc1ccc2ccccc2c1)Nc1cc(n[nH]1)C1CC1">(mol);
+    validate_contains<"O=C(NC1=CC2=C(C=NN2)C=C1)C1=CC2=C(C=C1)N=CN2">(mol);
+    validate_contains<"O=C(NC1=NC(=CO1)C1=CC=CC=C1)C1=CC=CC=C1">(mol);
+    validate_contains<"O=C(NC1=NC(=CO1)C1=NC=CC=C1)C1=CC=CC=C1">(mol);
+    validate_contains<"O=C(NC1=NC(CCNC2=CC=NC3=C2C=CN3)=CS1)NC1=CC=CC=C1">(mol);
+    validate_contains<"O=C(NC1=NC2=C(S1)C=C(OS(=O)(=O)C1=CC=CC=C1)C=C2)C1CC1">(mol);
+    validate_contains<"O=C1C(NC2=CC=C(C=C2)S(=O)=O)=CC(=NC2=CC=C(C=C2)S(=O)=O)C2=C1C=CC=C2">(mol);
+    validate_contains<"O=C1C(NC2=CC=C(C=C2)S(=O)=O)=CC(NC2=CC=CC=C2)C2=C1C=CC=C2">(mol);
+    validate_contains<"O=C1C(NC2=CC=CC=C2)=CC(=NC2=CC=CC=C2)C2=C1C=CC=C2">(mol);
+    validate_contains<"O=C1C2=CC=CC=C2C2=C1N=CC=N2">(mol);
+    validate_contains<"O=C1C2=NC(C#N)=C(N=C2C2=C1C=CC=C2)C#N">(mol);
+    validate_contains<"O=C1CC2=C(N1)C=CC(OCC1=NC3=C(C=CC=C3)C=C1)=C2">(mol);
+    validate_contains<"O=C1N(C(=O)C(C2=CN(CCCN3C=CN=C3)C3=C2C=CC=C3)=C1N1C=CC2=C1C=CC=N2)C1=CC=CC=C1">(mol);
+    validate_contains<"O=C1N(CC2=CC=CC=C2)C2=CC=CC=C2C2=CC=CC=C12">(mol);
+    validate_contains<"O=C1NC(=CC(C2=CC=CC=C2)=C1C#N)C1=CC=CC=C1">(mol);
+    validate_contains<"O=C1NC(=O)C(C2=CN(CCCN3C=CN=C3)C3=CC=CC=C23)=C1N1C=CC2=NC=CC=C12">(mol);
+    validate_contains<"O=C1NC(=O)C2=C(C=CC=C2)C1=CC1=CC=CC=C1">(mol);
+    validate_contains<"O=C1NC(=O)C2=C(C=CC=C2)C1=CC1=CC=NC=C1">(mol);
+    validate_contains<"O=C1NC(=O)N(CC2=CC=CC=C2)C=C1">(mol);
+    validate_contains<"O=C1NC2=C(C=C1)C(OC1=CC=CC=C1)=CC=C2">(mol);
+}

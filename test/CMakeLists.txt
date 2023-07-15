@@ -68,15 +68,6 @@ if(KITIMAR_WITH_RDKIT)
     gtest_add_tests(TARGET TestRDKit)
 endif()
 
-# Validation
-
-if(KITIMAR_WITH_OPENBABEL)
-    add_executable(ValidateCTSmarts ValidateCTSmarts.cpp)
-    target_link_libraries(ValidateCTSmarts CTSmarts KitimarOpenBabel Test)
-    gtest_add_tests(TARGET ValidateCTSmarts)
-endif()
-
-
 # Benchmark
 
 add_executable(BenchmarkSerialize BenchmarkSerialize.cpp)

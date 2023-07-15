@@ -1,0 +1,56 @@
+#include "Validate.hpp"
+
+void RDKit_smarts_part_3(OpenBabel::OBMol &mol)
+{
+    // SMARTS 101 - 150
+    validate_contains<"C=C-N([C,c])([C,c])">(mol);
+    validate_contains<"C=C-N(=O)(=O)">(mol);
+    validate_contains<"C=C-N(O)(=O)">(mol);
+    validate_contains<"C=C-O">(mol);
+    validate_contains<"C=C-O-C(=O)">(mol);
+    validate_contains<"[C;!R]=[C;!R]-[S;!R]">(mol);
+    validate_contains<"C=C-S(=O)(=O)">(mol);
+    validate_contains<"C=N-C(-O)">(mol);
+    validate_contains<"C=N-C(=O)">(mol);
+    validate_contains<"C=N-N">(mol);
+    validate_contains<"C=N-N=C">(mol);
+    validate_contains<"C=N-O">(mol);
+    validate_contains<"C=N-O-C(=O)">(mol);
+    validate_contains<"C=N=O">(mol);
+    validate_contains<"N#C-S">(mol);
+    validate_contains<"N(=O)-C([F,Br,I,Cl])">(mol);
+    validate_contains<"[N!H0]-[C!H0]-[N!H0]">(mol);
+    validate_contains<"N(O)=C-C-N(=O)">(mol);
+    validate_contains<"N-C(-S)=N-S(=O)(=O)">(mol);
+    validate_contains<"N-C(=N)-S">(mol);
+    validate_contains<"N-C(=O)-O-c1ccccc1">(mol);
+    validate_contains<"N-C(=S)">(mol);
+    validate_contains<"N-C(=S)-N">(mol);
+    validate_contains<"N-C=C">(mol);
+    validate_contains<"N-O-C(=O)">(mol);
+    validate_contains<"N1-C-C1">(mol);
+    validate_contains<"N1-N-C(=O)-N-N1">(mol);
+    validate_contains<"N=C(-N)-C(=N)-N">(mol);
+    validate_contains<"N=C(-O)-N">(mol);
+    validate_contains<"N=C(-S)-C(=N)-N">(mol);
+    validate_contains<"N=C([F,Br,I,Cl])">(mol);
+    validate_contains<"N=C-C(=O)">(mol);
+    validate_contains<"N=C-S">(mol);
+    validate_contains<"N=C=N">(mol);
+    validate_contains<"N=C=O">(mol);
+    validate_contains<"N=C=S">(mol);
+    validate_contains<"O-C(=O)-O-N">(mol);
+    validate_contains<"O-C([F,Br,I,Cl])=S">(mol);
+    validate_contains<"O-C=C">(mol);
+    validate_contains<"O-N=C-C=N-O">(mol);
+    validate_contains<"P">(mol);
+    validate_contains<"S(=O)(=O)-C([F,Br,I,Cl])">(mol);
+    validate_contains<"S(=O)(=O)O">(mol);
+    validate_contains<"S-C#N">(mol);
+    validate_contains<"S-C(=C)-S">(mol);
+    validate_contains<"S-C(=N)-N">(mol);
+    validate_contains<"S-C(=N)-S">(mol);
+    validate_contains<"S-C(=S)-N">(mol);
+    validate_contains<"S-N-C(=O)">(mol);
+    validate_contains<"[S;H]">(mol);
+}

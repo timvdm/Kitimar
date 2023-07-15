@@ -290,5 +290,10 @@ namespace OpenBabel {
         return atom->CountRingBonds();
     }
 
+    inline auto get_valence(const OpenBabel::OBMol &mol, OpenBabel::OBAtom *atom)
+    {
+        return atom->GetTotalValence();
+    }
+
 
 } // namespace OpenBabel

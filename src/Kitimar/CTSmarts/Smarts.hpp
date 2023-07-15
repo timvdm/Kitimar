@@ -102,7 +102,7 @@ namespace Kitimar::CTSmarts {
                 } else {
                     auto bond = get<bondIdx.value>(smarts.bonds);
                     constexpr auto targetIdx = bond.source == sourceIdx ? bond.target : bond.source;
-                    auto targetExpr = get<targetIdx>(smarts.atoms);
+                    //auto targetExpr = get<targetIdx>(smarts.atoms);
                     constexpr auto isRingClosure = ctll::exists_in(std::integral_constant<int, targetIdx>(), visitedAtoms);
                     // Visit atoms and bond
                     auto ctx2 = visitAtom(smarts, std::integral_constant<int, sourceIdx>{}, atomVisitor, ctx, visitedAtoms);

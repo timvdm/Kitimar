@@ -1,0 +1,56 @@
+#include "Validate.hpp"
+
+void RDMACCS_part_1(OpenBabel::OBMol &mol)
+{
+    // SMARTS 1 - 50
+    validate_contains<"[#103,#104]">(mol);
+    validate_contains<"[Ge,#33,#34,Sn,Sb,#52,Tl,Pb,Bi]">(mol);
+    validate_contains<"[Ac,Th,Pa,U,Np,Pu,Am,Cm,Bk,Cf,Es,Fm,Md,No,Lr]">(mol);
+    validate_contains<"[Sc,Ti,Y,Zr,Hf]">(mol);
+    validate_contains<"[La,Ce,Pr,Nd,Pm,Sm,Eu,Gd,Tb,Dy,Ho,Er,Tm,Yb,Lu]">(mol);
+    validate_contains<"[V,Cr,Mn,Nb,Mo,Tc,Ta,W,Re]">(mol);
+    validate_contains<"[!#6;!#1]~1~*~*~*~1">(mol);
+    validate_contains<"[Fe,Co,Ni,Ru,Rh,Pd,Os,Ir,Pt]">(mol);
+    validate_contains<"[Be,Mg,Ca,Sr,Ba,Ra]">(mol);
+    validate_contains<"*~1~*~*~*~1">(mol);
+    validate_contains<"[Cu,Zn,Ag,Cd,Au,Hg]">(mol);
+    validate_contains<"[#8]~[#7](~[#6])~[#6]">(mol);
+    validate_contains<"[#16]-[#16]">(mol);
+    validate_contains<"[#8]~[#6](~[#8])~[#8]">(mol);
+    validate_contains<"[!#6;!#1]~1~*~*~1">(mol);
+    validate_contains<"[#6]#[#6]">(mol);
+    validate_contains<"[#5,Al,Ga,In,Tl]">(mol);
+    validate_contains<"*~1~*~*~*~*~*~*~1">(mol);
+    validate_contains<"[#14]">(mol);
+    validate_contains<"[#6]=[#6](~[!#6;!#1])~[!#6;!#1]">(mol);
+    validate_contains<"*~1~*~*~1">(mol);
+    validate_contains<"[#7]~[#6](~[#8])~[#8]">(mol);
+    validate_contains<"[#7]-[#8]">(mol);
+    validate_contains<"[#7]~[#6](~[#7])~[#7]">(mol);
+    validate_contains<"[#6]=;@[#6](@*)@*">(mol);
+    validate_contains<"[I]">(mol);
+    validate_contains<"[!#6;!#1]~[CH2]~[!#6;!#1]">(mol);
+    validate_contains<"[#15]">(mol);
+    validate_contains<"[#6]~[!#6;!#1](~[#6])(~[#6])~[!#1]">(mol);
+    validate_contains<"[!#6;!#1]~[F,Cl,Br,I]">(mol);
+    validate_contains<"[#6]~[#16]~[#7]">(mol);
+    validate_contains<"[#7]~[#16]">(mol);
+    validate_contains<"[CH2]=*">(mol);
+    validate_contains<"[Li,Na,K,Rb,Cs,Fr]">(mol);
+    validate_contains<"[#16R]">(mol);
+    validate_contains<"[#7]~[#6](~[#8])~[#7]">(mol);
+    validate_contains<"[#7]~[#6](~[#6])~[#7]">(mol);
+    validate_contains<"[#8]~[#16](~[#8])~[#8]">(mol);
+    validate_contains<"[#16]-[#8]">(mol);
+    validate_contains<"[#6]#[#7]">(mol);
+    validate_contains<"F">(mol);
+    validate_contains<"[!C;!c;!#1;!H0]~*~[!C;!c;!#1;!H0]">(mol);
+    validate_contains<"[#6]=[#6]~[#7]">(mol);
+    validate_contains<"Br">(mol);
+    validate_contains<"[#16]~*~[#7]">(mol);
+    validate_contains<"[#8]~[!#6;!#1](~[#8])(~[#8])">(mol);
+    validate_contains<"[!+0]">(mol);
+    validate_contains<"[#6]=[#6](~[#6])~[#6]">(mol);
+    validate_contains<"[#6]~[#16]~[#8]">(mol);
+    validate_contains<"[#7]~[#7]">(mol);
+}

@@ -2,12 +2,15 @@
 
 #include <Kitimar/CTSmarts/CTSmarts.hpp>
 #include <Kitimar/OpenBabel/OpenBabel.hpp>
+#include <Kitimar/RDKit/RDKit.hpp>
 
 #include <cstring>
 
 namespace ctse = Kitimar::CTSmarts;
 
 auto mol = Kitimar::readSmilesOpenBabel("N1(C(=O)[C@H]2N(C(=O)CNC(=O)[C@@H](NC(=O)[C@@H](N)CCCN=C(N)N)CO)CCC2)[C@H](C(=O)NCC(=O)N[C@H](C(=O)N[C@H](C(=O)NCC(=O)N[C@H](C(=O)N[C@H](C(=O)N[C@H](C(=O)N[C@H](C(=O)N[C@H](C(=O)N([C@H](C(=O)N[C@H](C(=O)N[C@H](C(=O)N[C@H](C(=O)NCC(=O)N[C@H](C(=O)N[C@H](C(=O)N[C@H](C(=O)N[C@H](C(=O)NCC(=O)N[C@H](C(=O)O)[C@H](CC)C)C)C)Cc2nc[nH]c2)CC(=O)N)CO)C)CCC(=O)N)CC(C)C)C)CC(C)C)CCCN=C(N)N)CCC(=O)N)CC(C)C)CCCN=C(N)N)CCC(=O)N)CC(C)C)CCC1");
+//auto molPtr = Kitimar::readSmilesRDKit("N1(C(=O)[C@H]2N(C(=O)CNC(=O)[C@@H](NC(=O)[C@@H](N)CCCN=C(N)N)CO)CCC2)[C@H](C(=O)NCC(=O)N[C@H](C(=O)N[C@H](C(=O)NCC(=O)N[C@H](C(=O)N[C@H](C(=O)N[C@H](C(=O)N[C@H](C(=O)N[C@H](C(=O)N([C@H](C(=O)N[C@H](C(=O)N[C@H](C(=O)N[C@H](C(=O)NCC(=O)N[C@H](C(=O)N[C@H](C(=O)N[C@H](C(=O)N[C@H](C(=O)NCC(=O)N[C@H](C(=O)O)[C@H](CC)C)C)C)Cc2nc[nH]c2)CC(=O)N)CO)C)CCC(=O)N)CC(C)C)C)CC(C)C)CCCN=C(N)N)CCC(=O)N)CC(C)C)CCCN=C(N)N)CCC(=O)N)CC(C)C)CCC1");
+//auto &mol = *molPtr;
 
 #define BM_COUNT(SMARTS, name) \
     void BM_count_##name(benchmark::State& state) { \
@@ -18,15 +21,6 @@ auto mol = Kitimar::readSmilesOpenBabel("N1(C(=O)[C@H]2N(C(=O)CNC(=O)[C@@H](NC(=
         } \
     } \
     BENCHMARK(BM_count_##name);
-
-template<ctll::fixed_string SMARTS>
-auto count_multi(auto &mol)
-{
-    int n = 0;
-    for (const auto &map : ctse::multi<SMARTS>(mol, ctse::All))
-        ++n;
-    return n;
-}
 
 #define BM_ALL(SMARTS, name) \
     void BM_all_##name(benchmark::State& state) { \
@@ -258,31 +252,135 @@ Use std::array to store IsmorphismMap
         BM_all_AAAAAAAAAAAAAAAAAAA         69791 ns        69786 ns         9985
 
 
+MappedVector vs MappedLookup
+============================
+
+    MappedVector
+    ------------
+
+        ---------------------------------------------------------------------
+        Benchmark                           Time             CPU   Iterations
+        ---------------------------------------------------------------------
+        BM_count_C                        180 ns          180 ns      3875605
+        BM_count_CC                       552 ns          552 ns      1269907
+        BM_count_xxx                     2584 ns         2584 ns       271309
+        BM_count_xxxx                    5011 ns         5011 ns       139120
+        BM_count_xxxxx                   7623 ns         7622 ns        91868
+        BM_count_xxxxxx                 10131 ns        10130 ns        68604
+        BM_count_xxxxxxx                13310 ns        13309 ns        52387
+        BM_count_xxxxxxxx               16748 ns        16747 ns        41339
+        BM_count_xxxxxxxxxxx            28121 ns        28119 ns        24757
+        BM_count_xxxxxxxxxxxxxx         40878 ns        40875 ns        17071
+        BM_count_xxxxxxxxxxxxxxxxx      54898 ns        54895 ns        12584
+        BM_count_xx_x__x_x                944 ns          944 ns       743809
+        BM_count_xx_x_x_x_x              4326 ns         4326 ns       161055
+        BM_count_xx_x_x_x_x_x_x_x        4564 ns         4563 ns       153123
+        ---------------------------------------------------------------------
+        BM_all_C                          233 ns          233 ns      3000375
+        BM_all_CC                         519 ns          519 ns      1344652
+        BM_all_xxx                       2852 ns         2851 ns       242547
+        BM_all_xxxx                      5227 ns         5226 ns       133856
+        BM_all_xxxxx                     7821 ns         7820 ns        88054
+        BM_all_xxxxxx                   11060 ns        11059 ns        63672
+        BM_all_xxxxxxx                  13805 ns        13804 ns        50071
+        BM_all_xxxxxxxx                 17731 ns        17730 ns        39413
+        BM_all_xxxxxxxxxxx              29387 ns        29385 ns        23965
+        BM_all_xxxxxxxxxxxxxx           42460 ns        42457 ns        16440
+        BM_all_xxxxxxxxxxxxxxxxx        56793 ns        56790 ns        12252
+        BM_all_xx_x__x_x                 1041 ns         1041 ns       672883
+        BM_all_xx_x_x_x_x                4500 ns         4500 ns       156384
+        BM_all_xx_x_x_x_x_x_x_x          4723 ns         4723 ns       148107
+
+    MappedLookup
+    ------------
+
+        ---------------------------------------------------------------------
+        Benchmark                           Time             CPU   Iterations
+        ---------------------------------------------------------------------
+        BM_count_C                        201 ns          201 ns      3497774
+        BM_count_CC                       557 ns          557 ns      1244734
+        BM_count_xxx                     2232 ns         2231 ns       312509
+        BM_count_xxxx                    4029 ns         4029 ns       174073
+        BM_count_xxxxx                   6577 ns         6577 ns       104695
+        BM_count_xxxxxx                  9598 ns         9597 ns        72000
+        BM_count_xxxxxxx                13204 ns        13204 ns        52813
+        BM_count_xxxxxxxx               16814 ns        16813 ns        41574
+        BM_count_xxxxxxxxxxx            31628 ns        31626 ns        22146
+        BM_count_xxxxxxxxxxxxxx         49439 ns        49436 ns        14129
+        BM_count_xxxxxxxxxxxxxxxxx      70248 ns        70245 ns         9931
+        BM_count_xx_x__x_x                986 ns          986 ns       708099
+        BM_count_xx_x_x_x_x              4379 ns         4379 ns       159223
+        BM_count_xx_x_x_x_x_x_x_x        4752 ns         4752 ns       147335
+        ---------------------------------------------------------------------
+        BM_all_C                          231 ns          231 ns      3026275
+        BM_all_CC                         536 ns          536 ns      1289687
+        BM_all_xxx                       2532 ns         2532 ns       277073
+        BM_all_xxxx                      4777 ns         4777 ns       146996
+        BM_all_xxxxx                     7074 ns         7074 ns        98102
+        BM_all_xxxxxx                   10346 ns        10345 ns        66988
+        BM_all_xxxxxxx                  13738 ns        13737 ns        50695
+        BM_all_xxxxxxxx                 17798 ns        17797 ns        39309
+        BM_all_xxxxxxxxxxx              32785 ns        32783 ns        21392
+        BM_all_xxxxxxxxxxxxxx           51057 ns        51054 ns        13524
+        BM_all_xxxxxxxxxxxxxxxxx        74929 ns        74923 ns         9269
+        BM_all_xx_x__x_x                  942 ns          942 ns       744147
+        BM_all_xx_x_x_x_x                4472 ns         4471 ns       156718
+        BM_all_xx_x_x_x_x_x_x_x          4821 ns         4821 ns       145071
+
+
+
+
+
 */
 
 
 
-//BM_COUNT("C", C);
+
+BM_COUNT("C", C);
 BM_COUNT("CC", CC);
 BM_COUNT("***", xxx);
 BM_COUNT("****", xxxx);
 BM_COUNT("*****", xxxxx);
+BM_COUNT("******", xxxxxx);
+BM_COUNT("*******", xxxxxxx);
+BM_COUNT("********", xxxxxxxx);
+BM_COUNT("***********", xxxxxxxxxxx);
+BM_COUNT("**************", xxxxxxxxxxxxxx);
+BM_COUNT("*****************", xxxxxxxxxxxxxxxxx);
+BM_COUNT("**(*)(*)*", xx_x__x_x);
+BM_COUNT("**(*)*(*)*", xx_x_x_x_x);
+BM_COUNT("**(*)*(*)*(*)*", xx_x_x_x_x_x_x_x);
+
+/*
 BM_COUNT("c1ccccc1", c1ccccc1);
 BM_COUNT("c1ccccc1CCN", c1ccccc1CCN);
 BM_COUNT("CCCCCCCCCCCCCCCCCCC", CCCCCCCCCCCCCCCCCCCC);
 BM_COUNT("c1ccccc1CCCc1ccccc1", c1ccccc1CCCc1ccccc1);
 BM_COUNT("AAAAAAAAAAAAAAAAAAA", AAAAAAAAAAAAAAAAAAA);
+*/
 
-//BM_ALL("C", C);
+BM_ALL("C", C);
 BM_ALL("CC", CC);
 BM_ALL("***", xxx);
 BM_ALL("****", xxxx);
 BM_ALL("*****", xxxxx);
+BM_ALL("******", xxxxxx);
+BM_ALL("*******", xxxxxxx);
+BM_ALL("********", xxxxxxxx);
+BM_ALL("***********", xxxxxxxxxxx);
+BM_ALL("**************", xxxxxxxxxxxxxx);
+BM_ALL("*****************", xxxxxxxxxxxxxxxxx);
+BM_ALL("**(*)(*)*", xx_x__x_x);
+BM_ALL("**(*)*(*)*", xx_x_x_x_x);
+BM_ALL("**(*)*(*)*(*)*", xx_x_x_x_x_x_x_x);
+
+/*
 BM_ALL("c1ccccc1", c1ccccc1);
 BM_ALL("c1ccccc1CCN", c1ccccc1CCN);
 BM_ALL("CCCCCCCCCCCCCCCCCCC", CCCCCCCCCCCCCCCCCCCC);
 BM_ALL("c1ccccc1CCCc1ccccc1", c1ccccc1CCCc1ccccc1);
 BM_ALL("AAAAAAAAAAAAAAAAAAA", AAAAAAAAAAAAAAAAAAA);
+*/
 
 
 // Run the benchmark

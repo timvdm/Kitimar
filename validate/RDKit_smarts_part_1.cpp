@@ -1,0 +1,56 @@
+#include "Validate.hpp"
+
+void RDKit_smarts_part_1(OpenBabel::OBMol &mol)
+{
+    // SMARTS 1 - 50
+    validate_contains<"[Br,Cl,I][CX4;CH,CH2]">(mol);
+    validate_contains<"[S,C](=[O,S])[F,Br,Cl,I]">(mol);
+    validate_contains<"O=CN=[N+]=[N-]">(mol);
+    validate_contains<"COS(=O)O[C,c]">(mol);
+    validate_contains<"COS(=O)(=O)[C,c]">(mol);
+    validate_contains<"C(=O)OC(=O)">(mol);
+    validate_contains<"OO">(mol);
+    validate_contains<"C(=O)Oc1c(F)c(F)c(F)c(F)c1(F)">(mol);
+    validate_contains<"C(=O)Oc1ccc(N(=O)=O)cc1">(mol);
+    validate_contains<"C(=O)Onnn">(mol);
+    validate_contains<"N=C=[S,O]">(mol);
+    validate_contains<"OS(=O)(=O)C(F)(F)F">(mol);
+    validate_contains<"P(=S)(S)S">(mol);
+    validate_contains<"NP(=O)(N)N">(mol);
+    validate_contains<"cN=[N+]=[N-]">(mol);
+    validate_contains<"C(=O)C[N+,n+]">(mol);
+    validate_contains<"[N;R0][N;R0]C(=O)">(mol);
+    validate_contains<"[C+,Cl+,I+,P+,S+]">(mol);
+    validate_contains<"C=P">(mol);
+    validate_contains<"[Cl]C([C&R0])=N">(mol);
+    validate_contains<"[N&D2](=O)">(mol);
+    validate_contains<"[P,S][Cl,Br,F,I]">(mol);
+    validate_contains<"N=C=N">(mol);
+    validate_contains<"[N+]#[C-]">(mol);
+    validate_contains<"C(=O)N(C(=O))OC(=O)">(mol);
+    validate_contains<"N#CC[OH]">(mol);
+    validate_contains<"N#CC(=O)">(mol);
+    validate_contains<"S(=O)(=O)C#N">(mol);
+    validate_contains<"P(OCC)(OCC)(=O)C#N">(mol);
+    validate_contains<"[N;R0]=[N;R0]C#N">(mol);
+    validate_contains<"[N;R0]=[N;R0]CC=O">(mol);
+    validate_contains<"[CD2;R0][CD2;R0][CD2;R0][CD2;R0][CD2;R0][CD2;R0][CD2;R0]">(mol);
+    validate_contains<"[O;R1][C;R1][C;R1][O;R1][C;R1][C;R1][O;R1]">(mol);
+    validate_contains<"SS">(mol);
+    validate_contains<"[SH]">(mol);
+    validate_contains<"C1[O,S,N]C1">(mol);
+    validate_contains<"c([OH])cc([OH])c([OH])">(mol);
+    validate_contains<"c([OH])c([OH])c([OH])">(mol);
+    validate_contains<"N=NC(=S)N">(mol);
+    validate_contains<"SC#N">(mol);
+    validate_contains<"cC[N+]">(mol);
+    validate_contains<"C[O,S;R0][C;R0](=S)">(mol);
+    validate_contains<"N[CH2]C#N">(mol);
+    validate_contains<"C1(=O)OCC1">(mol);
+    validate_contains<"P(=O)([OH])OP(=O)[OH]">(mol);
+    validate_contains<"N1CCC1=O">(mol);
+    validate_contains<"O=C1[#6]~[#6]C(=O)[#6]~[#6]1">(mol);
+    validate_contains<"C=CC=CC=CC=C">(mol);
+    validate_contains<"O1CCCCC1OC2CCC3CCCCC3C2">(mol);
+    validate_contains<"O=C1NCC2CCCCC21">(mol);
+}

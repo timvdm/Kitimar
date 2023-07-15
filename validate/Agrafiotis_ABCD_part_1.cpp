@@ -1,0 +1,52 @@
+#include "Validate.hpp"
+
+void Agrafiotis_ABCD_part_1(OpenBabel::OBMol &mol)
+{
+    // SMARTS 1 - 46
+    validate_contains<"ONC1CC(C(O)C1O)[n]2cnc3c(NC4CC4)ncnc23">(mol);
+    validate_contains<"Nc1ncnc2[n]cnc12">(mol);
+    validate_contains<"CNc1ncnc2[n](C)cnc12">(mol);
+    validate_contains<"Nc1ncnc2[n](cnc12)C3CCCC3">(mol);
+    validate_contains<"CC12CCC3C(CCC4=CC(O)CCC34C)C1CCC2">(mol);
+    validate_contains<"OC2=CC(=O)c1c(cccc1)O2">(mol);
+    validate_contains<"Nc1nnc(S)s1">(mol);
+    validate_contains<"C1C2SCCN2C1">(mol);
+    validate_contains<"CP(O)(O)=O">(mol);
+    validate_contains<"CCCCCP(O)(O)=O">(mol);
+    validate_contains<"N2CCC13CCCCC1C2Cc4c3cccc4">(mol);
+    validate_contains<"s1cncc1">(mol);
+    validate_contains<"C34CCC1C(CCC2CC(=O)CCC12)C3CCC4">(mol);
+    validate_contains<"CCCCCCCCCCCP(O)(O)=O">(mol);
+    validate_contains<"CC1CCCC1">(mol);
+    validate_contains<"CCC1CCCC1">(mol);
+    validate_contains<"CCCC1CCCC1">(mol);
+    validate_contains<"[*D1]=[#6D2]-[#6D2]-[#6D2]=[#8D1]">(mol);
+    validate_contains<"[*D1]=[#6]-[#6]-[#6]=[#8D1]">(mol);
+    validate_contains<"[#6]-[#6D2]-[#6D2]-[#6D2]-[#6D2]-[#6D2]-[#6D2]-[#6D2]-[#6D2]-[#6D2]-[#6D2]-[#6D2]-[#6D3](=[#8D1])-[#8]">(mol);
+    validate_contains<"[#6]-[#6]-[#6]-[#6]-[#6]-[#6]-[#6]-[#6]-[#6]-[#6]-[#6]-[#6]-[#6](=[#8D1])-[#8]">(mol);
+    validate_contains<"[#6D1]-[#6]-1-2-[#6]-[#6D2]-[#6D2]-[#6D3]-1-[#6D3]-3-[#6D2]-[#6D2]-[#6D3]-4-[#6D2]-[#6]-[#6D2]-[#6D2]-[#6]-4(-[#6D1])-[#6D3]-3-[#6D2]-[#6D2]-2">(mol);
+    validate_contains<"[#6]-[#6]-1-2-[#6]-[#6]-[#6]-[#6]-1-[#6]-3-[#6]-[#6]-[#6]-4-[#6]-[#6]-[#6]-[#6]-[#6]-4(-[#6])-[#6]-3-[#6]-[#6]-2">(mol);
+    validate_contains<"[#6D2]-1=[#6D2]-[#6D2]-2-[#6]-[#6]-[#6D3]-1-[#6D2]-2">(mol);
+    validate_contains<"[#6]-1=[#6]-[#6]-2-[#6]-[#6]-[#6]-1-[#6]-2">(mol);
+    validate_contains<"[*;D1,D2,D3,D4]-[#6D3]1=,:[#6D2][#6D2]=,:[#6D2][#6D2]=,:[#6D3]1-[*;D1,D2,D3,D4]">(mol);
+    validate_contains<"[*;D1,D2,D3,D4]-[#6D3]1=,:[#6D2][#6D2]=,:[#6D2][#6D3](-[*;D1,D2,D3,D4])=,:[#6D2]1">(mol);
+    validate_contains<"[*;D1,D2,D3,D4]-[#6D3]1=,:[#6D2][#6D2]=,:[#6D3](-[*;D1,D2,D3,D4])[#6D2]=,:[#6D2]1">(mol);
+    validate_contains<"[*;D1,D2,D3,D4]-[#6D3]-1=[#6D3](-[*;D1,D2,D3,D4])-[#6D2]-[#6D2]=[#6D2]-1">(mol);
+    validate_contains<"[#6]-1=[#6]-[#6D2]-[#6]=[#6]-1">(mol);
+    validate_contains<"[#8]-[#6D3]-1-[#8D2]-[#6D3](-[#6D2]-[#8D2]-[#6D3]-2-[#8D2]-[#6D3](-[#8D1])-[#6D3](-[#8D1])-[#6D3](-[#8D1])-[#6D3]-2-[#8D1])-[#6D3](-[#8D1])-[#6D3](-[#8D1])-[#6D3]-1-[#8D1]">(mol);
+    validate_contains<"[#8]-[#6D3]-1-[#8D2]-[#6D3](-[#6D2]-[#8D2]-[#6D3]-2-[#8D2]-[#6D3](-[#8])-[#6D3](-[#8])-[#6D3](-[#8])-[#6D3]-2-[#8])-[#6D3](-[#8])-[#6D3](-[#8])-[#6D3]-1-[#8]">(mol);
+    validate_contains<"[#6D1]-[#7D3]-1-[#6D3]2=,:[#6D2][#6D2]=,:[#6D2][#6D2]=,:[#6D3]2-[#7]-[#6D3]=,:3[#6D2]=,:[#6D2][#6D2]=,:[#6D2][#6D3]-1=,:3">(mol);
+    validate_contains<"[#6D1]-[#7D3]-1-[#6]2=,:[#6][#6]=,:[#6][#6]=,:[#6]2-[#7]-[#6]=,:3[#6]=,:[#6][#6]=,:[#6][#6]-1=,:3">(mol);
+    validate_contains<"[#6D1]=[#6D2]-[#6D3]-1=[#6D3](-[#6D1])-[#6D3]=,:2[#6D2]=,:[#6D3]3[#7D2][#6D3](=,:[#6D2][#6D3]-4=,:[#7D2][#6D3](-[#6]=[#6D3]-4-[#6D1])=,:[#6D2][#6D3]5=,:[#6][#6D3](-[#6D1])=,:[#6D3]([#6D2]=,:[#6D3]-1[#7D2]=,:2)[#7D2]5)[#6D3](-[#6D1])=,:[#6D3]3-[#6D2]=[#6D1]">(mol);
+    validate_contains<"[#6]-1=[#6]-[#6D3]2=,:[#6][#6D3]3=,:[#6][#6]=,:[#6D3]([#6D2]=,:[#6D3]4-[#6]=[#6]-[#6D3]([#6]=,:[#6D3]5[#6]=,:[#6][#6D3](=,:[#6][#6D3]-1=,:[#7D2]2)[#7D2]5)=,:[#7D2]4)[#7D2]3">(mol);
+    validate_contains<"[*;D1,D2,D3,D4]-[#6D3]=,:1[#6D2]=,:[#6D2][#8D2][#6D3]=,:1-[*;D1,D2,D3,D4]">(mol);
+    validate_contains<"[#6]=,:1[#6]=,:[#6][#8D2][#6]=,:1">(mol);
+    validate_contains<"[*;D1,D2,D3,D4]-[#6D3]=,:1[#6D2]=,:[#6D2][#7D2][#6D3]=,:1-[*;D1,D2,D3,D4]">(mol);
+    validate_contains<"[#6]=,:1[#6]=,:[#6][#7D2][#6]=,:1">(mol);
+    validate_contains<"[*;D1,D2,D3,D4]-[#6D3]=,:1[#6D2]=,:[#6D2][#16D2][#6D3]=,:1-[*;D1,D2,D3,D4]">(mol);
+    validate_contains<"[#6]=,:1[#6]=,:[#6][#16D2][#6]=,:1">(mol);
+    validate_contains<"[*;D1,D2,D3,D4]-[#6D3]-1=[#6D3](-[*;D1,D2,D3,D4])-[#34D2]-[#6D2]=[#6D2]-1">(mol);
+    validate_contains<"[#6]-1=[#6]-[#34D2]-[#6]=[#6]-1">(mol);
+    validate_contains<"[*;D1,D2,D3,D4]-[#6D3]=,:1[#6D2]=,:[#6D2][*D2][#6D3]=,:1-[*;D1,D2,D3,D4]">(mol);
+    validate_contains<"[#6]=,:1[#6]=,:[#6][*D2][#6]=,:1">(mol);
+}

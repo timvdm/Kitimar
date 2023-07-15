@@ -2,9 +2,11 @@ cmake_minimum_required(VERSION 3.16)
 
 project(Kitimar LANGUAGES CXX)
 
-option(KITIMAR_WITH_OPENBABEL "Build with OpenBabel support" OFF)
-option(KITIMAR_WITH_RDKIT "Build with RDKit support" OFF)
+option(KITIMAR_WITH_OPENBABEL "Build with OpenBabel support" ON)
+option(KITIMAR_WITH_RDKIT "Build with RDKit support" OUTPUT_NAME)
 option(KITIMAR_WITH_COROUTINES "Build with c++20 coroutines support" ON)
+
+option(KITIMAR_WITH_VALIDATION "Build validation executable (WARNING: uses lots of RAM during compilation)" OFF)
 
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules")
@@ -15,6 +17,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_compile_options(-Wall)
 if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     add_compile_options(-Werror)
+else()
+    add_compile_options(-fbracket-depth=1024)
 endif()
 add_compile_options(-pedantic)
 add_compile_options(-Wno-sign-compare)
@@ -30,7 +34,8 @@ add_compile_options(-march=native -mtune=native)
 
 
 
-#add_compile_options(-fsanitize=address)
+#add_compile_definitions(_GLIBCXX_DEBUG)
+#add_compile_options(-fsanitize=address -fno-omit-frame-pointer)
 #add_link_options(-fsanitize=address)
 
 
@@ -45,7 +50,7 @@ CPMAddPackage(
     NAME benchmark
     GITHUB_REPOSITORY google/benchmark
     VERSION 1.8.0
-    OPTIONS "BENCHMARK_ENABLE_TESTING Off"
+    OPTIONS "BENCHMARK_ENABLE_TESTING OFF"
 )
 
 if(KITIMAR_WITH_COROUTINES)
@@ -69,6 +74,9 @@ add_custom_target(RunTests ctest)
 
 add_subdirectory(src)
 add_subdirectory(test)
+if(KITIMAR_WITH_VALIDATION)
+    add_subdirectory(validate)
+endif()
 add_subdirectory(tools)
 add_subdirectory(examples)
 add_subdirectory(single-header)
