@@ -6,6 +6,7 @@
 #include <ctll/parser.hpp>
 
 #include <ranges>
+#include <algorithm>
 
 namespace Kitimar::CTSmarts {
 
@@ -46,6 +47,155 @@ namespace Kitimar::CTSmarts {
             return adjacencyList<NumAtoms, NumBonds>(ctll::pop_front(bonds), newAdjList);
         }
     }
+
+
+    /*
+    template<typename SmartsT>
+    struct EdgeListVisitor
+    {
+        static inline std::array<int, 2 * SmartsT::numBonds> edges = {};
+
+        template<int BondIndex>
+        static constexpr auto visit(auto bond) noexcept
+        {
+            edges[2 * BondIndex    ] = bond.source;
+            edges[2 * BondIndex + 1] = bond.target;
+        }
+    };
+
+
+    template<typename SmartsT, typename Visitor>
+    constexpr auto visitBonds(Visitor &visitor, ctll::empty_list)
+    {
+    }
+
+    template<typename SmartsT, typename Visitor, typename Bond, typename ...Bonds>
+    constexpr auto visitBonds(Visitor &visitor, ctll::list<Bond, Bonds...> bonds)
+    {
+        constexpr auto bondIndex = SmartsT::numBonds - ctll::size(bonds);
+        auto [bond, tail] = ctll::pop_and_get_front(bonds);
+        visitor.template visit<bondIndex>(bond);
+        visitBonds<SmartsT>(visitor, tail);
+    }
+
+    template<typename SmartsT>
+    constexpr auto makeEdgeList2()
+    {
+        EdgeListVisitor<SmartsT> visitor;
+        visitBonds<SmartsT>(visitor, SmartsT::bonds);
+        return visitor.edges;
+    }
+    */
+
+
+
+    // EdgeList
+
+    template<typename SmartsT>
+    constexpr auto makeEdgeList(ctll::empty_list)
+    {
+        return std::array<int, 2 * SmartsT::numBonds>{};
+    }
+
+    template<typename SmartsT, typename Bond, typename ...Bonds>
+    constexpr auto makeEdgeList(ctll::list<Bond, Bonds...> bonds)
+    {
+        auto [bond, tail] = ctll::pop_and_get_front(bonds);
+        auto edges = makeEdgeList<SmartsT>(tail);
+        auto bondIndex = SmartsT::numBonds - ctll::size(bonds);
+        edges[2 * bondIndex    ] = bond.source;
+        edges[2 * bondIndex + 1] = bond.target;
+        return edges;
+    }
+
+    template<typename SmartsT>
+    struct EdgeList
+    {
+        // store source and target atom index for each edge
+        static constexpr inline auto vertices = makeEdgeList<SmartsT>(SmartsT::bonds);
+
+        constexpr EdgeList(SmartsT) noexcept {}
+    };
+
+    // DegreeList
+
+    template<typename SmartsT, typename EdgeListT>
+    constexpr auto makeDegreeList()
+    {
+        std::array<int, SmartsT::numAtoms> degrees = {};
+        for (auto i : EdgeListT::vertices)
+            ++degrees[i];
+        return degrees;
+    }
+
+    template<typename SmartsT, typename EdgeListT>
+    struct DegreeList
+    {
+        // store degree for each vertex
+        static constexpr inline auto degrees = makeDegreeList<SmartsT, EdgeListT>();
+
+        static constexpr auto max() noexcept
+        {
+            return *std::ranges::max_element(degrees);
+        }
+
+        constexpr DegreeList(SmartsT, EdgeListT) noexcept {}
+    };
+
+
+    // AdjacencyList
+
+
+    template<typename SmartsT, typename EdgeListT, typename DegreeListT>
+    constexpr auto makeAdjacencyList()
+    {
+        constexpr auto stride = DegreeListT::max();
+        std::array<int, SmartsT::numAtoms * stride> adj = {};
+
+        for (auto &i : adj)
+            i = -1; // FIXME: needed?
+
+        std::array<int, SmartsT::numAtoms> sizes = {};
+        for (auto i = 0; i < SmartsT::numBonds; ++i) {
+            auto source = EdgeListT::vertices[2 * i];
+            auto target = EdgeListT::vertices[2 * i + 1];
+            adj[stride * source + sizes[source]] = i;
+            adj[stride * target + sizes[target]] = i;
+            ++sizes[source];
+            ++sizes[target];
+        }
+
+        return adj;
+    }
+
+    template<typename SmartsT, typename EdgeListT, typename DegreeListT>
+    struct AdjacencyList
+    {
+        // store adjacent (or incident) bond indices for each vertex
+        static constexpr inline auto edges = makeAdjacencyList<SmartsT, EdgeListT, DegreeListT>();
+        static constexpr inline auto degrees = DegreeListT::degrees;
+        static constexpr inline auto stride = DegreeListT::max();
+
+        template<int AtomIndex, int AdjIndex>
+        constexpr auto get(Number<AtomIndex>, Number<AdjIndex>)
+        {
+            return edges[stride * AtomIndex + AdjIndex];
+        }
+
+        constexpr AdjacencyList(SmartsT, EdgeListT, DegreeListT) noexcept {}
+    };
+
+
+
+
+
+
+
+
+
+
+
+
 
     //
     // Depth-first search bonds
@@ -88,17 +238,18 @@ namespace Kitimar::CTSmarts {
         }
 
         template<int sourceIdx, int adjIdx, typename AtomVisitor, typename BondVisitor, typename Context, typename VB, typename VA>
-        static constexpr auto visit(auto smarts, AtomVisitor atomVisitor, BondVisitor bondVisitor, auto atomBacktrack, auto bondBacktrack, Context ctx, VB visitedBonds, VA visitedAtoms) noexcept
+        static constexpr auto visit(auto smarts, auto adjList, AtomVisitor atomVisitor, BondVisitor bondVisitor, auto atomBacktrack, auto bondBacktrack, Context ctx, VB visitedBonds, VA visitedAtoms) noexcept
         {
-            auto adjBondIdxs = get<sourceIdx>(smarts.adjList);
-            if constexpr (adjIdx >= ctll::size(adjBondIdxs)) {
+            //auto adjBondIdxs = get<sourceIdx>(smarts.adjList);
+            if constexpr (adjIdx >= adjList.degrees[sourceIdx]) {
                 // A leaf node has been reached
                 return std::make_tuple(visitedBonds, visitedAtoms, ctx);
-            } else {
-                auto bondIdx = get<adjIdx>(adjBondIdxs);
+            } else {                
+                //auto bondIdx = get<adjIdx>(adjBondIdxs);
+                constexpr auto bondIdx = std::integral_constant<int, adjList.get(Number<sourceIdx>{}, Number<adjIdx>{})>{};
                 if constexpr (ctll::exists_in(bondIdx, visitedBonds)) {
                     // Skip visited bonds
-                    return visit<sourceIdx, adjIdx + 1>(smarts, atomVisitor, bondVisitor, atomBacktrack, bondBacktrack, ctx, visitedBonds, visitedAtoms);;
+                    return visit<sourceIdx, adjIdx + 1>(smarts, adjList, atomVisitor, bondVisitor, atomBacktrack, bondBacktrack, ctx, visitedBonds, visitedAtoms);;
                 } else {
                     auto bond = get<bondIdx.value>(smarts.bonds);
                     constexpr auto targetIdx = bond.source == sourceIdx ? bond.target : bond.source;
@@ -112,36 +263,36 @@ namespace Kitimar::CTSmarts {
                     auto visitedBonds2 = ctll::push_front(bondIdx, visitedBonds);
                     auto visitedAtoms2 = ctll::push_front(std::integral_constant<int, sourceIdx>{}, ctll::push_front(std::integral_constant<int, targetIdx>{}, visitedAtoms));
                     // Recursive search....
-                    auto [visitedBonds3, visitedAtoms3, ctx5] = visit<targetIdx, 0>(smarts, atomVisitor, bondVisitor, atomBacktrack, bondBacktrack, ctx4, visitedBonds2, visitedAtoms2);
+                    auto [visitedBonds3, visitedAtoms3, ctx5] = visit<targetIdx, 0>(smarts, adjList, atomVisitor, bondVisitor, atomBacktrack, bondBacktrack, ctx4, visitedBonds2, visitedAtoms2);
                     auto ctx6 = backtrackAtom(std::integral_constant<bool, !isRingClosure>{}, atomBacktrack, ctx5);
                     auto ctx7 = bondBacktrack(ctx6);
                     // bond to next nbr
-                    return visit<sourceIdx, adjIdx + 1>(smarts, atomVisitor, bondVisitor, atomBacktrack, bondBacktrack, ctx7, visitedBonds3, visitedAtoms3);
+                    return visit<sourceIdx, adjIdx + 1>(smarts, adjList, atomVisitor, bondVisitor, atomBacktrack, bondBacktrack, ctx7, visitedBonds3, visitedAtoms3);
                 }
             }
         }
 
         template<typename Context = ctll::empty_list>
-        static constexpr auto visit(auto smarts, auto atomVisitor, auto bondVisitor, auto atomBacktrack, auto bondBacktrack, Context ctx = {}) noexcept
+        static constexpr auto visit(auto smarts, auto adjList, auto atomVisitor, auto bondVisitor, auto atomBacktrack, auto bondBacktrack, Context ctx = {}) noexcept
         {
-            auto ctx2 = std::get<2>(visit<0, 0>(smarts, atomVisitor, bondVisitor, atomBacktrack, bondBacktrack, ctx, ctll::empty_list{}, ctll::empty_list{}));
+            auto ctx2 = std::get<2>(visit<0, 0>(smarts, adjList, atomVisitor, bondVisitor, atomBacktrack, bondBacktrack, ctx, ctll::empty_list{}, ctll::empty_list{}));
             return atomBacktrack(ctx2);
         }
 
         template<typename Context = ctll::empty_list>
-        static constexpr auto visit(auto smarts, auto atomVisitor, auto bondVisitor, Context ctx = {}) noexcept
+        static constexpr auto visit(auto smarts, auto adjList, auto atomVisitor, auto bondVisitor, Context ctx = {}) noexcept
         {
-            return visit(smarts, atomVisitor, bondVisitor, NoAtomBacktrack, NoBondBacktrack, ctx);
+            return visit(smarts, adjList, atomVisitor, bondVisitor, NoAtomBacktrack, NoBondBacktrack, ctx);
         }
 
     };
 
-    constexpr auto getDfsAtoms(auto smarts) noexcept
+    constexpr auto getDfsAtoms(auto smarts, auto adjList) noexcept
     {
         constexpr auto atomVisitor = [] (auto smarts, auto atomIdx, auto ctx) {
             return ctll::push_front(atomIdx, ctx);
         };
-        return ctll::rotate(DfsSearch::visit(smarts, atomVisitor, DfsSearch::NoBondVisitor));
+        return ctll::rotate(DfsSearch::visit(smarts, adjList, atomVisitor, DfsSearch::NoBondVisitor));
     }
 
     //
@@ -170,13 +321,13 @@ namespace Kitimar::CTSmarts {
     };
 
 
-    constexpr auto getCycleMembership(auto targetIdx, ctll::empty_list path, auto ctx) noexcept
+    constexpr auto getCycleMembershipHelper(auto targetIdx, ctll::empty_list path, auto ctx) noexcept
     {
         return ctx;
     }
 
     template<typename Bond, typename ...Bonds>
-    constexpr auto getCycleMembership(auto targetIdx, ctll::list<Bond, Bonds...> path, auto ctx) noexcept
+    constexpr auto getCycleMembershipHelper(auto targetIdx, ctll::list<Bond, Bonds...> path, auto ctx) noexcept
     {
         auto atoms = ctll::add_item(Number<Bond::target>{}, ctll::add_item(Number<Bond::source>{}, ctx.atoms));
         auto bonds = ctll::add_item(Number<Bond::idx>{}, ctx.bonds);
@@ -184,16 +335,16 @@ namespace Kitimar::CTSmarts {
         if constexpr (Bond::idx != ctx.bondIdx && (Bond::source == targetIdx.value || Bond::target == targetIdx.value))
             return ctx2;
         else
-            return getCycleMembership(targetIdx, ctll::list<Bonds...>{}, ctx2);
+            return getCycleMembershipHelper(targetIdx, ctll::list<Bonds...>{}, ctx2);
     }
 
-    constexpr auto getCycleMembership(auto smarts) noexcept
+    constexpr auto getCycleMembership(auto smarts, auto adjList) noexcept
     {
         constexpr auto bondVisitor = [] (auto smarts, auto sourceIdx, auto targetIdx, auto expr, auto isRingClosure, auto ctx) {
             auto path = ctll::push_front(CylceMembershipBond<sourceIdx.value, targetIdx.value, ctx.bondIdx>{}, ctx.path);
 
             if constexpr (isRingClosure.value) {
-                auto ctx2 = getCycleMembership(targetIdx, path, ctx);
+                auto ctx2 = getCycleMembershipHelper(targetIdx, path, ctx);
                 return CycleMembershipContext(ctx2.atoms, ctx2.bonds, path, Number<ctx2.bondIdx+1>{});
             } else {
                 return CycleMembershipContext(ctx.atoms, ctx.bonds, path, Number<ctx.bondIdx+1>{});
@@ -206,7 +357,7 @@ namespace Kitimar::CTSmarts {
         };
 
         auto ctx = CycleMembershipContext<0, ctll::empty_list, ctll::empty_list, ctll::empty_list>{};
-        return DfsSearch::visit(smarts, DfsSearch::NoAtomVisitor, bondVisitor, DfsSearch::NoAtomBacktrack, bondBacktrack, ctx);
+        return DfsSearch::visit(smarts, adjList, DfsSearch::NoAtomVisitor, bondVisitor, DfsSearch::NoAtomBacktrack, bondBacktrack, ctx);
     }
 
     template<int BondIdx>
@@ -236,7 +387,7 @@ namespace Kitimar::CTSmarts {
         return ctll::push_front(dfsBond, addCycleMembership<BondIdx+1>(ctll::list<CycleBonds...>{}, cyclicBondIdxs));
     }
 
-    constexpr auto getDfsBonds(auto smarts) noexcept
+    constexpr auto getDfsBonds(auto smarts, auto adjList) noexcept
     {
         constexpr auto bondVisitor = [] (auto smarts, auto sourceIdx, auto targetIdx, auto expr, auto isRingClosure, auto ctx) {
             auto sourceExpr = get<sourceIdx.value>(smarts.atoms);
@@ -244,8 +395,8 @@ namespace Kitimar::CTSmarts {
             return ctll::push_front(DfsBond<sourceIdx.value, targetIdx.value, false, isRingClosure.value,
                                             decltype(sourceExpr), decltype(targetExpr), decltype(expr)>(), ctx);
         };
-        auto dfsBonds = ctll::rotate(DfsSearch::visit(smarts, DfsSearch::NoAtomVisitor, bondVisitor));
-        return addCycleMembership<0>(dfsBonds, getCycleMembership(smarts).bonds);
+        auto dfsBonds = ctll::rotate(DfsSearch::visit(smarts, adjList, DfsSearch::NoAtomVisitor, bondVisitor));
+        return addCycleMembership<0>(dfsBonds, getCycleMembership(smarts, adjList).bonds);
     }
 
     //
@@ -286,6 +437,10 @@ namespace Kitimar::CTSmarts {
         return degreesToArray(getDegrees<0, NumAtoms>(Bonds{}));
 
     }
+
+
+
+
 
     //
     // Captures
@@ -334,7 +489,7 @@ namespace Kitimar::CTSmarts {
             return -1;
         auto centralAtom = -1;
         auto degrees = getDegrees<NumAtoms>(bonds);
-        for (auto i = 0; i < degrees.size(); ++i) {
+        for (std::size_t i = 0; i < degrees.size(); ++i) {
             switch (degrees[i]) {
                 case 0:
                     return -1;
@@ -424,7 +579,7 @@ namespace Kitimar::CTSmarts {
         static constexpr inline auto bonds = ctll::rotate(Context::bonds);
         static constexpr inline auto numAtoms = ctll::size(atoms);
         static constexpr inline auto numBonds = ctll::size(bonds);
-        static constexpr inline auto adjList = rotateAdjacencyList(adjacencyList<numAtoms, numBonds>(bonds));
+        //static constexpr inline auto adjList = rotateAdjacencyList(adjacencyList<numAtoms, numBonds>(bonds));
 
         static constexpr inline auto isSingleAtom = numAtoms == 1;
         static constexpr inline auto isSingleBond = numAtoms == 2 && numBonds == 1;

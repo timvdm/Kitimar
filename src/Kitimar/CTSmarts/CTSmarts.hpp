@@ -220,8 +220,8 @@ namespace Kitimar::CTSmarts {
     template<ctll::fixed_string SMARTS, Molecule::Molecule Mol>
     constexpr auto single(Mol &mol)
     {
-        using Map = IsomorphismMap<decltype(get_index(mol, get_atom(mol, 0))), SMARTS>;
         auto smarts = Smarts<SMARTS>{};
+        using Map = IsomorphismMap<decltype(get_index(mol, get_atom(mol, 0))), smarts.numAtoms>;
         if constexpr (smarts.isSingleAtom) {
             // Optimize single atom SMARTS
             for (auto atom : get_atoms(mol))
@@ -266,10 +266,10 @@ namespace Kitimar::CTSmarts {
     template<ctll::fixed_string SMARTS, MapType M = MapType::Unique, Molecule::Molecule Mol>
     constexpr auto multi(Mol &mol, MapTypeTag<M> mapType = {})
     {
-        using Maps = IsomorphismMaps<decltype(get_index(mol, get_atom(mol, 0))), SMARTS>;
+        auto smarts = Smarts<SMARTS>{};
+        using Maps = IsomorphismMaps<decltype(get_index(mol, get_atom(mol, 0))), smarts.numAtoms>;
         using Map = Maps::value_type;
 
-        auto smarts = Smarts<SMARTS>{};
         if constexpr (smarts.isSingleAtom) {
             // Optimize single atom SMARTS
             Maps maps;

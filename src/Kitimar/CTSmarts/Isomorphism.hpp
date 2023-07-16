@@ -48,11 +48,11 @@ namespace Kitimar::CTSmarts {
         All
     };
 
-    template<std::integral Index, ctll::fixed_string SMARTS>
-    using IsomorphismMap = std::array<Index, Smarts<SMARTS>::numAtoms>;
+    template<std::integral Index, int N>
+    using IsomorphismMap = std::array<Index, N>;
 
-    template<std::integral Index, ctll::fixed_string SMARTS>
-    using IsomorphismMaps = std::vector<IsomorphismMap<Index, SMARTS>>;
+    template<std::integral Index, int N>
+    using IsomorphismMaps = std::vector<IsomorphismMap<Index, N>>;
 
 
     template<MapType T>
@@ -121,9 +121,10 @@ namespace Kitimar::CTSmarts {
 
         public:
             using Index = decltype(get_index(std::declval<Mol>(), get_atom(std::declval<Mol>(), 0)));
-            using Map = IsomorphismMap<Index, SmartsT::smarts>;
-            using Maps = IsomorphismMaps<Index, SmartsT::smarts>;
+            using Map = IsomorphismMap<Index, SmartsT::numAtoms>;
+            using Maps = IsomorphismMaps<Index, SmartsT::numAtoms>;
 
+            static constexpr inline auto invalidIndex = static_cast<Index>(-1);
             static constexpr inline auto smarts = SmartsT{};
             static constexpr inline auto dfsBonds = getDfsBonds(smarts);
 
@@ -134,7 +135,7 @@ namespace Kitimar::CTSmarts {
             Isomorphism()
             {
                 m_degrees = getDegrees<smarts.numAtoms>(smarts.bonds);
-                m_map.fill(-1);
+                m_map.fill(invalidIndex);
             }
 
             constexpr const Map& map() const noexcept
@@ -143,14 +144,14 @@ namespace Kitimar::CTSmarts {
             }
 
             bool match(Mol &mol)
-            {                
+            {
                 matchDfs(mol, nullptr);
                 return isDone();
             }
 
-            auto count(Mol &mol, int startAtom = - 1)
+            auto count(Mol &mol, int startAtom = -1)
             {
-                auto n = 0;                
+                auto n = 0;
                 auto cb = [&n] (const auto &array) { ++n; };
                 matchDfs(mol, cb, startAtom);
                 return n;
@@ -158,19 +159,19 @@ namespace Kitimar::CTSmarts {
 
 
             auto single(Mol &mol, int startAtom = -1)
-            {                
+            {
                 matchDfs(mol, nullptr, startAtom);
-                return std::make_tuple(isDone(), m_map);                
+                return std::make_tuple(isDone(), m_map);
             }
 
             Maps all(Mol &mol, int startAtom = -1)
-            {                
+            {
                 Maps maps;
                 auto cb = [&maps] (const auto &map) {
                     maps.push_back(map);
                 };
                 matchDfs(mol, cb, startAtom);
-                return maps;             
+                return maps;
             }
 
             //
@@ -178,9 +179,9 @@ namespace Kitimar::CTSmarts {
             //
 
             bool matchAtom(Mol &mol, const auto &atom)
-            {                
+            {
                 matchDfs(mol, nullptr, get_index(mol, atom));
-                return isDone();                
+                return isDone();
             }
 
             bool matchBond(Mol &mol, const auto &bond)
@@ -244,7 +245,7 @@ namespace Kitimar::CTSmarts {
                 debug("    ", queryAtomIndex, " -> ", atomIndex);
 
                 assert(queryAtomIndex < m_map.size());
-                assert(m_map[queryAtomIndex] == -1);
+                assert(m_map[queryAtomIndex] == invalidIndex);
                 m_map[queryAtomIndex] = atomIndex;
 
                 this->addMapped(atomIndex);
@@ -256,7 +257,7 @@ namespace Kitimar::CTSmarts {
 
                 assert(queryAtomIndex < m_map.size());
                 assert(m_map[queryAtomIndex] == atomIndex);
-                m_map[queryAtomIndex] = -1;
+                m_map[queryAtomIndex] = invalidIndex;
 
                 this->removeMapped(atomIndex);
             }
@@ -349,10 +350,10 @@ namespace Kitimar::CTSmarts {
                         auto bond = Molecule::get_bond(mol, source, target);
                         if (bond == null_bond(mol))
                             return;
-                        if (matchBondExpr(mol, bond, queryBond.bondExpr))                            
-                            matchDfs(mol, callback, startAtom, ctll::pop_front(bonds));                            
+                        if (matchBondExpr(mol, bond, queryBond.bondExpr))
+                            matchDfs(mol, callback, startAtom, ctll::pop_front(bonds));
 
-                    } else if (m_map[querySource] != -1) { // Source atom mapped?
+                    } else if (m_map[querySource] != invalidIndex) { // Source atom mapped?
 
                         auto source = get_atom(mol, m_map[querySource]);
 
@@ -373,12 +374,12 @@ namespace Kitimar::CTSmarts {
                             }
 
                             // match target atom
-                            if (!matchAtom(mol, target, queryTarget, queryBond.targetExpr)) {                                
+                            if (!matchAtom(mol, target, queryTarget, queryBond.targetExpr)) {
                                 debug("    atom does not match");
                                 continue;
                             }
 
-                            // map target atom                            
+                            // map target atom
                             addAtom(targetIndex, queryTarget);
                             matchDfs(mol, callback, startAtom, ctll::pop_front(bonds));
                             // exit as soon as possible if only one match is required
@@ -398,7 +399,7 @@ namespace Kitimar::CTSmarts {
 
                         assert(!isDone());
 
-                        assert(std::ranges::count(m_map, -1) == m_map.size());
+                        assert(std::ranges::count(m_map, invalidIndex) == m_map.size());
                         //if constexpr (std::is_same_v<MappedPolicy<void>, MappedVector<void>>)
                         //    assert(std::ranges::count(m_mapped, true) == 0);
 
@@ -413,7 +414,7 @@ namespace Kitimar::CTSmarts {
                             auto queryAtom = queryBond.source;
 
                             debug("    start atom: ",  index);
-                            
+
                             if (!matchAtom(mol, atom, queryAtom, queryBond.sourceExpr))
                                 continue;
 
@@ -433,7 +434,7 @@ namespace Kitimar::CTSmarts {
             }
 
             constexpr auto reset(Mol &mol) noexcept
-            {                
+            {
                 //debug("reset()");
                 setDone(false);
                 this->resetMapped(num_atoms(mol));
