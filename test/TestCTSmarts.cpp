@@ -537,18 +537,18 @@ TEST(TestCTSmarts, Operators)
 
 TEST(TestCTSmarts, GetCentralAtom)
 {
-    EXPECT_EQ(Smarts<"C">::centralAtom, -1);
-    EXPECT_EQ(Smarts<"CC">::centralAtom, -1);
-    EXPECT_EQ(Smarts<"CCC">::centralAtom, 1);
-    EXPECT_EQ(Smarts<"C(C)C">::centralAtom, 0);
-    EXPECT_EQ(Smarts<"CCCC">::centralAtom, -1);
-    EXPECT_EQ(Smarts<"CC(C)C">::centralAtom, 1);
-    EXPECT_EQ(Smarts<"C(C)(C)C">::centralAtom, 0);
-    EXPECT_EQ(Smarts<"CCCCC">::centralAtom, -1);
-    EXPECT_EQ(Smarts<"CC(C)CC">::centralAtom, -1);
-    EXPECT_EQ(Smarts<"CC(C)(C)C">::centralAtom, 1);
-    EXPECT_EQ(Smarts<"C(C)(C)(C)C">::centralAtom, 0);
-    EXPECT_EQ(Smarts<"C1CC1">::centralAtom, -1);
+    EXPECT_EQ(getCentralAtom(Smarts<"C">{}), -1);
+    EXPECT_EQ(getCentralAtom(Smarts<"CC">{}), -1);
+    EXPECT_EQ(getCentralAtom(Smarts<"CCC">{}), 1);
+    EXPECT_EQ(getCentralAtom(Smarts<"C(C)C">{}), 0);
+    EXPECT_EQ(getCentralAtom(Smarts<"CCCC">{}), -1);
+    EXPECT_EQ(getCentralAtom(Smarts<"CC(C)C">{}), 1);
+    EXPECT_EQ(getCentralAtom(Smarts<"C(C)(C)C">{}), 0);
+    EXPECT_EQ(getCentralAtom(Smarts<"CCCCC">{}), -1);
+    EXPECT_EQ(getCentralAtom(Smarts<"CC(C)CC">{}), -1);
+    EXPECT_EQ(getCentralAtom(Smarts<"CC(C)(C)C">{}), 1);
+    EXPECT_EQ(getCentralAtom(Smarts<"C(C)(C)(C)C">{}), 0);
+    EXPECT_EQ(getCentralAtom(Smarts<"C1CC1">{}), -1);
 }
 
 
@@ -1004,6 +1004,18 @@ TEST(TestCTSmarts, CTSmarts_captureAtom)
 
 TEST(TestCTSmarts, Debug)
 {
+
+    auto smarts = Smarts<"CC(C)C">{};
+
+    auto edges = EdgeList(smarts);
+    auto degrees = DegreeList(smarts, edges);
+    auto adjList = AdjacencyList(smarts, edges, degrees);
+
+    //std::cout << edges.data << std::endl;
+    std::cout << degrees.data << std::endl;
+    std::cout << adjList.data << std::endl;
+
+
     //auto smarts = Smarts<"[#6]:1:2:[!#1]:[#7+](:[!#1]:[#6](:[!#1]:1:[#6]:[#6]:[#6]:[#6]:2)-[*])~[#6]:[#6]">{};
                       //       1 2                                1                     2
 

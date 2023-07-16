@@ -13,88 +13,23 @@ namespace Kitimar::CTSmarts {
     template <ctll::fixed_string SMARTS, bool IgnoreInvalid = false>
     struct Smarts;
 
-    //
-    // Adjacency list
-    //
-
-    template<int I = 0>
-    constexpr auto rotateAdjacencyList(auto adjList)
-    {
-        if constexpr (I == ctll::size(adjList))
-            return adjList;
-        else {
-            auto newAdjList = replace<I, decltype(ctll::rotate(get<I>(adjList)))>(adjList);
-            return rotateAdjacencyList<I + 1>(newAdjList);
-
-        }
-    }
-
-    template<int NumAtoms, int NumBonds, typename ...Bonds, typename AdjList = decltype(resize<NumAtoms, ctll::list<>>())>
-    constexpr auto adjacencyList(ctll::list<Bonds...> bonds, AdjList adjList = {})
-    {
-        if constexpr (ctll::empty(bonds))
-            return adjList;
-        else {
-            constexpr auto source = ctll::front(bonds).source;
-            constexpr auto target = ctll::front(bonds).target;
-            constexpr auto bondIndex = NumBonds - ctll::size(ctll::list<Bonds...>());
-            //using SourceNbrs = decltype(ctll::push_front(Number<target>(), get<source>(adjList)));
-            //using TargetNbrs = decltype(ctll::push_front(Number<source>(), get<target>(adjList)));
-            using SourceNbrs = decltype(ctll::push_front(Number<bondIndex>(), get<source>(adjList)));
-            using TargetNbrs = decltype(ctll::push_front(Number<bondIndex>(), get<target>(adjList)));
-
-            auto newAdjList = replace<source, SourceNbrs>(replace<target, TargetNbrs>(adjList));
-            return adjacencyList<NumAtoms, NumBonds>(ctll::pop_front(bonds), newAdjList);
-        }
-    }
 
 
-    /*
-    template<typename SmartsT>
-    struct EdgeListVisitor
-    {
-        static inline std::array<int, 2 * SmartsT::numBonds> edges = {};
-
-        template<int BondIndex>
-        static constexpr auto visit(auto bond) noexcept
-        {
-            edges[2 * BondIndex    ] = bond.source;
-            edges[2 * BondIndex + 1] = bond.target;
-        }
-    };
-
-
-    template<typename SmartsT, typename Visitor>
-    constexpr auto visitBonds(Visitor &visitor, ctll::empty_list)
-    {
-    }
-
-    template<typename SmartsT, typename Visitor, typename Bond, typename ...Bonds>
-    constexpr auto visitBonds(Visitor &visitor, ctll::list<Bond, Bonds...> bonds)
-    {
-        constexpr auto bondIndex = SmartsT::numBonds - ctll::size(bonds);
-        auto [bond, tail] = ctll::pop_and_get_front(bonds);
-        visitor.template visit<bondIndex>(bond);
-        visitBonds<SmartsT>(visitor, tail);
-    }
-
-    template<typename SmartsT>
-    constexpr auto makeEdgeList2()
-    {
-        EdgeListVisitor<SmartsT> visitor;
-        visitBonds<SmartsT>(visitor, SmartsT::bonds);
-        return visitor.edges;
-    }
-    */
 
 
 
     // EdgeList
 
+    struct Edge
+    {
+        int source;
+        int target;
+    };
+
     template<typename SmartsT>
     constexpr auto makeEdgeList(ctll::empty_list)
     {
-        return std::array<int, 2 * SmartsT::numBonds>{};
+        return std::array<Edge, SmartsT::numBonds>{};
     }
 
     template<typename SmartsT, typename Bond, typename ...Bonds>
@@ -103,8 +38,7 @@ namespace Kitimar::CTSmarts {
         auto [bond, tail] = ctll::pop_and_get_front(bonds);
         auto edges = makeEdgeList<SmartsT>(tail);
         auto bondIndex = SmartsT::numBonds - ctll::size(bonds);
-        edges[2 * bondIndex    ] = bond.source;
-        edges[2 * bondIndex + 1] = bond.target;
+        edges[bondIndex] = Edge{bond.source, bond.target};
         return edges;
     }
 
@@ -112,7 +46,12 @@ namespace Kitimar::CTSmarts {
     struct EdgeList
     {
         // store source and target atom index for each edge
-        static constexpr inline auto vertices = makeEdgeList<SmartsT>(SmartsT::bonds);
+        static constexpr inline auto data = makeEdgeList<SmartsT>(SmartsT::bonds);
+
+        static constexpr inline Edge get(int index) noexcept
+        {
+            return data[index];
+        }
 
         constexpr EdgeList(SmartsT) noexcept {}
     };
@@ -123,8 +62,10 @@ namespace Kitimar::CTSmarts {
     constexpr auto makeDegreeList()
     {
         std::array<int, SmartsT::numAtoms> degrees = {};
-        for (auto i : EdgeListT::vertices)
-            ++degrees[i];
+        for (const auto &edge : EdgeListT::data) {
+            ++degrees[edge.source];
+            ++degrees[edge.target];
+        }
         return degrees;
     }
 
@@ -132,11 +73,16 @@ namespace Kitimar::CTSmarts {
     struct DegreeList
     {
         // store degree for each vertex
-        static constexpr inline auto degrees = makeDegreeList<SmartsT, EdgeListT>();
+        static constexpr inline auto data = makeDegreeList<SmartsT, EdgeListT>();
+
+        static constexpr inline int get(int index) noexcept
+        {
+            return data[index];
+        }
 
         static constexpr auto max() noexcept
         {
-            return *std::ranges::max_element(degrees);
+            return *std::ranges::max_element(data);
         }
 
         constexpr DegreeList(SmartsT, EdgeListT) noexcept {}
@@ -157,8 +103,9 @@ namespace Kitimar::CTSmarts {
 
         std::array<int, SmartsT::numAtoms> sizes = {};
         for (auto i = 0; i < SmartsT::numBonds; ++i) {
-            auto source = EdgeListT::vertices[2 * i];
-            auto target = EdgeListT::vertices[2 * i + 1];
+            auto edge = EdgeListT::get(i);
+            auto source = edge.source;
+            auto target = edge.target;
             adj[stride * source + sizes[source]] = i;
             adj[stride * target + sizes[target]] = i;
             ++sizes[source];
@@ -172,14 +119,14 @@ namespace Kitimar::CTSmarts {
     struct AdjacencyList
     {
         // store adjacent (or incident) bond indices for each vertex
-        static constexpr inline auto edges = makeAdjacencyList<SmartsT, EdgeListT, DegreeListT>();
-        static constexpr inline auto degrees = DegreeListT::degrees;
+        static constexpr inline auto data = makeAdjacencyList<SmartsT, EdgeListT, DegreeListT>();
+        static constexpr inline auto degrees = DegreeListT::data;
         static constexpr inline auto stride = DegreeListT::max();
 
         template<int AtomIndex, int AdjIndex>
         constexpr auto get(Number<AtomIndex>, Number<AdjIndex>)
         {
-            return edges[stride * AtomIndex + AdjIndex];
+            return data[stride * AtomIndex + AdjIndex];
         }
 
         constexpr AdjacencyList(SmartsT, EdgeListT, DegreeListT) noexcept {}
@@ -244,7 +191,7 @@ namespace Kitimar::CTSmarts {
             if constexpr (adjIdx >= adjList.degrees[sourceIdx]) {
                 // A leaf node has been reached
                 return std::make_tuple(visitedBonds, visitedAtoms, ctx);
-            } else {                
+            } else {
                 //auto bondIdx = get<adjIdx>(adjBondIdxs);
                 constexpr auto bondIdx = std::integral_constant<int, adjList.get(Number<sourceIdx>{}, Number<adjIdx>{})>{};
                 if constexpr (ctll::exists_in(bondIdx, visitedBonds)) {
@@ -399,46 +346,6 @@ namespace Kitimar::CTSmarts {
         return addCycleMembership<0>(dfsBonds, getCycleMembership(smarts, adjList).bonds);
     }
 
-    //
-    // Degrees
-    //
-
-    template<int AtomIndex>
-    constexpr auto getDegree(ctll::empty_list)
-    {
-        return 0;
-    }
-
-    template<int AtomIndex, typename Bond, typename ...Bonds>
-    constexpr auto getDegree(ctll::list<Bond, Bonds...>)
-    {
-        int d = Bond::source == AtomIndex || Bond::target == AtomIndex;
-        return d + getDegree<AtomIndex>(ctll::list<Bonds...>{});
-    }
-
-    template<int AtomIndex, int NumAtoms, typename Bonds>
-    constexpr auto getDegrees(Bonds)
-    {
-        if constexpr (AtomIndex == NumAtoms)
-            return ctll::empty_list{};
-        else
-        return ctll::push_front(Number<getDegree<AtomIndex>(Bonds{})>{}, getDegrees<AtomIndex+1, NumAtoms>(Bonds{}));
-    }
-
-    template<typename ...T>
-    constexpr auto degreesToArray(ctll::list<T...> degrees)
-    {
-        return std::array<uint8_t, ctll::size(degrees)>({T::value...});
-    }
-
-    template<int NumAtoms, typename Bonds>
-    constexpr auto getDegrees(Bonds)
-    {
-        return degreesToArray(getDegrees<0, NumAtoms>(Bonds{}));
-
-    }
-
-
 
 
 
@@ -482,15 +389,17 @@ namespace Kitimar::CTSmarts {
     //
 
 
-    template<int NumAtoms, int NumBonds, typename Bonds>
-    constexpr auto getCentralAtom(Bonds bonds)
+
+    constexpr auto getCentralAtom(auto smarts)
     {
-        if constexpr (NumAtoms < 3 || NumAtoms != NumBonds + 1)
+        auto edgeList = EdgeList(smarts); // FIXME
+        auto degreeList = DegreeList(smarts, edgeList);
+
+        if constexpr (smarts.numAtoms < 3 || smarts.numAtoms != smarts.numBonds + 1)
             return -1;
         auto centralAtom = -1;
-        auto degrees = getDegrees<NumAtoms>(bonds);
-        for (std::size_t i = 0; i < degrees.size(); ++i) {
-            switch (degrees[i]) {
+        for (std::size_t i = 0; i < smarts.numAtoms; ++i) {
+            switch (degreeList.get(i)) {
                 case 0:
                     return -1;
                 case 1:
@@ -579,11 +488,10 @@ namespace Kitimar::CTSmarts {
         static constexpr inline auto bonds = ctll::rotate(Context::bonds);
         static constexpr inline auto numAtoms = ctll::size(atoms);
         static constexpr inline auto numBonds = ctll::size(bonds);
-        //static constexpr inline auto adjList = rotateAdjacencyList(adjacencyList<numAtoms, numBonds>(bonds));
 
         static constexpr inline auto isSingleAtom = numAtoms == 1;
         static constexpr inline auto isSingleBond = numAtoms == 2 && numBonds == 1;
-        static constexpr inline auto centralAtom = getCentralAtom<numAtoms, numBonds>(bonds);
+
 
 
         template<typename ErrorTag>

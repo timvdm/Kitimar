@@ -5,7 +5,7 @@ datasets = [
     'Agrafiotis_ABCD',
     #'BindingDB_exact',
     #'BindingDB_similarity',
-    'BindingDB_substructure',
+    #'BindingDB_substructure',
     'Hicks_and_Jochum',
     'RDKit_smarts',
     'RDMACCS',

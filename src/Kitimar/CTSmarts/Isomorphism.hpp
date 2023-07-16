@@ -126,7 +126,11 @@ namespace Kitimar::CTSmarts {
 
             static constexpr inline auto invalidIndex = static_cast<Index>(-1);
             static constexpr inline auto smarts = SmartsT{};
-            static constexpr inline auto dfsBonds = getDfsBonds(smarts);
+
+            static constexpr inline auto edgeList = EdgeList(smarts);
+            static constexpr inline auto degreeList = DegreeList(smarts, edgeList);
+            static constexpr inline auto adjList = AdjacencyList(smarts, edgeList, degreeList);
+            static constexpr inline auto dfsBonds = getDfsBonds(smarts, adjList);
 
 
             static_assert(smarts.numBonds);
@@ -134,7 +138,6 @@ namespace Kitimar::CTSmarts {
 
             Isomorphism()
             {
-                m_degrees = getDegrees<smarts.numAtoms>(smarts.bonds);
                 m_map.fill(invalidIndex);
             }
 
@@ -223,7 +226,7 @@ namespace Kitimar::CTSmarts {
 
             bool matchAtom(Mol &mol, const auto &atom, int queryAtomIndex, auto atomExpr) const noexcept
             {
-                if (get_degree(mol, atom) < m_degrees[queryAtomIndex])
+                if (get_degree(mol, atom) < degreeList.get(queryAtomIndex))
                     return false;
 
                 return matchAtomExpr(mol, atom, atomExpr);
@@ -472,7 +475,6 @@ namespace Kitimar::CTSmarts {
 
 
             Map m_map; // current mapping: query atom index -> queried atom index
-            std::array<uint8_t, smarts.numAtoms> m_degrees; // degree of query atoms
             std::conditional_t<Type == MapType::Unique, std::unordered_set<std::size_t>, std::monostate> m_maps;
             bool m_done = false;
     };
