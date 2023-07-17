@@ -1,8 +1,8 @@
 #pragma once
 
-#include "SmartsGrammar.hpp"
-#include "SmartsAST.hpp"
-#include "Util.hpp"
+#include "Grammar.hpp"
+#include "../AST.hpp"
+#include "../Util.hpp"
 
 #include <cctype>
 

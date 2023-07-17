@@ -1,14 +1,22 @@
 # Headers
 
 set(CTSmarts_HDRS
-    Isomorphism.hpp
-    SmartsActions.hpp
-    SmartsAST.hpp
-    SmartsGrammar.hpp
-    Smarts.hpp
-    SmartsMatch.hpp
-    Util.hpp
     CTSmarts.hpp
+    Smarts.hpp
+    MatchExpr.hpp
+    Isomorphism.hpp
+    AST.hpp
+    Util.hpp
+    Parser/Grammar.hpp
+    Parser/Actions.hpp
+    Algorithm/EdgeList.hpp
+    Algorithm/VertexDegree.hpp
+    Algorithm/IncidentList.hpp
+    Algorithm/DfsSearch.hpp
+    Algorithm/DfsSearchEvents.hpp
+    Algorithm/DfsEdgeList.hpp
+    Algorithm/CycleMembership.hpp
+    Algorithm/DfsBondList.hpp
 )
 
 # Library

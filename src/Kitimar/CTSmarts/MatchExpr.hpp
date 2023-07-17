@@ -1,6 +1,6 @@
 #pragma once
 
-#include "SmartsAST.hpp"
+#include "AST.hpp"
 
 namespace Kitimar::CTSmarts {
 

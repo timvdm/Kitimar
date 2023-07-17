@@ -3,7 +3,7 @@
 #include "../Molecule/Molecule.hpp"
 
 #include "Smarts.hpp"
-#include "SmartsMatch.hpp"
+#include "MatchExpr.hpp"
 
 #include <set>
 #include <vector>
@@ -128,8 +128,8 @@ namespace Kitimar::CTSmarts {
             static constexpr inline auto smarts = SmartsT{};
 
             static constexpr inline auto edgeList = EdgeList(smarts);
-            static constexpr inline auto degreeList = DegreeList(smarts, edgeList);
-            static constexpr inline auto adjList = AdjacencyList(smarts, edgeList, degreeList);
+            static constexpr inline auto vertexDegree = VertexDegree(smarts, edgeList);
+            static constexpr inline auto adjList = IncidentList(smarts, edgeList, vertexDegree);
             static constexpr inline auto dfsEdges = DfsEdgeList(smarts, adjList);
             static constexpr inline auto cycleMembership = CycleMembership(smarts, adjList);
             static constexpr inline auto dfsBonds = DfsBondList(smarts, dfsEdges, cycleMembership).data;
@@ -227,7 +227,7 @@ namespace Kitimar::CTSmarts {
 
             bool matchAtom(Mol &mol, const auto &atom, int queryAtomIndex, auto atomExpr) const noexcept
             {
-                if (get_degree(mol, atom) < degreeList.get(queryAtomIndex))
+                if (get_degree(mol, atom) < vertexDegree.get(queryAtomIndex))
                     return false;
 
                 return matchAtomExpr(mol, atom, atomExpr);
