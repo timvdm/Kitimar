@@ -8,6 +8,8 @@
 #include <ranges>
 #include <algorithm>
 
+#include <iostream>
+
 namespace Kitimar::CTSmarts {
 
     template <ctll::fixed_string SMARTS, bool IgnoreInvalid = false>
@@ -15,15 +17,20 @@ namespace Kitimar::CTSmarts {
 
 
 
+    constexpr auto cycleRank(auto numVertices, auto numEdges, auto numComponents)
+    {
+        return numEdges - numVertices + numComponents;
+    }
 
 
-
+    //
     // EdgeList
+    //
 
     struct Edge
     {
-        int source;
-        int target;
+        int source = -1;
+        int target = -1;
     };
 
     template<typename SmartsT>
@@ -53,10 +60,13 @@ namespace Kitimar::CTSmarts {
             return data[index];
         }
 
+        constexpr EdgeList() noexcept {}
         constexpr EdgeList(SmartsT) noexcept {}
     };
 
+    //
     // DegreeList
+    //
 
     template<typename SmartsT, typename EdgeListT>
     constexpr auto makeDegreeList()
@@ -85,12 +95,14 @@ namespace Kitimar::CTSmarts {
             return *std::ranges::max_element(data);
         }
 
+        constexpr DegreeList() noexcept {}
         constexpr DegreeList(SmartsT, EdgeListT) noexcept {}
     };
 
 
+    //
     // AdjacencyList
-
+    //
 
     template<typename SmartsT, typename EdgeListT, typename DegreeListT>
     constexpr auto makeAdjacencyList()
@@ -120,32 +132,284 @@ namespace Kitimar::CTSmarts {
     {
         // store adjacent (or incident) bond indices for each vertex
         static constexpr inline auto data = makeAdjacencyList<SmartsT, EdgeListT, DegreeListT>();
-        static constexpr inline auto degrees = DegreeListT::data;
+        static constexpr inline auto edges = EdgeListT{};
+        static constexpr inline auto degrees = DegreeListT{};
         static constexpr inline auto stride = DegreeListT::max();
 
-        template<int AtomIndex, int AdjIndex>
-        constexpr auto get(Number<AtomIndex>, Number<AdjIndex>)
+        static constexpr auto get(int AtomIndex, int AdjIndex)
         {
             return data[stride * AtomIndex + AdjIndex];
         }
 
+        constexpr AdjacencyList() noexcept {}
         constexpr AdjacencyList(SmartsT, EdgeListT, DegreeListT) noexcept {}
     };
 
 
+    //
+    // dfsSearch
+    //
+
+    template<typename SmartsT, typename Visitor, typename AdjacencyListT, int SourceIndex, int AdjIndex>
+    constexpr void dfsSearchHelper(std::array<bool, SmartsT::numAtoms> &visitedVertices,
+                                   std::array<bool, SmartsT::numBonds> &visitedEdges,
+                                   Visitor &visitor)
+    {
+        constexpr auto sourceDegree = AdjacencyListT::degrees.get(SourceIndex);
+        if constexpr (AdjIndex < sourceDegree) {
+            constexpr auto edgeIndex = AdjacencyListT::get(SourceIndex, AdjIndex);
+
+            if (visitedEdges[edgeIndex]) {
+                dfsSearchHelper<SmartsT, Visitor, AdjacencyListT, SourceIndex, AdjIndex + 1>(visitedVertices, visitedEdges, visitor);
+                return;
+            }
+
+            constexpr auto edge = AdjacencyListT::edges.get(edgeIndex);
+            constexpr auto targetIndex = edge.source == SourceIndex ? edge.target : edge.source;
+            auto isNewComponent = !visitedVertices[SourceIndex];
+            auto isClosure = visitedVertices[targetIndex];
+
+            visitor.visit(edgeIndex, SourceIndex, targetIndex, isNewComponent, isClosure);
+
+            visitedEdges[edgeIndex] = true;
+            visitedVertices[SourceIndex] = true;
+            visitedVertices[targetIndex] = true;
+
+            // dfs
+            if (!isClosure)
+                dfsSearchHelper<SmartsT, Visitor, AdjacencyListT, targetIndex, 0>(visitedVertices, visitedEdges, visitor);
+
+            visitor.backtrack(edgeIndex, targetIndex, isClosure);
+
+            // next incident bond
+            dfsSearchHelper<SmartsT, Visitor, AdjacencyListT, SourceIndex, AdjIndex + 1>(visitedVertices, visitedEdges, visitor);
+        } else if constexpr (SourceIndex == 0) {
+            visitor.backtrack(SourceIndex);
+        }
+    }
+
+    template<typename SmartsT, typename Visitor, typename AdjacencyListT>
+    constexpr void dfsSearch(SmartsT, Visitor &visitor, AdjacencyListT)
+    {
+        std::array<bool, SmartsT::numAtoms> visitedAtoms = {};
+        std::array<bool, SmartsT::numBonds> visitedBonds = {};
+        dfsSearchHelper<SmartsT, Visitor, AdjacencyListT, 0, 0>(visitedAtoms, visitedBonds, visitor);
+    }
+
+    //
+    // DfsSearchEvents
+    //
+
+    template<typename SmartsT>
+    struct DfsSearchEventsVisitor
+    {
+        struct Event
+        {
+            enum Type {
+                Invalid,
+                VisitVertex, // index = vertex index, flag = isNewComponent
+                VisitEdge, // index = edge index, flag = isClosure
+                BacktrackVertex, // index = vertex index, flag = isEndComponent
+                BacktrackEdge // index = edge index, flag = isClosure
+            };
+
+            Type type = Invalid;
+            int index = -1;
+            bool flag = false;
+        };
+
+        friend std::ostream& operator<<(std::ostream &os, const Event &event)
+        {
+            switch (event.type) {
+                case Event::VisitVertex:
+                    os << "VisitVertex( index = " << event.index << ", isNewComponent = " << event.flag << " )";
+                    break;
+                case Event::VisitEdge:
+                    os << "VisitEdge( index = " << event.index << ", isClosure = " << event.flag << " )";
+                    break;
+                case Event::BacktrackVertex:
+                    os << "BacktrackVertex( index = " << event.index << ", isEndComponent = " << event.flag << " )";
+                    break;
+                case Event::BacktrackEdge:
+                    os << "BacktrackEdge( index = " << event.index << ", isClosure = " << event.flag << " )";
+                    break;
+                default:
+                    os << "InvalidEvent";
+                    break;
+            }
+
+            return os;
+        }
+
+        using Events = std::array<Event, 2 * (SmartsT::numAtoms + SmartsT::numBonds)>;
+
+        constexpr DfsSearchEventsVisitor() noexcept {}
+        constexpr DfsSearchEventsVisitor(SmartsT) noexcept {}
+
+        constexpr void visit(int edge, int source, int target, bool isNewComponent, bool isClosure) noexcept
+        {
+            if (isNewComponent)
+                events[nextEventIndex++] = Event{Event::VisitVertex, source, true};
+            events[nextEventIndex++] = Event{Event::VisitEdge, edge, isClosure};
+            if (!isClosure)
+                events[nextEventIndex++] = Event{Event::VisitVertex, target, false};
+        }
+
+        constexpr void backtrack(int edge, int target, bool isClosure) noexcept
+        {
+            if (!isClosure)
+                events[nextEventIndex++] = Event{Event::BacktrackVertex, target, false};
+            events[nextEventIndex++] = Event{Event::BacktrackEdge, edge, isClosure};
+        }
+
+        constexpr void backtrack(int source) noexcept
+        {
+            events[nextEventIndex++] = Event{Event::BacktrackVertex, source, true};
+        }
+
+        Events events = {};
+        int nextEventIndex = 0;
+    };
+
+    template<typename SmartsT, typename AdjacencyListT>
+    constexpr auto makeDfsSearchEvents()
+    {
+        DfsSearchEventsVisitor<SmartsT> visitor;
+        dfsSearch(SmartsT{}, visitor, AdjacencyListT{});
+        return visitor.events;
+    }
 
 
+    template<typename SmartsT, typename AdjacencyListT>
+    struct DfsSearchEvents
+    {
+        static constexpr inline auto events = makeDfsSearchEvents<SmartsT, AdjacencyListT>();
 
-
-
-
-
-
+        constexpr DfsSearchEvents() noexcept {}
+        constexpr DfsSearchEvents(SmartsT, AdjacencyListT) noexcept {}
+    };
 
 
 
     //
-    // Depth-first search bonds
+    // DfsEdgeList
+    //
+
+    struct DfsEdge : Edge
+    {
+        int index = -1;
+        bool closure = false;
+    };
+
+    template<typename SmartsT>
+    struct DfsEdgeListVisitor
+    {
+
+        constexpr DfsEdgeListVisitor() noexcept {}
+        constexpr DfsEdgeListVisitor(SmartsT) noexcept {}
+
+        constexpr void visit(int edge, int source, int target, bool isNewComponent, bool isClosure) noexcept
+        {
+            edges[nextEdgeIndex++] = DfsEdge{{source, target}, edge, isClosure};
+        }
+
+        constexpr void backtrack(int edge, int target, bool isClosure) noexcept {}
+
+        constexpr void backtrack(int source) noexcept {}
+
+
+        std::array<DfsEdge, SmartsT::numBonds> edges;
+        int nextEdgeIndex = 0;
+    };
+
+    template<typename SmartsT, typename AdjacencyListT>
+    constexpr auto makeDfsEdgeList()
+    {
+        DfsEdgeListVisitor<SmartsT> visitor;
+        dfsSearch(SmartsT{}, visitor, AdjacencyListT{});
+        return visitor.edges;
+    }
+
+
+    template<typename SmartsT, typename AdjacencyListT>
+    struct DfsEdgeList
+    {
+        static constexpr inline auto data = makeDfsEdgeList<SmartsT, AdjacencyListT>();
+
+        static constexpr inline DfsEdge get(int index) noexcept
+        {
+            return data[index];
+        }
+
+        constexpr DfsEdgeList() noexcept {}
+        constexpr DfsEdgeList(SmartsT, AdjacencyListT) noexcept {}
+    };
+
+
+    //
+    // CycleMembership
+    //
+
+    template<typename SmartsT, typename AdjacencyListT>
+    struct CycleMembershipVisitor
+    {
+
+        constexpr CycleMembershipVisitor() noexcept {}
+        constexpr CycleMembershipVisitor(SmartsT) noexcept {}
+
+        constexpr void visit(int edge, int source, int target, bool isNewComponent, bool isClosure) noexcept
+        {
+            path[depth++] = edge;
+
+            if (isClosure) {
+                for (auto i = depth - 1; i >= 0; --i) {
+                    auto e = AdjacencyListT::edges.get(path[i]);
+                    edges[path[i]] = true;
+                    vertices[e.source] = true;
+                    vertices[e.target] = true;
+                    if (i < depth - 1)
+                        if (e.source == target || e.target == target)
+                            break;
+                }
+            }
+        }
+
+        constexpr void backtrack(int edge, int target, bool isClosure) noexcept
+        {
+            --depth;
+        }
+
+        constexpr void backtrack(int source) noexcept {}
+
+        std::array<int, SmartsT::numBonds> path = {};
+        std::array<bool, SmartsT::numAtoms> vertices = {};
+        std::array<bool, SmartsT::numBonds> edges = {};
+        int depth = 0;
+    };
+
+    template<typename SmartsT, typename AdjacencyListT>
+    constexpr auto makeCycleMembership()
+    {
+        CycleMembershipVisitor<SmartsT, AdjacencyListT> visitor;
+        dfsSearch(SmartsT{}, visitor, AdjacencyListT{});
+        return std::make_tuple(visitor.vertices, visitor.edges);
+    }
+
+    template<typename SmartsT, typename EdgeListT>
+    struct CycleMembership
+    {
+        static constexpr inline auto data = makeCycleMembership<SmartsT, EdgeListT>();
+        static constexpr inline auto vertices = std::get<0>(data);
+        static constexpr inline auto edges = std::get<1>(data);
+
+        constexpr CycleMembership() noexcept {}
+        constexpr CycleMembership(SmartsT, EdgeListT) noexcept {}
+    };
+
+
+
+    //
+    // DfsBondList
     //
 
     template<int Source, int Target, bool IsCyclic, bool IsRingClosure, typename SourceExpr, typename TargetExpr, typename BondExpr>
@@ -159,6 +423,61 @@ namespace Kitimar::CTSmarts {
         static constexpr inline auto targetExpr = TargetExpr();
         static constexpr inline auto bondExpr = BondExpr();
     };
+
+    template<typename SmartsT, typename DfsEdgeListT, typename CycleMembershipT, int DfsEdgeIndex>
+    constexpr auto makeDfsBondListHelper()
+    {
+        if constexpr (DfsEdgeIndex == SmartsT::numBonds) {
+            return ctll::empty_list{};
+        } else {
+            constexpr auto edge = DfsEdgeListT::get(DfsEdgeIndex);
+
+            constexpr auto bondExpr = get<edge.index>(SmartsT::bonds).expr;
+            auto sourceExpr = get<edge.source>(SmartsT::atoms);
+            auto targetExpr = get<edge.target>(SmartsT::atoms);
+            constexpr auto isCyclic = CycleMembershipT::edges[edge.index];
+
+            //auto dfsBond = DfsBond<edge.source, edge.target, false, edge.closure, decltype(sourceExpr), decltype(targetExpr), decltype(bondExpr)>{};
+            auto dfsBond = DfsBond<edge.source, edge.target, isCyclic, edge.closure, decltype(sourceExpr), decltype(targetExpr), decltype(bondExpr)>{};
+
+            return ctll::push_front(dfsBond, makeDfsBondListHelper<SmartsT, DfsEdgeListT, CycleMembershipT, DfsEdgeIndex + 1>());
+        }
+    }
+
+    template<typename SmartsT, typename DfsEdgeListT, typename CycleMembershipT>
+    constexpr auto makeDfsBondList()
+    {
+        return makeDfsBondListHelper<SmartsT, DfsEdgeListT, CycleMembershipT, 0>();
+    }
+
+
+    template<typename SmartsT, typename DfsEdgeListT, typename CycleMembershipT>
+    struct DfsBondList
+    {
+        static constexpr inline auto data = makeDfsBondList<SmartsT, DfsEdgeListT, CycleMembershipT>();
+
+        static constexpr inline DfsEdge get(int index) noexcept
+        {
+            return data[index];
+        }
+
+        constexpr DfsBondList() noexcept {}
+        constexpr DfsBondList(SmartsT, DfsEdgeListT, CycleMembershipT) noexcept {}
+    };
+
+
+
+
+
+
+
+
+
+
+
+
+
+    /*
 
     struct DfsSearch
     {
@@ -188,12 +507,12 @@ namespace Kitimar::CTSmarts {
         static constexpr auto visit(auto smarts, auto adjList, AtomVisitor atomVisitor, BondVisitor bondVisitor, auto atomBacktrack, auto bondBacktrack, Context ctx, VB visitedBonds, VA visitedAtoms) noexcept
         {
             //auto adjBondIdxs = get<sourceIdx>(smarts.adjList);
-            if constexpr (adjIdx >= adjList.degrees[sourceIdx]) {
+            if constexpr (adjIdx >= adjList.degrees.get(sourceIdx)) {
                 // A leaf node has been reached
                 return std::make_tuple(visitedBonds, visitedAtoms, ctx);
             } else {
                 //auto bondIdx = get<adjIdx>(adjBondIdxs);
-                constexpr auto bondIdx = std::integral_constant<int, adjList.get(Number<sourceIdx>{}, Number<adjIdx>{})>{};
+                constexpr auto bondIdx = std::integral_constant<int, adjList.get(sourceIdx, adjIdx)>{};
                 if constexpr (ctll::exists_in(bondIdx, visitedBonds)) {
                     // Skip visited bonds
                     return visit<sourceIdx, adjIdx + 1>(smarts, adjList, atomVisitor, bondVisitor, atomBacktrack, bondBacktrack, ctx, visitedBonds, visitedAtoms);;
@@ -234,6 +553,9 @@ namespace Kitimar::CTSmarts {
 
     };
 
+    */
+
+    /*
     constexpr auto getDfsAtoms(auto smarts, auto adjList) noexcept
     {
         constexpr auto atomVisitor = [] (auto smarts, auto atomIdx, auto ctx) {
@@ -241,11 +563,13 @@ namespace Kitimar::CTSmarts {
         };
         return ctll::rotate(DfsSearch::visit(smarts, adjList, atomVisitor, DfsSearch::NoBondVisitor));
     }
+    */
 
     //
     // Cycle-membership
     //
 
+    /*
     template<int BondIdx, typename Atoms, typename Bonds, typename Path>
     struct CycleMembershipContext
     {
@@ -333,7 +657,9 @@ namespace Kitimar::CTSmarts {
         auto dfsBond = DfsBond<S, T, isCyclic<BondIdx>(cyclicBondIdxs), IRC, SE, TE, BE>{};
         return ctll::push_front(dfsBond, addCycleMembership<BondIdx+1>(ctll::list<CycleBonds...>{}, cyclicBondIdxs));
     }
+    */
 
+    /*
     constexpr auto getDfsBonds(auto smarts, auto adjList) noexcept
     {
         constexpr auto bondVisitor = [] (auto smarts, auto sourceIdx, auto targetIdx, auto expr, auto isRingClosure, auto ctx) {
@@ -343,8 +669,35 @@ namespace Kitimar::CTSmarts {
                                             decltype(sourceExpr), decltype(targetExpr), decltype(expr)>(), ctx);
         };
         auto dfsBonds = ctll::rotate(DfsSearch::visit(smarts, adjList, DfsSearch::NoAtomVisitor, bondVisitor));
-        return addCycleMembership<0>(dfsBonds, getCycleMembership(smarts, adjList).bonds);
+        return dfsBonds;
+        //return addCycleMembership<0>(dfsBonds, getCycleMembership(smarts, adjList).bonds);
     }
+    */
+
+
+
+
+
+
+
+    /*
+    template<typename SmartsT, typename Bonds = decltype(SmartsT::bonds)>
+    constexpr auto getDfsBonds(SmartsT smarts, Bonds bonds = {}) noexcept
+    {
+        if constexpr (ctll::empty(bonds)) {
+            return ctll::empty_list{};
+        } else {
+            auto [bond, tail] = ctll::pop_and_get_front(bonds);
+            auto bondIndex = smarts.numBonds - ctll::size(bonds);
+            auto sourceExpr = get<bond.source>(smarts.atoms);
+            auto targetExpr = get<bond.target>(smarts.atoms);
+
+            auto dfsBond = DfsBond<bond.source, bond.target, false, false, decltype(sourceExpr), decltype(targetExpr), decltype(bond.expr)>();
+
+            return ctll::push_front(dfsBond, getDfsBonds(smarts, tail));
+        }
+    }
+    */
 
 
 
@@ -491,6 +844,7 @@ namespace Kitimar::CTSmarts {
 
         static constexpr inline auto isSingleAtom = numAtoms == 1;
         static constexpr inline auto isSingleBond = numAtoms == 2 && numBonds == 1;
+
 
 
 

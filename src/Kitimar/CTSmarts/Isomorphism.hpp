@@ -130,8 +130,9 @@ namespace Kitimar::CTSmarts {
             static constexpr inline auto edgeList = EdgeList(smarts);
             static constexpr inline auto degreeList = DegreeList(smarts, edgeList);
             static constexpr inline auto adjList = AdjacencyList(smarts, edgeList, degreeList);
-            static constexpr inline auto dfsBonds = getDfsBonds(smarts, adjList);
-
+            static constexpr inline auto dfsEdges = DfsEdgeList(smarts, adjList);
+            static constexpr inline auto cycleMembership = CycleMembership(smarts, adjList);
+            static constexpr inline auto dfsBonds = DfsBondList(smarts, dfsEdges, cycleMembership).data;
 
             static_assert(smarts.numBonds);
             static_assert(ctll::size(smarts.bonds) == ctll::size(dfsBonds));

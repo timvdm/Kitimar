@@ -2,7 +2,7 @@
 
 #include <Kitimar/CTSmarts/CTSmarts.hpp>
 #include <Kitimar/OpenBabel/OpenBabel.hpp>
-#include <Kitimar/RDKit/RDKit.hpp>
+//#include <Kitimar/RDKit/RDKit.hpp>
 
 #include <cstring>
 

@@ -79,8 +79,10 @@ if(KITIMAR_WITH_RDKIT)
     target_link_libraries(BenchmarkSerialize KitimarRDKit)
 endif()
 
-if(KITIMAR_WITH_OPENBABEL AND KITIMAR_WITH_RDKIT)
+#if(KITIMAR_WITH_OPENBABEL AND KITIMAR_WITH_RDKIT)
+if(KITIMAR_WITH_OPENBABEL)
     add_executable(BenchmarkCTSmarts BenchmarkCTSmarts.cpp)
-    target_link_libraries(BenchmarkCTSmarts CTSmarts KitimarOpenBabel KitimarRDKit benchmark::benchmark)
+    #target_link_libraries(BenchmarkCTSmarts CTSmarts KitimarOpenBabel KitimarRDKit benchmark::benchmark)
+    target_link_libraries(BenchmarkCTSmarts CTSmarts KitimarOpenBabel benchmark::benchmark)
 endif()
 
