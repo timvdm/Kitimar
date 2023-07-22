@@ -1,5 +1,7 @@
 #include <Kitimar/CTSmarts/CTSmarts.hpp>
 
+
+
 #ifdef KITIMAR_WITH_OPENBABEL
 #include <Kitimar/OpenBabel/OpenBabel.hpp>
 #include <openbabel/parsmart.h>
@@ -16,7 +18,8 @@ constexpr void test_atom_expr()
     auto smarts = Smarts<SMARTS>{};
     static_assert(ctll::size(smarts.atoms) > AtomIndex);
     auto expr = get<AtomIndex>(smarts.atoms);
-    static_assert(std::is_same_v<decltype(expr), AtomExpr>);
+    //static_assert(std::is_same_v<decltype(expr), AtomExpr>);
+    static_assert(std::is_same_v<decltype(expr), decltype(optimizeExpression(AtomExpr{}))>);
 }
 
 template <ctll::fixed_string SMARTS, typename BondExpr, int BondIndex = 0>
@@ -355,6 +358,9 @@ TEST(TestCTSmarts, Charge)
     test_atom_expr<"[+0]", Charge<0> >();
     test_atom_expr<"[+1]", Charge<1> >();
     test_atom_expr<"[+3]", Charge<3> >();
+
+    //test_atom_expr<"[++]",  Charge<2> >();
+    //test_atom_expr<"[+++]",  Charge<3> >();
 }
 
 TEST(TestCTSmarts, Chiral)
@@ -998,22 +1004,436 @@ TEST(TestCTSmarts, CTSmarts_captureAtom)
     EXPECT_EQ(CTSmarts::captureAtom<"CC(=O)N">(mol), null_atom(mol));
 }
 
+template<typename T>
+struct identify_type;
 
+
+
+TEST(TestCTSmarts, DfsSearch)
+{
+
+    //auto smarts = Smarts<"CC(C)C">{};
+    //auto smarts = Smarts<"*1**1">{};
+    //auto smarts = Smarts<"*1**1*">{};
+    auto smarts = Smarts<"*1**12**2*">{};
+
+    auto edges = EdgeList(smarts);
+    auto degrees = VertexDegree(smarts, edges);
+    auto adjList = IncidentList(smarts, edges, degrees);
+
+    //DfsSearchEventsVisitor visitor(smarts);
+    //dfsSearch(smarts, visitor, adjList);
+
+    auto dfsSearchEvents = DfsSearchEvents(smarts, adjList);
+
+    //for (const auto &event : visitor.events)
+    for (const auto &event : dfsSearchEvents.events)
+        std::cout << event << std::endl;
+
+}
+
+
+TEST(TestCTSmarts, ExpressionFrequency)
+{
+    using C = AliphaticAtom<6>;
+    using O = AliphaticAtom<8>;
+    //using S = AliphaticAtom<16>;
+
+
+    static_assert(expressionFrequency(Not<C>{}) == 1 - expressionFrequency(C{}));
+
+    static_assert(expressionFrequency(And<C, O>{}) == expressionFrequency(O{}));
+    static_assert(expressionFrequency(And<O, C>{}) == expressionFrequency(O{}));
+
+    static_assert(expressionFrequency(Or<C, O>{}) == expressionFrequency(C{}));
+    static_assert(expressionFrequency(Or<O, C>{}) == expressionFrequency(C{}));
+
+
+
+
+}
+
+
+
+template<typename Compare, typename Expr, typename OptimizedExpr>
+constexpr void test_selection_sort(Expr expr, OptimizedExpr)
+{
+    static_assert(std::is_same_v<decltype(selectionSort<ProjExprFrequency, Compare>(expr)), OptimizedExpr>);
+}
+
+TEST(TestCTSmarts, CtllSort)
+{
+    using C = AliphaticAtom<6>;
+    using O = AliphaticAtom<8>;
+    using S = AliphaticAtom<16>;
+
+    auto less = ctll::list<S, O, C>{};
+    auto greater = ctll::list<C, O, S>{};
+
+    auto permutation1 = ctll::list<C, O, S>{};
+    auto permutation2 = ctll::list<C, S, O>{};
+    auto permutation3 = ctll::list<O, C, S>{};
+    auto permutation4 = ctll::list<O, S, C>{};
+    auto permutation5 = ctll::list<S, C, O>{};
+    auto permutation6 = ctll::list<S, O, C>{};
+
+    test_selection_sort<std::less<>>(permutation1, less);
+    test_selection_sort<std::less<>>(permutation2, less);
+    test_selection_sort<std::less<>>(permutation3, less);
+    test_selection_sort<std::less<>>(permutation4, less);
+    test_selection_sort<std::less<>>(permutation5, less);
+    test_selection_sort<std::less<>>(permutation6, less);
+
+    test_selection_sort<std::greater<>>(permutation1, greater);
+    test_selection_sort<std::greater<>>(permutation2, greater);
+    test_selection_sort<std::greater<>>(permutation3, greater);
+    test_selection_sort<std::greater<>>(permutation4, greater);
+    test_selection_sort<std::greater<>>(permutation5, greater);
+    test_selection_sort<std::greater<>>(permutation6, greater);
+}
+
+/*
+template<typename Compare, typename Expr, typename OptimizedExpr>
+constexpr void test_std_sort(Expr expr, OptimizedExpr)
+{
+    static_assert(std::is_same_v<decltype(stdSort<ProjExprFrequency, Compare>(expr)), OptimizedExpr>);
+}
+
+TEST(TestCTSmarts, StdSort)
+{
+    using C = AliphaticAtom<6>;
+    using O = AliphaticAtom<8>;
+    using S = AliphaticAtom<16>;
+
+    auto less = ctll::list<S, O, C>{};
+    auto greater = ctll::list<C, O, S>{};
+
+    auto permutation1 = ctll::list<C, O, S>{};
+    auto permutation2 = ctll::list<C, S, O>{};
+    auto permutation3 = ctll::list<O, C, S>{};
+    auto permutation4 = ctll::list<O, S, C>{};
+    auto permutation5 = ctll::list<S, C, O>{};
+    auto permutation6 = ctll::list<S, O, C>{};
+
+    test_std_sort<std::less<>>(permutation1, less);
+    test_std_sort<std::less<>>(permutation2, less);
+    test_std_sort<std::less<>>(permutation3, less);
+    test_std_sort<std::less<>>(permutation4, less);
+    test_std_sort<std::less<>>(permutation5, less);
+    test_std_sort<std::less<>>(permutation6, less);
+
+    test_std_sort<std::greater<>>(permutation1, greater);
+    test_std_sort<std::greater<>>(permutation2, greater);
+    test_std_sort<std::greater<>>(permutation3, greater);
+    test_std_sort<std::greater<>>(permutation4, greater);
+    test_std_sort<std::greater<>>(permutation5, greater);
+    test_std_sort<std::greater<>>(permutation6, greater);
+}
+*/
+
+template<typename Goal = BestCase, typename Expr, typename OptimizedExpr>
+constexpr void test_optimize_expression(Expr expr, OptimizedExpr)
+{
+    static_assert(std::is_same_v<decltype(optimizeExpression<Goal>(expr)), OptimizedExpr>);
+}
+
+TEST(TestCTSmarts, OptimizeExpression)
+{
+    // 6    0.49
+    // 8    0.17
+    // 16   0.00543654
+
+    using C = AliphaticAtom<6>;
+    using O = AliphaticAtom<8>;
+    using S = AliphaticAtom<16>;
+
+    // n = 1
+
+    test_optimize_expression(C{}, C{});
+
+    // n = 2
+
+    auto less_2 = ctll::list<O, C>{};
+    auto greater_2 = ctll::list<C, O>{};
+    auto perm_2_1 = ctll::list<C, O>{};
+    auto perm_2_2 = ctll::list<O, C>{};
+
+    test_optimize_expression(And{perm_2_1}, And{less_2});
+    test_optimize_expression(And{perm_2_1}, And{less_2});
+
+    test_optimize_expression(Or{perm_2_1}, Or{greater_2});
+    test_optimize_expression(Or{perm_2_2}, Or{greater_2});
+
+    test_optimize_expression<WorstCase>(And{perm_2_1}, And{greater_2});
+    test_optimize_expression<WorstCase>(And{perm_2_1}, And{greater_2});
+
+    test_optimize_expression<WorstCase>(Or{perm_2_1}, Or{less_2});
+    test_optimize_expression<WorstCase>(Or{perm_2_2}, Or{less_2});
+
+    // n = 3
+
+    auto less_3 = ctll::list<S, O, C>{};
+    auto greater_3 = ctll::list<C, O, S>{};
+    auto perm_3_1 = ctll::list<C, O, S>{};
+    auto perm_3_2 = ctll::list<C, S, O>{};
+    auto perm_3_3 = ctll::list<O, C, S>{};
+    auto perm_3_4 = ctll::list<O, S, C>{};
+    auto perm_3_5 = ctll::list<S, C, O>{};
+    auto perm_3_6 = ctll::list<S, O, C>{};
+
+    test_optimize_expression(And{perm_3_1}, And{less_3});
+    test_optimize_expression(And{perm_3_2}, And{less_3});
+    test_optimize_expression(And{perm_3_3}, And{less_3});
+    test_optimize_expression(And{perm_3_4}, And{less_3});
+    test_optimize_expression(And{perm_3_5}, And{less_3});
+    test_optimize_expression(And{perm_3_6}, And{less_3});
+
+    test_optimize_expression(Or{perm_3_1}, Or{greater_3});
+    test_optimize_expression(Or{perm_3_2}, Or{greater_3});
+    test_optimize_expression(Or{perm_3_3}, Or{greater_3});
+    test_optimize_expression(Or{perm_3_4}, Or{greater_3});
+    test_optimize_expression(Or{perm_3_5}, Or{greater_3});
+    test_optimize_expression(Or{perm_3_6}, Or{greater_3});
+
+    test_optimize_expression<WorstCase>(And{perm_3_1}, And{greater_3});
+    test_optimize_expression<WorstCase>(And{perm_3_2}, And{greater_3});
+    test_optimize_expression<WorstCase>(And{perm_3_3}, And{greater_3});
+    test_optimize_expression<WorstCase>(And{perm_3_4}, And{greater_3});
+    test_optimize_expression<WorstCase>(And{perm_3_5}, And{greater_3});
+    test_optimize_expression<WorstCase>(And{perm_3_6}, And{greater_3});
+
+    test_optimize_expression<WorstCase>(Or{perm_3_1}, Or{less_3});
+    test_optimize_expression<WorstCase>(Or{perm_3_2}, Or{less_3});
+    test_optimize_expression<WorstCase>(Or{perm_3_3}, Or{less_3});
+    test_optimize_expression<WorstCase>(Or{perm_3_4}, Or{less_3});
+    test_optimize_expression<WorstCase>(Or{perm_3_5}, Or{less_3});
+    test_optimize_expression<WorstCase>(Or{perm_3_6}, Or{less_3});
+
+    // Not
+
+    auto best_not = Not<And<C, O>>{};
+    auto worst_not = Not<And<O, C>>{};
+
+    test_optimize_expression(best_not, best_not);
+    test_optimize_expression(worst_not, best_not);
+
+    test_optimize_expression<WorstCase>(best_not, worst_not);
+    test_optimize_expression<WorstCase>(worst_not, worst_not);
+
+    // depth > 1
+
+    auto best_depth = And<Or<O, S>, C>{};
+    auto worst_depth = And<C, Or<S, O>>{};
+
+    static_assert(expressionFrequency(best_depth) == expressionFrequency(O{}));
+
+    auto depth_perm_1 = And<C, Or<O, S>>{};
+    auto depth_perm_2 = And<C, Or<S, O>>{};
+    auto depth_perm_3 = And<Or<O, S>, C>{};
+    auto depth_perm_4 = And<Or<S, O>, C>{};
+
+    test_optimize_expression(depth_perm_1, best_depth);
+    test_optimize_expression(depth_perm_2, best_depth);
+    test_optimize_expression(depth_perm_3, best_depth);
+    test_optimize_expression(depth_perm_4, best_depth);
+
+    test_optimize_expression<WorstCase>(depth_perm_1, worst_depth);
+    test_optimize_expression<WorstCase>(depth_perm_2, worst_depth);
+    test_optimize_expression<WorstCase>(depth_perm_3, worst_depth);
+    test_optimize_expression<WorstCase>(depth_perm_4, worst_depth);
+}
+
+
+template<typename Goal = BestCase, typename Expr, typename OptimizedExpr>
+constexpr void test_optimize_expressions(Expr expr, OptimizedExpr)
+{
+    static_assert(std::is_same_v<decltype(optimizeExpressions<Goal>(expr)), OptimizedExpr>);
+}
+
+TEST(TestCTSmarts, OptimizeExpressions)
+{
+    // 6    0.49
+    // 8    0.17
+    // 16   0.00543654
+
+    using C = AliphaticAtom<6>;
+    using O = AliphaticAtom<8>;
+    using S = AliphaticAtom<16>;
+
+    using Best_1 = And<O, C>;
+    using Worst_1 = And<C, O>;
+    using Best_2 = And<S, C>;
+    using Worst_2 = And<C, S>;
+    using Best_3 = And<S, O>;
+    using Worst_3 = And<O, S>;
+
+    test_optimize_expression(Best_1{}, Best_1{});
+    test_optimize_expression(Worst_1{}, Best_1{});
+    test_optimize_expression(Best_2{}, Best_2{});
+    test_optimize_expression(Worst_2{}, Best_2{});
+    test_optimize_expression(Best_3{}, Best_3{});
+    test_optimize_expression(Worst_3{}, Best_3{});
+
+    auto perm1 = ctll::list<Best_1 , Best_2 , Best_3 >{};
+    auto perm2 = ctll::list<Best_1 , Best_2 , Worst_3>{};
+    auto perm3 = ctll::list<Best_1 , Worst_2, Best_3 >{};
+    auto perm4 = ctll::list<Best_1 , Worst_2, Worst_3>{};
+    auto perm5 = ctll::list<Worst_1, Best_2 , Best_3 >{};
+    auto perm6 = ctll::list<Worst_1, Best_2 , Worst_3>{};
+    auto perm7 = ctll::list<Worst_1, Worst_2, Best_3 >{};
+    auto perm8 = ctll::list<Worst_1, Worst_2 , Worst_3>{};
+
+    auto best = perm1;
+    auto worst = perm8;
+
+    test_optimize_expressions(perm1, best);
+    test_optimize_expressions(perm2, best);
+    test_optimize_expressions(perm3, best);
+    test_optimize_expressions(perm4, best);
+    test_optimize_expressions(perm5, best);
+    test_optimize_expressions(perm6, best);
+    test_optimize_expressions(perm7, best);
+    test_optimize_expressions(perm8, best);
+
+    test_optimize_expressions<WorstCase>(perm1, worst);
+    test_optimize_expressions<WorstCase>(perm2, worst);
+    test_optimize_expressions<WorstCase>(perm3, worst);
+    test_optimize_expressions<WorstCase>(perm4, worst);
+    test_optimize_expressions<WorstCase>(perm5, worst);
+    test_optimize_expressions<WorstCase>(perm6, worst);
+    test_optimize_expressions<WorstCase>(perm7, worst);
+    test_optimize_expressions<WorstCase>(perm8, worst);
+}
 
 
 
 TEST(TestCTSmarts, Debug)
 {
 
-    auto smarts = Smarts<"CC(C)C">{};
+    //auto smarts = Smarts<"CC(C)C">{};
 
+    //auto smarts = Smarts<"**1*(*)*1*">{};
+
+
+    //auto smarts = Smarts<"[Ti,Cr,Mn,Fe,Co,Ni,Cu,Pd,Ag,Sn,Pt,Au,Hg,Pb,Bi,As,Sb]">{};
+
+    //auto atoms = smarts.atoms;
+
+    auto l = ctll::list<
+            Kitimar::CTSmarts::AliphaticAtom<22>, // Ti
+            Kitimar::CTSmarts::AliphaticAtom<24>, // Cr
+            Kitimar::CTSmarts::AliphaticAtom<25>, // Mn
+            Kitimar::CTSmarts::AliphaticAtom<26>, // Fe
+            Kitimar::CTSmarts::AliphaticAtom<27>, // Co
+            Kitimar::CTSmarts::AliphaticAtom<28>, // Ni
+            Kitimar::CTSmarts::AliphaticAtom<29>, // Cu
+            Kitimar::CTSmarts::AliphaticAtom<46>, // Pd
+            Kitimar::CTSmarts::AliphaticAtom<47>, // Ag
+            Kitimar::CTSmarts::AliphaticAtom<50>, // Sn
+            Kitimar::CTSmarts::AliphaticAtom<78>, // Pt
+            Kitimar::CTSmarts::AliphaticAtom<79>, // Au
+            Kitimar::CTSmarts::AliphaticAtom<80>, // Hg
+            Kitimar::CTSmarts::AliphaticAtom<82>, // Pb
+            Kitimar::CTSmarts::AliphaticAtom<83>, // Bi
+            Kitimar::CTSmarts::AliphaticAtom<33>, // As
+            Kitimar::CTSmarts::AliphaticAtom<51>  // Sb
+    >{};
+
+    /*
+    constexpr auto sortable = Sortable<decltype(l), ProjExprFrequency>{};
+
+    for (auto [index, value] : sortable.data)
+        std::cout << index << " : " << value << std::endl;
+    std::cout << std::endl;
+
+    auto sortedSortable = SortedSortable<decltype(sortable), std::less<>>{};
+
+    for (auto [index, value] : sortedSortable.data)
+        std::cout << index << " : " << value << std::endl;
+    std::cout << std::endl;
+    */
+
+    auto sorted = selectionSort<ProjExprFrequency>(l);
+
+
+    //constexpr auto sortable2 = std::array<std::pair<int, double>, 17>{};
+
+
+    //std::ranges::sort(sortable2);
+
+    //auto sorted = sortSortable<std::less<>>(sortable);
+    //auto sorted = sortSortable<std::less<>>(sortable2);
+
+    //auto sortable = Sortable{l, ProjExprFrequency{}, std::less<>{}};
+
+    //auto l2 = ctllSort<ProjExprFrequency>(l);
+
+
+    //identify_type<decltype(atoms)>{};
+
+
+    //auto isSingleAtom = smarts.isSingleAtom;
+
+
+
+
+    OpenBabel::OBMol mol;
+    CTSmarts::contains<"[Be,B,Al,Ti,Cr,Mn,Fe,Co,Ni,Cu,Pd,Ag,Sn,Pt,Au,Hg,Pb,Bi,As,Sb,Gd,Te]">(mol);
+    //CTSmarts::contains<"[Be,B,Al,Ti,Cr,Mn,Fe,Co,Ni,Cu,Pd,Ag,Sn,Pt,Au,Hg,Pb,Bi,As,Be]">(mol);
+    //CTSmarts::contains<"[Ti,Cr,Mn,Fe,Co,Ni,Cu,Pd,Ag,Sn,Pt,Au,Hg,Pb,Bi,As,Sb]">(mol);
+
+
+
+            /*
     auto edges = EdgeList(smarts);
-    auto degrees = DegreeList(smarts, edges);
-    auto adjList = AdjacencyList(smarts, edges, degrees);
+    auto degrees = VertexDegree(smarts, edges);
+    auto adjList = IncidentList(smarts, edges, degrees);
+
+    auto dfsEdgeList = DfsEdgeList(smarts, adjList);
+    //auto dfsEdgeList2 = DfsEdgeList2(smarts, adjList);
+
+
+    auto cycleMembership = CycleMembership(smarts, adjList);
+
+    auto dfsBondList = DfsBondList(smarts, dfsEdgeList, cycleMembership);
+
+    auto dfsBonds = dfsBondList.data;
+
+    //identify_type<decltype(dfsBondList)>{};
 
     //std::cout << edges.data << std::endl;
     std::cout << degrees.data << std::endl;
     std::cout << adjList.data << std::endl;
+
+    for (auto &dfsEdge : dfsEdgeList.data)
+        std::cout << dfsEdge.source << " - " << dfsEdge.target << ", index = " << dfsEdge.index << ", closure = " << dfsEdge.closure << std::endl;
+
+    std::cout << "cyclic atoms: ";
+    for (auto c : cycleMembership.vertices)
+        std::cout << c << " ";
+    std::cout << std::endl;
+
+    std::cout << "cyclic bonds: ";
+    for (auto c : cycleMembership.edges)
+        std::cout << c << " ";
+    std::cout << std::endl;
+
+*/
+
+    //auto p1 = ctll::list<AnyAtom, AnyAliphatic, AnyAromatic, Cyclic, Acyclic>{};
+    //auto p2 = addPrimitives<AliphaticAtom, 1, 10>(p1);
+
+
+
+
+
+    /*
+    std::cout << std::endl;
+    for (auto &dfsEdge : dfsEdgeList2.data)
+        std::cout << dfsEdge.source << " - " << dfsEdge.target << ", index = " << dfsEdge.index << ", closure = " << dfsEdge.closure << std::endl;
+    */
+
+
 
 
     //auto smarts = Smarts<"[#6]:1:2:[!#1]:[#7+](:[!#1]:[#6](:[!#1]:1:[#6]:[#6]:[#6]:[#6]:2)-[*])~[#6]:[#6]">{};
@@ -1171,7 +1591,7 @@ auto matchAtomExpr(const Molecule &mol, const Atom &atom, ctll::list<Ts...> atom
     });
 }
 
-template<auto T>
+template<typename T>
 struct identify_type;
 
 

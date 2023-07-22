@@ -13,13 +13,13 @@ namespace Kitimar::CTSmarts {
     };
 
     template<typename SmartsT>
-    constexpr auto makeEdgeList(ctll::empty_list) noexcept
+    consteval auto makeEdgeList(ctll::empty_list) noexcept
     {
         return std::array<Edge, SmartsT::numBonds>{};
     }
 
     template<typename SmartsT, typename Bond, typename ...Bonds>
-    constexpr auto makeEdgeList(ctll::list<Bond, Bonds...> bonds) noexcept
+    consteval auto makeEdgeList(ctll::list<Bond, Bonds...> bonds) noexcept
     {
         auto [bond, tail] = ctll::pop_and_get_front(bonds);
         auto edges = makeEdgeList<SmartsT>(tail);
@@ -33,13 +33,8 @@ namespace Kitimar::CTSmarts {
     {
         static constexpr inline auto data = makeEdgeList<SmartsT>(SmartsT::bonds);
 
-        static constexpr inline Edge get(int index) noexcept
-        {
-            return data[index];
-        }
-
-        constexpr EdgeList() noexcept {}
-        constexpr EdgeList(SmartsT) noexcept {}
+        consteval EdgeList() noexcept {}
+        consteval EdgeList(SmartsT) noexcept {}
     };
 
 }

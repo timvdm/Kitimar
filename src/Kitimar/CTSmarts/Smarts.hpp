@@ -1,13 +1,15 @@
 #pragma once
 
-#include "Algorithm/EdgeList.hpp"
-#include "Algorithm/VertexDegree.hpp"
-#include "Algorithm/IncidentList.hpp"
-#include "Algorithm/DfsSearch.hpp"
-#include "Algorithm/DfsSearchEvents.hpp"
-#include "Algorithm/DfsEdgeList.hpp"
-#include "Algorithm/CycleMembership.hpp"
-#include "Algorithm/DfsBondList.hpp"
+#include <Kitimar/CTSmarts/Algorithm/EdgeList.hpp>
+#include <Kitimar/CTSmarts/Algorithm/VertexDegree.hpp>
+#include <Kitimar/CTSmarts/Algorithm/IncidentList.hpp>
+#include <Kitimar/CTSmarts/Algorithm/DfsSearch.hpp>
+#include <Kitimar/CTSmarts/Algorithm/DfsSearchEvents.hpp>
+#include <Kitimar/CTSmarts/Algorithm/DfsEdgeList.hpp>
+#include <Kitimar/CTSmarts/Algorithm/CycleMembership.hpp>
+#include <Kitimar/CTSmarts/Algorithm/DfsBondList.hpp>
+
+#include <Kitimar/CTSmarts/Optimizer/OptimizeExpression.hpp>
 
 #include "Util.hpp"
 #include "Parser/Actions.hpp"
@@ -29,9 +31,6 @@ namespace Kitimar::CTSmarts {
     {
         return numEdges - numVertices + numComponents;
     }
-
-
-
 
     //
     // Captures
@@ -83,7 +82,7 @@ namespace Kitimar::CTSmarts {
             return -1;
         auto centralAtom = -1;
         for (std::size_t i = 0; i < smarts.numAtoms; ++i) {
-            switch (vertexDegree.get(i)) {
+            switch (vertexDegree.data[i]) {
                 case 0:
                     return -1;
                 case 1:
@@ -168,7 +167,8 @@ namespace Kitimar::CTSmarts {
         static constexpr inline auto position = Result::position;
 
 
-        static constexpr inline auto atoms = handleTotalH(ctll::rotate(Context::atoms));
+        //static constexpr inline auto atoms = handleTotalH(ctll::rotate(Context::atoms));
+        static constexpr inline auto atoms = optimizeExpressions(handleTotalH(ctll::rotate(Context::atoms)));
         static constexpr inline auto bonds = ctll::rotate(Context::bonds);
         static constexpr inline auto numAtoms = ctll::size(atoms);
         static constexpr inline auto numBonds = ctll::size(bonds);

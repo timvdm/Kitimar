@@ -5,20 +5,20 @@
 
 namespace Kitimar::CTSmarts {
 
-    template<typename SmartsT, typename AdjacencyListT>
+    template<typename SmartsT, typename IncidentListT>
     struct CycleMembershipVisitor
     {
 
-        constexpr CycleMembershipVisitor() noexcept {}
-        constexpr CycleMembershipVisitor(SmartsT) noexcept {}
+        consteval CycleMembershipVisitor() noexcept {}
+        consteval CycleMembershipVisitor(SmartsT) noexcept {}
 
         constexpr void visit(int edge, int source, int target, bool isNewComponent, bool isClosure) noexcept
         {
             path[depth++] = edge;
 
             if (isClosure) {
-                for (auto i = depth - 1; i >= 0; --i) {
-                    auto e = AdjacencyListT::edges.get(path[i]);
+                for (auto i = depth - 1; i >= 0; --i) {                    
+                    auto e = IncidentListT::edges.data[path[i]];
                     edges[path[i]] = true;
                     vertices[e.source] = true;
                     vertices[e.target] = true;
@@ -42,11 +42,11 @@ namespace Kitimar::CTSmarts {
         int depth = 0;
     };
 
-    template<typename SmartsT, typename AdjacencyListT>
-    constexpr auto makeCycleMembership()
+    template<typename SmartsT, typename IncidentListT>
+    consteval auto makeCycleMembership()
     {
-        CycleMembershipVisitor<SmartsT, AdjacencyListT> visitor;
-        dfsSearch(SmartsT{}, visitor, AdjacencyListT{});
+        CycleMembershipVisitor<SmartsT, IncidentListT> visitor;
+        dfsSearch(SmartsT{}, visitor, IncidentListT{});
         return std::make_tuple(visitor.vertices, visitor.edges);
     }
 
@@ -57,8 +57,8 @@ namespace Kitimar::CTSmarts {
         static constexpr inline auto vertices = std::get<0>(data);
         static constexpr inline auto edges = std::get<1>(data);
 
-        constexpr CycleMembership() noexcept {}
-        constexpr CycleMembership(SmartsT, EdgeListT) noexcept {}
+        consteval CycleMembership() noexcept {}
+        consteval CycleMembership(SmartsT, EdgeListT) noexcept {}
     };
 
 }

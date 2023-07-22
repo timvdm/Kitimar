@@ -14,8 +14,8 @@ namespace Kitimar::CTSmarts {
     struct DfsEdgeListVisitor
     {
 
-        constexpr DfsEdgeListVisitor() noexcept {}
-        constexpr DfsEdgeListVisitor(SmartsT) noexcept {}
+        consteval DfsEdgeListVisitor() noexcept {}
+        consteval DfsEdgeListVisitor(SmartsT) noexcept {}
 
         constexpr void visit(int edge, int source, int target, bool isNewComponent, bool isClosure) noexcept
         {
@@ -31,27 +31,26 @@ namespace Kitimar::CTSmarts {
         int nextEdgeIndex = 0;
     };
 
-    template<typename SmartsT, typename AdjacencyListT>
-    constexpr auto makeDfsEdgeList()
+    template<typename SmartsT, typename IncidentListT>
+    consteval auto makeDfsEdgeList()
     {
         DfsEdgeListVisitor<SmartsT> visitor;
-        dfsSearch(SmartsT{}, visitor, AdjacencyListT{});
+        dfsSearch(SmartsT{}, visitor, IncidentListT{});
         return visitor.edges;
     }
 
-
-    template<typename SmartsT, typename AdjacencyListT>
+    template<typename SmartsT, typename IncidentListT>
     struct DfsEdgeList
     {
-        static constexpr inline auto data = makeDfsEdgeList<SmartsT, AdjacencyListT>();
+        static constexpr inline auto data = makeDfsEdgeList<SmartsT, IncidentListT>();
 
-        static constexpr inline DfsEdge get(int index) noexcept
+        static consteval inline DfsEdge get(int index) noexcept
         {
             return data[index];
         }
 
-        constexpr DfsEdgeList() noexcept {}
-        constexpr DfsEdgeList(SmartsT, AdjacencyListT) noexcept {}
+        consteval DfsEdgeList() noexcept {}
+        consteval DfsEdgeList(SmartsT, IncidentListT) noexcept {}
     };
 
 }

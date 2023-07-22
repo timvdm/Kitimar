@@ -227,7 +227,7 @@ namespace Kitimar::CTSmarts {
 
             bool matchAtom(Mol &mol, const auto &atom, int queryAtomIndex, auto atomExpr) const noexcept
             {
-                if (get_degree(mol, atom) < vertexDegree.get(queryAtomIndex))
+                if (get_degree(mol, atom) < vertexDegree.data[queryAtomIndex])
                     return false;
 
                 return matchAtomExpr(mol, atom, atomExpr);

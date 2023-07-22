@@ -48,8 +48,8 @@ namespace Kitimar::CTSmarts {
 
         using Events = std::array<Event, 2 * (SmartsT::numAtoms + SmartsT::numBonds)>;
 
-        constexpr DfsSearchEventsVisitor() noexcept {}
-        constexpr DfsSearchEventsVisitor(SmartsT) noexcept {}
+        consteval DfsSearchEventsVisitor() noexcept {}
+        consteval DfsSearchEventsVisitor(SmartsT) noexcept {}
 
         constexpr void visit(int edge, int source, int target, bool isNewComponent, bool isClosure) noexcept
         {
@@ -76,22 +76,22 @@ namespace Kitimar::CTSmarts {
         int nextEventIndex = 0;
     };
 
-    template<typename SmartsT, typename AdjacencyListT>
-    constexpr auto makeDfsSearchEvents()
+    template<typename SmartsT, typename IncidentListT>
+    consteval auto makeDfsSearchEvents()
     {
         DfsSearchEventsVisitor<SmartsT> visitor;
-        dfsSearch(SmartsT{}, visitor, AdjacencyListT{});
+        dfsSearch(SmartsT{}, visitor, IncidentListT{});
         return visitor.events;
     }
 
 
-    template<typename SmartsT, typename AdjacencyListT>
+    template<typename SmartsT, typename IncidentListT>
     struct DfsSearchEvents
     {
-        static constexpr inline auto events = makeDfsSearchEvents<SmartsT, AdjacencyListT>();
+        static constexpr inline auto events = makeDfsSearchEvents<SmartsT, IncidentListT>();
 
-        constexpr DfsSearchEvents() noexcept {}
-        constexpr DfsSearchEvents(SmartsT, AdjacencyListT) noexcept {}
+        consteval DfsSearchEvents() noexcept {}
+        consteval DfsSearchEvents(SmartsT, IncidentListT) noexcept {}
     };
 
 }

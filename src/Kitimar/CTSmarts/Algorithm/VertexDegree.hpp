@@ -1,11 +1,12 @@
 #pragma once
 
+#include <array>
 #include <algorithm>
 
 namespace Kitimar::CTSmarts {
 
     template<typename SmartsT, typename EdgeListT>
-    constexpr auto makeVertexDegree() noexcept
+    consteval auto makeVertexDegree() noexcept
     {
         std::array<int, SmartsT::numAtoms> degrees = {};
         for (const auto &edge : EdgeListT::data) {
@@ -20,18 +21,13 @@ namespace Kitimar::CTSmarts {
     {
         static constexpr inline auto data = makeVertexDegree<SmartsT, EdgeListT>();
 
-        static constexpr inline int get(int index) noexcept
-        {
-            return data[index];
-        }
-
-        static constexpr auto max() noexcept
+        static consteval auto max() noexcept
         {
             return *std::ranges::max_element(data);
         }
 
-        constexpr VertexDegree() noexcept {}
-        constexpr VertexDegree(SmartsT, EdgeListT) noexcept {}
+        consteval VertexDegree() noexcept {}
+        consteval VertexDegree(SmartsT, EdgeListT) noexcept {}
     };
 
 }

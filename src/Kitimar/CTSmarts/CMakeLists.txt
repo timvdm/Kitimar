@@ -17,6 +17,10 @@ set(CTSmarts_HDRS
     Algorithm/DfsEdgeList.hpp
     Algorithm/CycleMembership.hpp
     Algorithm/DfsBondList.hpp
+    Algorithm/CtllSort.hpp
+    Optimizer/PrimitiveFrequency.hpp
+    Optimizer/ExpressionFrequency.hpp
+    Optimizer/OptimizeExpression.hpp
 )
 
 # Library

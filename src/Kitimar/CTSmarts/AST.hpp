@@ -155,6 +155,13 @@ namespace Kitimar::CTSmarts {
     // Graph
     //
 
+    template<int Index, typename Expr>
+    struct Atom
+    {
+        static constexpr inline auto index = Index;
+        static constexpr inline auto expr = Expr();
+    };
+
     template<int Source, int Target, typename Expr>
     struct Bond
     {
