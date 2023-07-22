@@ -135,17 +135,6 @@ namespace Kitimar::CTSmarts {
     }
 
 
-    template<typename ...Expr>
-    constexpr auto handleTotalH(ctll::list<Expr...> atoms)
-    {
-        return transform(atoms, [] (auto expr) {
-            if constexpr (SmartsActions::isTotalHExpr(expr))
-                return SmartsActions::toTotalHExpr(expr);
-            else
-                return expr;
-        });
-    }
-
 
     //template<typename Atoms, typename Bonds>
     template <ctll::fixed_string SMARTS, bool IgnoreInvalid>
@@ -167,8 +156,7 @@ namespace Kitimar::CTSmarts {
         static constexpr inline auto position = Result::position;
 
 
-        //static constexpr inline auto atoms = handleTotalH(ctll::rotate(Context::atoms));
-        static constexpr inline auto atoms = optimizeExpressions(handleTotalH(ctll::rotate(Context::atoms)));
+        static constexpr inline auto atoms = ctll::rotate(Context::atoms);
         static constexpr inline auto bonds = ctll::rotate(Context::bonds);
         static constexpr inline auto numAtoms = ctll::size(atoms);
         static constexpr inline auto numBonds = ctll::size(bonds);

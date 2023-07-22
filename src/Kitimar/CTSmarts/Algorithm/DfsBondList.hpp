@@ -4,16 +4,14 @@
 
 namespace Kitimar::CTSmarts {
 
-    template<int Source, int Target, bool IsCyclic, bool IsRingClosure, typename SourceExpr, typename TargetExpr, typename BondExpr>
+    template<typename Source, typename Target, typename BondExpr, bool IsCyclic, bool IsRingClosure>
     struct DfsBond
     {
-        static constexpr inline auto source = Source;
-        static constexpr inline auto target = Target;
+        static constexpr inline auto source = Source{};
+        static constexpr inline auto target = Target{};
+        static constexpr inline auto expr = BondExpr();
         static constexpr inline auto isCyclic = IsCyclic;
         static constexpr inline auto isRingClosure = IsRingClosure;
-        static constexpr inline auto sourceExpr = SourceExpr();
-        static constexpr inline auto targetExpr = TargetExpr();
-        static constexpr inline auto bondExpr = BondExpr();
     };
 
     template<typename SmartsT, typename DfsEdgeListT, typename CycleMembershipT, int DfsEdgeIndex>
@@ -25,11 +23,11 @@ namespace Kitimar::CTSmarts {
             constexpr auto edge = DfsEdgeListT::get(DfsEdgeIndex);
 
             constexpr auto bondExpr = get<edge.index>(SmartsT::bonds).expr;
-            auto sourceExpr = get<edge.source>(SmartsT::atoms);
-            auto targetExpr = get<edge.target>(SmartsT::atoms);
+            auto source = get<edge.source>(SmartsT::atoms);
+            auto target = get<edge.target>(SmartsT::atoms);
             constexpr auto isCyclic = CycleMembershipT::edges[edge.index];
 
-            auto dfsBond = DfsBond<edge.source, edge.target, isCyclic, edge.closure, decltype(sourceExpr), decltype(targetExpr), decltype(bondExpr)>{};
+            auto dfsBond = DfsBond<decltype(source), decltype(target), decltype(bondExpr), isCyclic, edge.closure>{};
 
             return ctll::push_front(dfsBond, makeDfsBondListHelper<SmartsT, DfsEdgeListT, CycleMembershipT, DfsEdgeIndex + 1>());
         }

@@ -225,12 +225,12 @@ namespace Kitimar::CTSmarts {
             }
 
 
-            bool matchAtom(Mol &mol, const auto &atom, int queryAtomIndex, auto atomExpr) const noexcept
+            bool matchAtom(Mol &mol, const auto &atom, auto queryAtom) const noexcept
             {
-                if (get_degree(mol, atom) < vertexDegree.data[queryAtomIndex])
+                if (get_degree(mol, atom) < vertexDegree.data[queryAtom.index])
                     return false;
 
-                return matchAtomExpr(mol, atom, atomExpr);
+                return matchAtomExpr(mol, atom, queryAtom.expr);
             }
 
             bool matchBond(Mol &mol, const auto &bond, int queryBondIndex, auto queryBond) const noexcept
@@ -239,7 +239,7 @@ namespace Kitimar::CTSmarts {
                     if (!is_cyclic_bond(mol, bond))
                         return false;
 
-                return matchBondExpr(mol, bond, queryBond.bondExpr);
+                return matchBondExpr(mol, bond, queryBond.expr);
             }
 
 
@@ -347,19 +347,19 @@ namespace Kitimar::CTSmarts {
 
                     if constexpr (queryBond.isRingClosure) { // Ring closure?
 
-                        auto source = get_atom(mol, m_map[querySource]);
-                        auto target = get_atom(mol, m_map[queryTarget]);
+                        auto source = get_atom(mol, m_map[querySource.index]);
+                        auto target = get_atom(mol, m_map[queryTarget.index]);
                         if (!this->isMapped(get_index(mol, target)))
                             return;
                         auto bond = Molecule::get_bond(mol, source, target);
                         if (bond == null_bond(mol))
                             return;
-                        if (matchBondExpr(mol, bond, queryBond.bondExpr))
+                        if (matchBondExpr(mol, bond, queryBond.expr))
                             matchDfs(mol, callback, startAtom, ctll::pop_front(bonds));
 
-                    } else if (m_map[querySource] != invalidIndex) { // Source atom mapped?
+                    } else if (m_map[querySource.index] != invalidIndex) { // Source atom mapped?
 
-                        auto source = get_atom(mol, m_map[querySource]);
+                        auto source = get_atom(mol, m_map[querySource.index]);
 
                         for (auto bond : get_bonds(mol, source)) {
 
@@ -378,13 +378,13 @@ namespace Kitimar::CTSmarts {
                             }
 
                             // match target atom
-                            if (!matchAtom(mol, target, queryTarget, queryBond.targetExpr)) {
+                            if (!matchAtom(mol, target, queryTarget)) {
                                 debug("    atom does not match");
                                 continue;
                             }
 
                             // map target atom
-                            addAtom(targetIndex, queryTarget);
+                            addAtom(targetIndex, queryTarget.index);
                             matchDfs(mol, callback, startAtom, ctll::pop_front(bonds));
                             // exit as soon as possible if only one match is required
                             // (single mapping stored in m_map after returning)
@@ -392,7 +392,7 @@ namespace Kitimar::CTSmarts {
                                 return;
                             // bracktrack target atom
                             if constexpr (!queryBond.isRingClosure)
-                                removeAtom(targetIndex, queryTarget);
+                                removeAtom(targetIndex, queryTarget.index);
 
                         }
 
@@ -419,15 +419,15 @@ namespace Kitimar::CTSmarts {
 
                             debug("    start atom: ",  index);
 
-                            if (!matchAtom(mol, atom, queryAtom, queryBond.sourceExpr))
+                            if (!matchAtom(mol, atom, queryAtom))
                                 continue;
 
                             // map source atom, recursive dfs, backtrack
-                            addAtom(index, queryAtom);
+                            addAtom(index, queryAtom.index);
                             matchDfs(mol, callback, startAtom, dfsBonds);
                             if (isDone())
                                 return;
-                            removeAtom(index, queryAtom);
+                            removeAtom(index, queryAtom.index);
 
                             if (startAtom != -1)
                                 return;;

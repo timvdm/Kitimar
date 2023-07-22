@@ -52,7 +52,7 @@ namespace Kitimar::CTSmarts {
 
         constexpr bool singleAtomMatch(auto smarts, auto &mol, const auto &atom)
         {
-            return matchAtomExpr(mol, atom, get<0>(smarts.atoms));
+            return matchAtomExpr(mol, atom, get<0>(smarts.atoms).expr);
         }
 
         // 0 -> no match
@@ -64,9 +64,9 @@ namespace Kitimar::CTSmarts {
             auto target = get_target(mol, bond);
             if (!matchBondExpr(mol, bond, get<0>(smarts.bonds).expr))
                 return 0;
-            if (matchAtomExpr(mol, source, get<0>(smarts.atoms)) && matchAtomExpr(mol, target, get<1>(smarts.atoms)))
+            if (matchAtomExpr(mol, source, get<0>(smarts.atoms).expr) && matchAtomExpr(mol, target, get<1>(smarts.atoms).expr))
                 return 1;
-            if (matchAtomExpr(mol, source, get<1>(smarts.atoms)) && matchAtomExpr(mol, target, get<0>(smarts.atoms)))
+            if (matchAtomExpr(mol, source, get<1>(smarts.atoms).expr) && matchAtomExpr(mol, target, get<0>(smarts.atoms).expr))
                 return 2;
             return 0;
         }
@@ -150,12 +150,12 @@ namespace Kitimar::CTSmarts {
             return detail::singleAtomMatch(smarts, mol, atom);
         } else if constexpr (smarts.isSingleBond) {
             // Optimize single bond SMARTS
-            if (!matchAtomExpr(mol, atom, get<0>(smarts.atoms)))
+            if (!matchAtomExpr(mol, atom, get<0>(smarts.atoms).expr))
                 return false;
             for (auto bond : get_bonds(mol, atom)) {
                 if (!matchBondExpr(mol, bond, get<0>(smarts.bonds).expr))
                     continue;
-                if (matchAtomExpr(mol, get_nbr(mol, bond, atom), get<1>(smarts.atoms)))
+                if (matchAtomExpr(mol, get_nbr(mol, bond, atom), get<1>(smarts.atoms).expr))
                     return true;
             }
             return false;

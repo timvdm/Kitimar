@@ -501,7 +501,11 @@ namespace Kitimar::CTSmarts {
 
         static constexpr auto makeAtomAST(auto expr)
         {
-            return makeAndLow(expr);
+            constexpr auto expr2 = makeAndLow(expr);
+            if constexpr (SmartsActions::isTotalHExpr(expr2))
+                return SmartsActions::toTotalHExpr(expr2);
+            else
+                return expr2;
         }
 
         static constexpr auto makeBondAST(auto expr)
@@ -522,7 +526,7 @@ namespace Kitimar::CTSmarts {
 
 
         template<typename Atoms, typename Bonds, typename Params>
-        static constexpr auto createBond(Atoms atoms, Bonds bonds, Params params)
+        static constexpr auto makeBond(Atoms atoms, Bonds bonds, Params params)
         {
             if constexpr (ctll::empty(params.prevIndex)) {
                 return SmartsContext{atoms, bonds, params.nextAtom()};
@@ -535,12 +539,14 @@ namespace Kitimar::CTSmarts {
             }
         }
 
+
         template <auto V, typename Context>
         static constexpr auto apply(SmartsGrammar::next_atom, ctll::term<V> term, Context ctx)
         {
-            auto tree = makeAtomAST(ctll::rotate(ctx.params.atomExpr));
-            auto atoms = ctll::push_front(tree, ctx.atoms);
-            return createBond(atoms, ctx.bonds, ctx.params.setAtomExpr(ctll::empty_list())); // FIXME empty atomExpr in nextAtom
+            auto expr = makeAtomAST(ctll::rotate(ctx.params.atomExpr));
+            auto atom = Atom<ctll::size(ctx.atoms), decltype(expr)>{};
+            auto atoms = ctll::push_front(atom, ctx.atoms);
+            return makeBond(atoms, ctx.bonds, ctx.params.setAtomExpr(ctll::empty_list())); // FIXME empty atomExpr in nextAtom
         }
 
         //

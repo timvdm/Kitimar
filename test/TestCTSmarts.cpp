@@ -12,14 +12,18 @@
 using namespace Kitimar;
 using namespace Kitimar::CTSmarts;
 
-template <ctll::fixed_string SMARTS, typename AtomExpr, int AtomIndex = 0>
+template <ctll::fixed_string SMARTS, typename AtomExpr/*, int AtomIndex = 0*/>
 constexpr void test_atom_expr()
 {
+    constexpr auto AtomIndex = 0;
     auto smarts = Smarts<SMARTS>{};
     static_assert(ctll::size(smarts.atoms) > AtomIndex);
     auto expr = get<AtomIndex>(smarts.atoms);
     //static_assert(std::is_same_v<decltype(expr), AtomExpr>);
-    static_assert(std::is_same_v<decltype(expr), decltype(optimizeExpression(AtomExpr{}))>);
+    //static_assert(std::is_same_v<decltype(expr), decltype(optimizeExpression(AtomExpr{}))>);
+    static_assert(std::is_same_v<decltype(expr), Atom<AtomIndex, AtomExpr>>);
+
+
 }
 
 template <ctll::fixed_string SMARTS, typename BondExpr, int BondIndex = 0>
@@ -1319,155 +1323,19 @@ TEST(TestCTSmarts, OptimizeExpressions)
 
 
 
+
+
+
+
+
+
+
+
+
 TEST(TestCTSmarts, Debug)
 {
 
-    //auto smarts = Smarts<"CC(C)C">{};
 
-    //auto smarts = Smarts<"**1*(*)*1*">{};
-
-
-    //auto smarts = Smarts<"[Ti,Cr,Mn,Fe,Co,Ni,Cu,Pd,Ag,Sn,Pt,Au,Hg,Pb,Bi,As,Sb]">{};
-
-    //auto atoms = smarts.atoms;
-
-    auto l = ctll::list<
-            Kitimar::CTSmarts::AliphaticAtom<22>, // Ti
-            Kitimar::CTSmarts::AliphaticAtom<24>, // Cr
-            Kitimar::CTSmarts::AliphaticAtom<25>, // Mn
-            Kitimar::CTSmarts::AliphaticAtom<26>, // Fe
-            Kitimar::CTSmarts::AliphaticAtom<27>, // Co
-            Kitimar::CTSmarts::AliphaticAtom<28>, // Ni
-            Kitimar::CTSmarts::AliphaticAtom<29>, // Cu
-            Kitimar::CTSmarts::AliphaticAtom<46>, // Pd
-            Kitimar::CTSmarts::AliphaticAtom<47>, // Ag
-            Kitimar::CTSmarts::AliphaticAtom<50>, // Sn
-            Kitimar::CTSmarts::AliphaticAtom<78>, // Pt
-            Kitimar::CTSmarts::AliphaticAtom<79>, // Au
-            Kitimar::CTSmarts::AliphaticAtom<80>, // Hg
-            Kitimar::CTSmarts::AliphaticAtom<82>, // Pb
-            Kitimar::CTSmarts::AliphaticAtom<83>, // Bi
-            Kitimar::CTSmarts::AliphaticAtom<33>, // As
-            Kitimar::CTSmarts::AliphaticAtom<51>  // Sb
-    >{};
-
-    /*
-    constexpr auto sortable = Sortable<decltype(l), ProjExprFrequency>{};
-
-    for (auto [index, value] : sortable.data)
-        std::cout << index << " : " << value << std::endl;
-    std::cout << std::endl;
-
-    auto sortedSortable = SortedSortable<decltype(sortable), std::less<>>{};
-
-    for (auto [index, value] : sortedSortable.data)
-        std::cout << index << " : " << value << std::endl;
-    std::cout << std::endl;
-    */
-
-    auto sorted = selectionSort<ProjExprFrequency>(l);
-
-
-    //constexpr auto sortable2 = std::array<std::pair<int, double>, 17>{};
-
-
-    //std::ranges::sort(sortable2);
-
-    //auto sorted = sortSortable<std::less<>>(sortable);
-    //auto sorted = sortSortable<std::less<>>(sortable2);
-
-    //auto sortable = Sortable{l, ProjExprFrequency{}, std::less<>{}};
-
-    //auto l2 = ctllSort<ProjExprFrequency>(l);
-
-
-    //identify_type<decltype(atoms)>{};
-
-
-    //auto isSingleAtom = smarts.isSingleAtom;
-
-
-
-
-    OpenBabel::OBMol mol;
-    CTSmarts::contains<"[Be,B,Al,Ti,Cr,Mn,Fe,Co,Ni,Cu,Pd,Ag,Sn,Pt,Au,Hg,Pb,Bi,As,Sb,Gd,Te]">(mol);
-    //CTSmarts::contains<"[Be,B,Al,Ti,Cr,Mn,Fe,Co,Ni,Cu,Pd,Ag,Sn,Pt,Au,Hg,Pb,Bi,As,Be]">(mol);
-    //CTSmarts::contains<"[Ti,Cr,Mn,Fe,Co,Ni,Cu,Pd,Ag,Sn,Pt,Au,Hg,Pb,Bi,As,Sb]">(mol);
-
-
-
-            /*
-    auto edges = EdgeList(smarts);
-    auto degrees = VertexDegree(smarts, edges);
-    auto adjList = IncidentList(smarts, edges, degrees);
-
-    auto dfsEdgeList = DfsEdgeList(smarts, adjList);
-    //auto dfsEdgeList2 = DfsEdgeList2(smarts, adjList);
-
-
-    auto cycleMembership = CycleMembership(smarts, adjList);
-
-    auto dfsBondList = DfsBondList(smarts, dfsEdgeList, cycleMembership);
-
-    auto dfsBonds = dfsBondList.data;
-
-    //identify_type<decltype(dfsBondList)>{};
-
-    //std::cout << edges.data << std::endl;
-    std::cout << degrees.data << std::endl;
-    std::cout << adjList.data << std::endl;
-
-    for (auto &dfsEdge : dfsEdgeList.data)
-        std::cout << dfsEdge.source << " - " << dfsEdge.target << ", index = " << dfsEdge.index << ", closure = " << dfsEdge.closure << std::endl;
-
-    std::cout << "cyclic atoms: ";
-    for (auto c : cycleMembership.vertices)
-        std::cout << c << " ";
-    std::cout << std::endl;
-
-    std::cout << "cyclic bonds: ";
-    for (auto c : cycleMembership.edges)
-        std::cout << c << " ";
-    std::cout << std::endl;
-
-*/
-
-    //auto p1 = ctll::list<AnyAtom, AnyAliphatic, AnyAromatic, Cyclic, Acyclic>{};
-    //auto p2 = addPrimitives<AliphaticAtom, 1, 10>(p1);
-
-
-
-
-
-    /*
-    std::cout << std::endl;
-    for (auto &dfsEdge : dfsEdgeList2.data)
-        std::cout << dfsEdge.source << " - " << dfsEdge.target << ", index = " << dfsEdge.index << ", closure = " << dfsEdge.closure << std::endl;
-    */
-
-
-
-
-    //auto smarts = Smarts<"[#6]:1:2:[!#1]:[#7+](:[!#1]:[#6](:[!#1]:1:[#6]:[#6]:[#6]:[#6]:2)-[*])~[#6]:[#6]">{};
-                      //       1 2                                1                     2
-
-    //auto smarts = Smarts<"*:1:2*:1*:2">{};
-    //auto atoms = smarts.atoms;
-
-
-
-
-    /*
-    auto mol = readSmilesOpenBabel("CS");
-
-    auto S = mol.GetAtom(2);
-    EXPECT_EQ(S->GetAtomicNum(), 16);
-    std::cout << S->GetTotalDegree() << std::endl;
-
-    auto m = CTSmarts::contains<"[#16X2H]">(mol);
-
-    EXPECT_TRUE(m);
-*/
 
 
 }
