@@ -28,7 +28,7 @@ constexpr void test_bond_expr()
     auto smarts = Smarts<SMARTS>{};
     static_assert(ctll::size(smarts.bonds) > BondIndex);
     auto expr = get<BondIndex>(smarts.bonds);
-    static_assert(std::is_same_v<decltype(expr), Bond<0, 1, BondExpr>>);
+    static_assert(std::is_same_v<decltype(expr), Bond<BondIndex, 0, 1, BondExpr>>);
 }
 
 
@@ -439,27 +439,27 @@ TEST(TestCTSmarts, RingBond)
     using Single = BondOrder<1>;
     using Double = BondOrder<2>;
 
-    test_bond<"*1***1", Bond<3, 0, ImplicitBond>, 3 >();
-    test_bond<"*-1***1", Bond<3, 0, Single>, 3 >();
-    test_bond<"*1***-1", Bond<3, 0, Single>, 3 >();
-    test_bond<"*=1***=1", Bond<3, 0, Double>, 3 >();
+    test_bond<"*1***1", Bond<3, 3, 0, ImplicitBond>, 3 >();
+    test_bond<"*-1***1", Bond<3, 3, 0, Single>, 3 >();
+    test_bond<"*1***-1", Bond<3, 3, 0, Single>, 3 >();
+    test_bond<"*=1***=1", Bond<3, 3, 0, Double>, 3 >();
 
 
     //         0  2   4
-    test_bond<"*1**12**2", Bond<2, 0, ImplicitBond>, 2 >();
-    test_bond<"*1**12**2", Bond<4, 2, ImplicitBond>, 5 >();
-    test_bond<"*2**21**1", Bond<2, 0, ImplicitBond>, 2 >();
-    test_bond<"*2**21**1", Bond<4, 2, ImplicitBond>, 5 >();
-    test_bond<"*1**11**1", Bond<2, 0, ImplicitBond>, 2 >();
-    test_bond<"*1**11**1", Bond<4, 2, ImplicitBond>, 5 >();
+    test_bond<"*1**12**2", Bond<2, 2, 0, ImplicitBond>, 2 >();
+    test_bond<"*1**12**2", Bond<5, 4, 2, ImplicitBond>, 5 >();
+    test_bond<"*2**21**1", Bond<2, 2, 0, ImplicitBond>, 2 >();
+    test_bond<"*2**21**1", Bond<5, 4, 2, ImplicitBond>, 5 >();
+    test_bond<"*1**11**1", Bond<2, 2, 0, ImplicitBond>, 2 >();
+    test_bond<"*1**11**1", Bond<5, 4, 2, ImplicitBond>, 5 >();
 
     // adjacent ring bonds
-    test_bond<"*:1=2**:1*=2", Bond<2, 0, AromaticBond>, 2 >();
-    test_bond<"*:1=2**:1*=2", Bond<3, 0, Double>, 4 >();
-    test_bond<"*:1=2**1*2", Bond<2, 0, AromaticBond>, 2 >();
-    test_bond<"*:1=2**1*2", Bond<3, 0, Double>, 4 >();
-    test_bond<"*12**:1*=2", Bond<2, 0, AromaticBond>, 2 >();
-    test_bond<"*12**:1*=2", Bond<3, 0, Double>, 4 >();
+    test_bond<"*:1=2**:1*=2", Bond<2, 2, 0, AromaticBond>, 2 >();
+    test_bond<"*:1=2**:1*=2", Bond<4, 3, 0, Double>, 4 >();
+    test_bond<"*:1=2**1*2", Bond<2, 2, 0, AromaticBond>, 2 >();
+    test_bond<"*:1=2**1*2", Bond<4, 3, 0, Double>, 4 >();
+    test_bond<"*12**:1*=2", Bond<2, 2, 0, AromaticBond>, 2 >();
+    test_bond<"*12**:1*=2", Bond<4, 3, 0, Double>, 4 >();
 
 
     // conflicing ring bonds

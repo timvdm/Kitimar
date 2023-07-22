@@ -162,9 +162,10 @@ namespace Kitimar::CTSmarts {
         static constexpr inline auto expr = Expr();
     };
 
-    template<int Source, int Target, typename Expr>
+    template<int Index, int Source, int Target, typename Expr>
     struct Bond
     {
+        static constexpr inline auto index = Index;
         static constexpr inline auto source = Source;
         static constexpr inline auto target = Target;
         static constexpr inline auto expr = Expr();        
