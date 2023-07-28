@@ -1322,6 +1322,58 @@ TEST(TestCTSmarts, OptimizeExpressions)
 }
 
 
+TEST(TestCTSmarts, AtomFrequency)
+{
+    using C = AliphaticAtom<6>;
+    using N = AliphaticAtom<7>;
+    using O = AliphaticAtom<8>;
+
+    auto smarts = Smarts<"CNO">{};
+
+    constexpr auto atomFreq = AtomFrequency{smarts}.data;
+
+    static_assert(atomFreq.size() == 3);
+    static_assert(atomFreq[0] == expressionFrequency(C{}));
+    static_assert(atomFreq[1] == expressionFrequency(N{}));
+    static_assert(atomFreq[2] == expressionFrequency(O{}));
+}
+
+TEST(TestCTSmarts, IncidentList)
+{
+    /*
+    using C = AliphaticAtom<6>;
+    using N = AliphaticAtom<7>;
+    using O = AliphaticAtom<8>;
+    using F = AliphaticAtom<9>;
+    */
+
+    auto smarts = Smarts<"CN(O)F">{};
+
+    constexpr auto edgeList = EdgeList{smarts};
+    constexpr auto vertexDegree = VertexDegree{smarts, edgeList};
+    constexpr auto incidentList = IncidentList{smarts, edgeList, vertexDegree};
+
+    static_assert(incidentList.data.size() == 4 * 3);
+    static_assert(incidentList.data[0] == 0);
+    static_assert(incidentList.data[3] == 0);
+    static_assert(incidentList.data[4] == 1);
+    static_assert(incidentList.data[5] == 2);
+    static_assert(incidentList.data[6] == 1);
+    static_assert(incidentList.data[9] == 2);
+
+
+    constexpr auto atomFreq = AtomFrequency{smarts};
+    constexpr auto optimizeIncidentList = OptimizeIncidentList{smarts, incidentList, atomFreq};
+
+    static_assert(optimizeIncidentList.data.size() == 4 * 3);
+    static_assert(optimizeIncidentList.data[0] == 0);
+    static_assert(optimizeIncidentList.data[3] == 2);
+    static_assert(optimizeIncidentList.data[4] == 1);
+    static_assert(optimizeIncidentList.data[5] == 0);
+    static_assert(optimizeIncidentList.data[6] == 1);
+    static_assert(optimizeIncidentList.data[9] == 2);
+
+}
 
 
 

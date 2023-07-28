@@ -10,6 +10,8 @@
 #include <Kitimar/CTSmarts/Algorithm/DfsBondList.hpp>
 
 #include <Kitimar/CTSmarts/Optimizer/OptimizeExpression.hpp>
+#include <Kitimar/CTSmarts/Optimizer/AtomFrequency.hpp>
+#include <Kitimar/CTSmarts/Optimizer/OptimizeIncidentList.hpp>
 
 #include "Util.hpp"
 #include "Parser/Actions.hpp"

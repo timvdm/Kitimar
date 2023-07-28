@@ -21,7 +21,8 @@ set(CTSmarts_HDRS
     Optimizer/PrimitiveFrequency.hpp
     Optimizer/ExpressionFrequency.hpp
     Optimizer/OptimizeExpression.hpp
-    Optimizer/OptimizeAtoms.hpp
+    Optimizer/AtomFrequency.hpp
+    Optimizer/OptimizeIncidentList.hpp
 )
 
 # Library

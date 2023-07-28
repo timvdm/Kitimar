@@ -22,12 +22,12 @@ namespace Kitimar::CTSmarts {
         } else {
             constexpr auto edge = DfsEdgeListT::get(DfsEdgeIndex);
 
-            constexpr auto bondExpr = get<edge.index>(SmartsT::bonds).expr;
+            constexpr auto expr = get<edge.index>(SmartsT::bonds).expr;
             auto source = get<edge.source>(SmartsT::atoms);
             auto target = get<edge.target>(SmartsT::atoms);
             constexpr auto isCyclic = CycleMembershipT::edges[edge.index];
 
-            auto dfsBond = DfsBond<decltype(source), decltype(target), decltype(bondExpr), isCyclic, edge.closure>{};
+            auto dfsBond = DfsBond<decltype(source), decltype(target), decltype(expr), isCyclic, edge.closure>{};
 
             return ctll::push_front(dfsBond, makeDfsBondListHelper<SmartsT, DfsEdgeListT, CycleMembershipT, DfsEdgeIndex + 1>());
         }

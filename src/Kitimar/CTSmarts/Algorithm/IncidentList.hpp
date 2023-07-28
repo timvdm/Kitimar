@@ -9,9 +9,9 @@ namespace Kitimar::CTSmarts {
     consteval auto makeIncidentList()
     {
         constexpr auto stride = VertexDegreeT::max();
-        std::array<int, SmartsT::numAtoms * stride> adj = {};
+        std::array<int, SmartsT::numAtoms * stride> incident = {};
 
-        for (auto &i : adj)
+        for (auto &i : incident)
             i = -1; // FIXME: needed?
 
         std::array<int, SmartsT::numAtoms> sizes = {};
@@ -19,13 +19,13 @@ namespace Kitimar::CTSmarts {
             auto edge = EdgeListT::data[i];
             auto source = edge.source;
             auto target = edge.target;
-            adj[stride * source + sizes[source]] = i;
-            adj[stride * target + sizes[target]] = i;
+            incident[stride * source + sizes[source]] = i;
+            incident[stride * target + sizes[target]] = i;
             ++sizes[source];
             ++sizes[target];
         }
 
-        return adj;
+        return incident;
     }
 
     template<typename SmartsT, typename EdgeListT, typename VertexDegreeT>
