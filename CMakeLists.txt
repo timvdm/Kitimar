@@ -2,9 +2,9 @@ cmake_minimum_required(VERSION 3.16)
 
 project(Kitimar LANGUAGES CXX)
 
-option(KITIMAR_WITH_OPENBABEL "Build with OpenBabel support" ON)
-option(KITIMAR_WITH_RDKIT "Build with RDKit support" OUTPUT_NAME)
-option(KITIMAR_WITH_COROUTINES "Build with c++20 coroutines support" ON)
+option(KITIMAR_WITH_OPENBABEL "Build with OpenBabel support" OFF)
+option(KITIMAR_WITH_RDKIT "Build with RDKit support" OFF)
+option(KITIMAR_WITH_COROUTINES "Build with c++20 coroutines support" OFF)
 
 option(KITIMAR_WITH_VALIDATION "Build validation executable (WARNING: uses lots of RAM during compilation)" OFF)
 
@@ -19,8 +19,7 @@ if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     add_compile_options(-Werror)
     add_compile_options(-ftemplate-depth=1024)
 else()
-    add_compile_options(-fbracket-depth=1024)
-    #add_compile_options(-fbracket-depth=2048) # ExtractExpressionFrequency
+    add_compile_options(-fbracket-depth=1024)    
 endif()
 add_compile_options(-pedantic)
 add_compile_options(-Wno-sign-compare)
