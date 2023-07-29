@@ -6,18 +6,19 @@ set(CTSmarts_HDRS
     MatchExpr.hpp
     Isomorphism.hpp
     AST.hpp
-    Util.hpp
+    Util/Util.hpp
+    Util/Ctll.hpp
+    Util/CtllSort.hpp
     Parser/Grammar.hpp
     Parser/Actions.hpp
-    Algorithm/EdgeList.hpp
-    Algorithm/VertexDegree.hpp
-    Algorithm/IncidentList.hpp
-    Algorithm/DfsSearch.hpp
-    Algorithm/DfsSearchEvents.hpp
-    Algorithm/DfsEdgeList.hpp
-    Algorithm/CycleMembership.hpp
-    Algorithm/DfsBondList.hpp
-    Algorithm/CtllSort.hpp
+    Graph/EdgeList.hpp
+    Graph/VertexDegree.hpp
+    Graph/IncidentList.hpp
+    Graph/DfsSearch.hpp
+    Graph/DfsSearchEvents.hpp
+    Graph/DfsEdgeList.hpp
+    Graph/CycleMembership.hpp
+    Graph/DfsBondList.hpp
     Optimizer/PrimitiveFrequency.hpp
     Optimizer/ExpressionFrequency.hpp
     Optimizer/OptimizeExpression.hpp

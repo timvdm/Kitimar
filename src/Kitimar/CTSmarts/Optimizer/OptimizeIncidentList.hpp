@@ -1,6 +1,5 @@
 #pragma once
 
-#include <Kitimar/CTSmarts/Algorithm/IncidentList.hpp>
 #include <algorithm>
 
 namespace Kitimar::CTSmarts {
@@ -13,7 +12,6 @@ namespace Kitimar::CTSmarts {
         for (auto i = 0; i < SmartsT::numAtoms; ++i) {
             auto offset = i * IncidentListT::stride;
             auto end = offset + IncidentListT::degrees.data[i];
-            //std::ranges::sort(std::begin(incident) + offset, std::begin(incident) + end);
             std::ranges::sort(std::begin(incident) + offset, std::begin(incident) + end, [i] (auto index1, auto index2) {
                 auto edge1 = IncidentListT::edges.data[index1];
                 auto edge2 = IncidentListT::edges.data[index2];

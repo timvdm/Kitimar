@@ -160,7 +160,7 @@ namespace Kitimar::CTSmarts {
             }
             return false;
         } else {
-            auto iso = Isomorphism<Mol, decltype(smarts), MapType::Single>{};
+            auto iso = Isomorphism<Mol, decltype(smarts), MapType::Single, NoOptimizationPolicy>{}; // FIXME: allow optimizations to be used...
             return iso.matchAtom(mol, atom);
         }
     }
@@ -179,7 +179,7 @@ namespace Kitimar::CTSmarts {
             // Optimize single bond SMARTS
             return detail::singleBondMatch(smarts, mol, bond);
         } else {
-            auto iso = Isomorphism<Mol, decltype(smarts), MapType::All>{};
+            auto iso = Isomorphism<Mol, decltype(smarts), MapType::All, NoOptimizationPolicy>{}; // FIXME: allow optimizations to be used...
             return iso.matchBond(mol, bond);
         }
     }

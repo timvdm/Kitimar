@@ -183,6 +183,7 @@ namespace Kitimar::CTLayout {
 
                 auto off = offset(VectorT{}, Type{}, m_sink, index);                
                 return toWriter(Type{}, m_sink + off, [this, off, index] () {
+                    (void)off; // avoid unused capture warning
                     m_written[index] = true;
                     if constexpr (!isFixedSize(Type{})) {
                         //fmt::println("update({})", index);

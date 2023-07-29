@@ -1018,10 +1018,10 @@ TEST(TestCTSmarts, EdgeList)
     constexpr auto edges = EdgeList{smarts}.data;
 
     static_assert(edges.size() == 4);
-    static_assert(edges[0] == Edge{0, 1});
-    static_assert(edges[1] == Edge{1, 2});
-    static_assert(edges[2] == Edge{1, 3});
-    static_assert(edges[3] == Edge{3, 0});
+    static_assert(edges[0] == Edge{0, 0, 1});
+    static_assert(edges[1] == Edge{1, 1, 2});
+    static_assert(edges[2] == Edge{2, 1, 3});
+    static_assert(edges[3] == Edge{3, 3, 0});
 }
 
 

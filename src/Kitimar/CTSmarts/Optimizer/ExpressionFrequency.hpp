@@ -1,7 +1,7 @@
 #pragma once
 
-#include <Kitimar/CTSmarts/Optimizer/PrimitiveFrequency.hpp>
-#include <Kitimar/CTSmarts/Algorithm/CtllSort.hpp>
+#include "PrimitiveFrequency.hpp"
+#include "../Util/CtllSort.hpp"
 
 namespace Kitimar::CTSmarts {
 

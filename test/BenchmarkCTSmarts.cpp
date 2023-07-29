@@ -351,6 +351,9 @@ BM_COUNT("**(*)(*)*", xx_x__x_x);
 BM_COUNT("**(*)*(*)*", xx_x_x_x_x);
 BM_COUNT("**(*)*(*)*(*)*", xx_x_x_x_x_x_x_x);
 
+BM_COUNT("CCCCCCCl", CCCCCCCl);
+BM_COUNT("ClCCCCCC", ClCCCCCC);
+
 /*
 BM_COUNT("c1ccccc1", c1ccccc1);
 BM_COUNT("c1ccccc1CCN", c1ccccc1CCN);
@@ -373,6 +376,9 @@ BM_ALL("*****************", xxxxxxxxxxxxxxxxx);
 BM_ALL("**(*)(*)*", xx_x__x_x);
 BM_ALL("**(*)*(*)*", xx_x_x_x_x);
 BM_ALL("**(*)*(*)*(*)*", xx_x_x_x_x_x_x_x);
+
+BM_ALL("CCCCCCCl", CCCCCCCl);
+BM_ALL("ClCCCCCC", ClCCCCCC);
 
 /*
 BM_ALL("c1ccccc1", c1ccccc1);

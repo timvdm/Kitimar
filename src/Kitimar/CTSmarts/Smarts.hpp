@@ -1,19 +1,19 @@
 #pragma once
 
-#include <Kitimar/CTSmarts/Algorithm/EdgeList.hpp>
-#include <Kitimar/CTSmarts/Algorithm/VertexDegree.hpp>
-#include <Kitimar/CTSmarts/Algorithm/IncidentList.hpp>
-#include <Kitimar/CTSmarts/Algorithm/DfsSearch.hpp>
-#include <Kitimar/CTSmarts/Algorithm/DfsSearchEvents.hpp>
-#include <Kitimar/CTSmarts/Algorithm/DfsEdgeList.hpp>
-#include <Kitimar/CTSmarts/Algorithm/CycleMembership.hpp>
-#include <Kitimar/CTSmarts/Algorithm/DfsBondList.hpp>
+#include "Graph/EdgeList.hpp"
+#include "Graph/VertexDegree.hpp"
+#include "Graph/IncidentList.hpp"
+#include "Graph/DfsSearch.hpp"
+#include "Graph/DfsSearchEvents.hpp"
+#include "Graph/DfsEdgeList.hpp"
+#include "Graph/CycleMembership.hpp"
+#include "Graph/DfsBondList.hpp"
 
-#include <Kitimar/CTSmarts/Optimizer/OptimizeExpression.hpp>
-#include <Kitimar/CTSmarts/Optimizer/AtomFrequency.hpp>
-#include <Kitimar/CTSmarts/Optimizer/OptimizeIncidentList.hpp>
+#include "Optimizer/OptimizeExpression.hpp"
+#include "Optimizer/AtomFrequency.hpp"
+#include "Optimizer/OptimizeIncidentList.hpp"
 
-#include "Util.hpp"
+#include "Util/Util.hpp"
 #include "Parser/Actions.hpp"
 
 #include <ctll/parser.hpp>

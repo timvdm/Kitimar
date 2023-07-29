@@ -113,9 +113,39 @@ namespace Kitimar::CTSmarts {
     };
 
 
+    template<typename SmartsT>
+    struct NoOptimizationPolicy
+    {
+        static constexpr inline auto smarts = SmartsT{};
+        static constexpr inline auto edgeList = EdgeList{smarts};
+        static constexpr inline auto vertexDegree = VertexDegree{smarts, edgeList};
+        static constexpr inline auto incidentList = IncidentList{smarts, edgeList, vertexDegree};
+        static constexpr inline auto dfsEdges = DfsEdgeList{smarts, incidentList};
+        static constexpr inline auto cycleMembership = CycleMembership{smarts, incidentList};
+        static constexpr inline auto dfsBonds = DfsBondList{smarts, dfsEdges, cycleMembership}.data;
+    };
+
+    // FIXME: optimize atom expressions...
+    template<typename SmartsT>
+    struct FullOptimizationPolicy
+    {
+        static constexpr inline auto smarts = SmartsT{};
+        static constexpr inline auto edgeList = EdgeList{smarts};
+        static constexpr inline auto vertexDegree = VertexDegree{smarts, edgeList};
+        static constexpr inline auto incidentList = IncidentList{smarts, edgeList, vertexDegree};
+        static constexpr inline auto atomFreq = AtomFrequency{smarts};
+        static constexpr inline auto optimizedIncidentList = OptimizeIncidentList{smarts, incidentList, atomFreq};
+        static constexpr inline auto sourceIndex = std::ranges::min_element(atomFreq.data) - std::begin(atomFreq.data);
+        static constexpr inline auto dfsEdges = DfsEdgeList{smarts, optimizedIncidentList, Number<sourceIndex>{}};
+        static constexpr inline auto cycleMembership = CycleMembership{smarts, optimizedIncidentList};
+        static constexpr inline auto dfsBonds = DfsBondList{smarts, dfsEdges, cycleMembership}.data;
+    };
 
 
-    template<Molecule::Molecule Mol, typename SmartsT, MapType Type, template<typename> class MappedPolicy = MappedVector>
+
+    template<Molecule::Molecule Mol, typename SmartsT, MapType Type,
+             template<typename> class OptimizationPolicy = FullOptimizationPolicy,
+             template<typename> class MappedPolicy = MappedVector>
     class Isomorphism : public MappedPolicy<Isomorphism<Mol, SmartsT, Type>>
     {
 
@@ -127,12 +157,8 @@ namespace Kitimar::CTSmarts {
             static constexpr inline auto invalidIndex = static_cast<Index>(-1);
             static constexpr inline auto smarts = SmartsT{};
 
-            static constexpr inline auto edgeList = EdgeList(smarts);
-            static constexpr inline auto vertexDegree = VertexDegree(smarts, edgeList);
-            static constexpr inline auto adjList = IncidentList(smarts, edgeList, vertexDegree);
-            static constexpr inline auto dfsEdges = DfsEdgeList(smarts, adjList);
-            static constexpr inline auto cycleMembership = CycleMembership(smarts, adjList);
-            static constexpr inline auto dfsBonds = DfsBondList(smarts, dfsEdges, cycleMembership).data;
+            static constexpr inline auto vertexDegree = OptimizationPolicy<SmartsT>::vertexDegree;
+            static constexpr inline auto dfsBonds = OptimizationPolicy<SmartsT>::dfsBonds;
 
             static_assert(smarts.numBonds);
             static_assert(ctll::size(smarts.bonds) == ctll::size(dfsBonds));
