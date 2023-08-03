@@ -244,13 +244,31 @@ void writePrimitiveFrequencyCodeFile(std::ostream &os, std::string_view filename
 }
 
 
+template<auto N, int I = 0>
+void writePrimitiveFrequencyData(std::ostream &os, auto primitives, const std::array<double, N> &frequency)
+{
+    if constexpr (!ctll::empty(primitives)) {
+        auto [primitive, tail] = ctll::pop_and_get_front(primitives);
+        os << toString(primitive) << '\t' << frequency[I] << '\n';
+        writePrimitiveFrequencyData<N, I + 1>(os, tail, frequency);
+    }
+}
+
+void writePrimitiveFrequencyDataFile(std::ostream &os, std::string_view filename, const PrimitiveFequency &freq)
+{
+    os << freq.numMolecules << '\t' << freq.numAtoms << '\t' << freq.numBonds << '\n';
+    writePrimitiveFrequencyData(os, freq.atomPrimitives, freq.atomFrequency());
+    writePrimitiveFrequencyData(os, freq.bondPrimitives, freq.bondFrequency());
+}
+
+
 
 
 
 int main(int argc, char **argv)
 {
-    if (argc < 2) {
-        std::cout << "Usage: " << argv[0] << " <molecule file>" << std::endl;
+    if (argc < 3) {
+        std::cerr << "Usage: " << argv[0] << " <code or data> <molecule file>" << std::endl;
         return -1;
     }
 
@@ -258,14 +276,22 @@ int main(int argc, char **argv)
 
     auto p = freq.atomPrimitives;
 
-    auto filename = argv[1];
+    auto filename = argv[2];
     OpenBabelSmilesMolSource source{filename};
 
 
     for (const auto &mol : source.molecules())
         freq.addMolecule(const_cast<OpenBabel::OBMol&>(mol));
 
-    writePrimitiveFrequencyCodeFile(std::cout, filename, freq);
+    std::string output{argv[1]};
+    if (output == "code")
+        writePrimitiveFrequencyCodeFile(std::cout, filename, freq);
+    else if (output == "data")
+        writePrimitiveFrequencyDataFile(std::cout, filename, freq);
+    else {
+        std::cerr << "Invalid output type: " << output << std::endl;
+        return -1;
+    }
 
 
 
