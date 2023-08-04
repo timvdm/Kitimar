@@ -106,7 +106,10 @@ namespace Kitimar::CTSmarts {
 
     // '-' | '-' DIGIT | '+' | '+' DIGIT
     template<int N>
-    struct Charge {};
+    struct Charge
+    {
+        static constexpr inline int value = N;
+    };
 
     // '@' '?'? | '@@' '?' |
     // '@TH1' '?'? | '@TH2' '?'? |

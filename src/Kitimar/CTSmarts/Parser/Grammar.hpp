@@ -56,7 +56,9 @@ namespace Kitimar::CTSmarts {
         struct atom_expr_ring_connectivity {};
         struct atom_expr_ring_connectivity2 {};
         struct atom_expr_neg_charge {};
+        struct atom_expr_neg_charge2 {};
         struct atom_expr_pos_charge {};
+        struct atom_expr_pos_charge2 {};
         struct atom_expr_chiral {};
         struct atom_expr_class {};
         struct atom_expr_class2 {};
@@ -91,8 +93,10 @@ namespace Kitimar::CTSmarts {
         struct make_ring_count : ctll::action {};
         struct make_ring_size : ctll::action {};
         struct make_ring_connectivity : ctll::action {};
-        struct make_neg_charge : ctll::action {};
-        struct make_pos_charge : ctll::action {};
+        struct start_charge : ctll::action {};
+        struct increment_charge : ctll::action {};
+        struct decrement_charge : ctll::action {};
+        struct make_charge : ctll::action {};
         struct make_chiral : ctll::action {};
         struct make_class : ctll::action {};
 
@@ -246,13 +250,21 @@ namespace Kitimar::CTSmarts {
         static constexpr auto rule(atom_expr_ring_connectivity2, not_digit_chars) -> ctll::push<make_ring_connectivity, atom_expr2>;
 
 
-        // charge: '-' | '-' DIGIT | '+' | '+' DIGIT
-        static constexpr auto rule(atom_expr2, ctll::term<'-'>) -> ctll::push<ctll::anything, atom_expr_neg_charge>;
-        static constexpr auto rule(atom_expr2, ctll::term<'+'>) -> ctll::push<ctll::anything, atom_expr_pos_charge>;
-        static constexpr auto rule(atom_expr_neg_charge, digit_chars) -> ctll::push<ctll::anything, make_neg_charge, atom_expr2>;
-        static constexpr auto rule(atom_expr_neg_charge, not_digit_chars) -> ctll::push<make_neg_charge, atom_expr2>;
-        static constexpr auto rule(atom_expr_pos_charge, digit_chars) -> ctll::push<ctll::anything, make_pos_charge, atom_expr2>;
-        static constexpr auto rule(atom_expr_pos_charge, not_digit_chars) -> ctll::push<make_pos_charge, atom_expr2>;
+        // charge: '-' | '--' | '---' | ... | '-' DIGIT
+        static constexpr auto rule(atom_expr2, ctll::term<'-'>) -> ctll::push<ctll::anything, start_charge, atom_expr_neg_charge>;
+        static constexpr auto rule(atom_expr_neg_charge, digit_chars) -> ctll::push<ctll::anything, make_charge, atom_expr2>;
+        static constexpr auto rule(atom_expr_neg_charge, ctll::term<'-'>) -> ctll::push<ctll::anything, decrement_charge, atom_expr_neg_charge2>;
+        static constexpr auto rule(atom_expr_neg_charge, ctll::neg_set<'-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'>) -> ctll::push<make_charge, atom_expr2>;
+        static constexpr auto rule(atom_expr_neg_charge2, ctll::term<'-'>) -> ctll::push<ctll::anything, decrement_charge, atom_expr_neg_charge2>;
+        static constexpr auto rule(atom_expr_neg_charge2, ctll::neg_set<'-'>) -> ctll::push<make_charge, atom_expr2>;
+
+        // charge: '+' | '++' | '+++' | ... | '+' DIGIT
+        static constexpr auto rule(atom_expr2, ctll::term<'+'>) -> ctll::push<ctll::anything, start_charge, atom_expr_pos_charge>;
+        static constexpr auto rule(atom_expr_pos_charge, digit_chars) -> ctll::push<ctll::anything, make_charge, atom_expr2>;
+        static constexpr auto rule(atom_expr_pos_charge, ctll::term<'+'>) -> ctll::push<ctll::anything, increment_charge, atom_expr_pos_charge2>;
+        static constexpr auto rule(atom_expr_pos_charge, ctll::neg_set<'+', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'>) -> ctll::push<make_charge, atom_expr2>;
+        static constexpr auto rule(atom_expr_pos_charge2, ctll::term<'+'>) -> ctll::push<ctll::anything, increment_charge, atom_expr_pos_charge2>;
+        static constexpr auto rule(atom_expr_pos_charge2, ctll::neg_set<'+'>) -> ctll::push<make_charge, atom_expr2>;
 
 
 
@@ -423,7 +435,7 @@ namespace Kitimar::CTSmarts {
 
 
 
-        static constexpr auto rule(chain, ctll::epsilon) -> ctll::epsilon;        
+        static constexpr auto rule(chain, ctll::epsilon) -> ctll::epsilon;
         static constexpr auto rule(chain, ctll::set<'-', '=', '#', '$', ':', '~', '@', '/', '\\'>) -> ctll::push<bond_expr>;
         //static constexpr auto rule(chain, ctll::set<'/', '\\'>) -> ctll::push<ctll::anything, make_bond_primitive, chain_up_down>;
         //static constexpr auto rule(chain_up_down, ctll::neg_set<'?'>) -> ctll::push<chain>;
