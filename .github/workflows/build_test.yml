@@ -28,6 +28,12 @@ jobs:
             os: ubuntu-latest,
             cc: "clang-16", cxx: "clang++-16",
           }
+        - {
+            name: "Ubuntu Latest GCC 12 (RDKit + OpenBabel)",
+            os: ubuntu-latest,
+            cc: "gcc-12", cxx: "g++-12",
+            cmake_args: "-DKitimar_WITH_RDKIT=ON -DKitimar_WITH_OPENBABEL=ON",
+          }
 
     steps:
     - name: Check variables
@@ -48,7 +54,7 @@ jobs:
       run: |
         mkdir "${{ runner.workspace }}/build"
         cd "${{ runner.workspace }}/build"
-        cmake $GITHUB_WORKSPACE -GNinja -DCMAKE_C_COMPILER=${{matrix.config.cc}} -DCMAKE_CXX_COMPILER=${{matrix.config.cxx}}
+        cmake $GITHUB_WORKSPACE -GNinja -DCMAKE_C_COMPILER=${{matrix.config.cc}} -DCMAKE_CXX_COMPILER=${{matrix.config.cxx}} ${{matrix.config.cmake_args}}
       shell: bash
 
     - name: Build

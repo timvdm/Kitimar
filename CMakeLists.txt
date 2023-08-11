@@ -9,10 +9,10 @@ project(Kitimar
     LANGUAGES CXX
 )
 
-option(KITIMAR_WITH_OPENBABEL "Build with OpenBabel support" OFF)
-option(KITIMAR_WITH_RDKIT "Build with RDKit support" OFF)
-option(KITIMAR_WITH_COROUTINES "Build with c++20 coroutines support" OFF)
-option(KITIMAR_WITH_VALIDATION "Build validation executable (WARNING: uses lots of RAM during compilation)" OFF)
+option(Kitimar_WITH_OPENBABEL "Build with OpenBabel support" OFF)
+option(Kitimar_WITH_RDKIT "Build with RDKit support" OFF)
+option(Kitimar_WITH_COROUTINES "Build with c++20 coroutines support" OFF)
+option(Kitimar_WITH_VALIDATION "Build validation executable (WARNING: uses lots of RAM during compilation)" OFF)
 
 # CMake module path
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules")
