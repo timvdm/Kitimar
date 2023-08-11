@@ -98,6 +98,7 @@ install(EXPORT KitimarWarningsTargets
 
 add_custom_target(AdditionalFiles ALL SOURCES
     README.md
+    .github/workflows/build_test.yml
     Config.cmake.in
     ProjectOptions.cmake
     Dependencies.cmake
