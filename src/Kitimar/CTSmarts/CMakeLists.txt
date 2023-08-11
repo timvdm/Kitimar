@@ -32,21 +32,22 @@ set(CTSmarts_HDRS
 
 # Library
 
-add_library(CTSmarts INTERFACE ${CTSmarts_HDRS})
+add_library(KitimarCTSmarts INTERFACE ${CTSmarts_HDRS})
+add_library(Kitimar::CTSmarts ALIAS KitimarCTSmarts)
+set_target_properties(KitimarCTSmarts PROPERTIES EXPORT_NAME "CTSmarts")
 
-target_include_directories(CTSmarts INTERFACE
+target_include_directories(KitimarCTSmarts INTERFACE
     "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>"
     "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDE_DIR}>"
 )
 
-target_link_libraries(CTSmarts INTERFACE ctre::ctre Molecule)
-if(KITIMAR_WITH_COROUTINES)
-    target_link_libraries(CTSmarts INTERFACE cppcoro)
-endif()
+target_link_libraries(KitimarCTSmarts INTERFACE ctre::ctre Kitimar::Molecule)
+
+target_precompile_headers(KitimarCTSmarts INTERFACE ${CTSmarts_HDRS})
 
 # Install
 
-install(TARGETS CTSmarts
+install(TARGETS KitimarCTSmarts
     EXPORT KitimarCTSmartsTargets
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}

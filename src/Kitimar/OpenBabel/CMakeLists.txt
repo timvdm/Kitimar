@@ -9,6 +9,8 @@ set(KitimarOpenBabel_HDRS
 # Library
 
 add_library(KitimarOpenBabel INTERFACE ${KitimarOpenBabel_HDRS})
+add_library(Kitimar::OpenBabel ALIAS KitimarOpenBabel)
+set_target_properties(KitimarOpenBabel PROPERTIES EXPORT_NAME "OpenBabel")
 
 target_compile_definitions(KitimarOpenBabel INTERFACE -DKITIMAR_WITH_OPENBABEL)
 
@@ -17,12 +19,12 @@ target_include_directories(KitimarOpenBabel INTERFACE
     "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDE_DIR}>"
 )
 
-target_link_libraries(KitimarOpenBabel INTERFACE Molecule openbabel)
+target_link_libraries(KitimarOpenBabel INTERFACE Kitimar::Molecule openbabel)
 
 # Install
 
 install(TARGETS KitimarOpenBabel
-    EXPORT KitimarKitimarOpenBabelTargets
+    EXPORT KitimarOpenBabelTargets
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -31,8 +33,8 @@ install(TARGETS KitimarOpenBabel
 
 install(FILES ${KitimarOpenBabel_HDRS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/Kitimar/OpenBabel)
 
-install(EXPORT KitimarKitimarOpenBabelTargets
-    FILE KitimarKitimarOpenBabelTargets.cmake
+install(EXPORT KitimarOpenBabelTargets
+    FILE KitimarOpenBabelTargets.cmake
     NAMESPACE Kitimar::
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/Kitimar
 )

@@ -157,6 +157,7 @@ namespace Kitimar::CTSmarts {
 
     template<Molecule::Molecule Mol, typename SmartsT, MapType Type,
              template<typename> class OptimizationPolicy = FullOptimizationPolicy,
+             //template<typename> class OptimizationPolicy = NoOptimizationPolicy,
              template<typename> class MappedPolicy = MappedVectorPolicy>
     class Isomorphism : public MappedPolicy<Isomorphism<Mol, SmartsT, Type>>
     {

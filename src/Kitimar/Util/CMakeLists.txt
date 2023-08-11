@@ -1,35 +1,37 @@
 # Headers
 
-set(Util_HDRS
+set(KitimarUtil_HDRS
     Util.hpp
     Timer.hpp
 )
 
 # Library
 
-add_library(Util INTERFACE ${Util_HDRS})
+add_library(KitimarUtil INTERFACE ${Util_HDRS})
+add_library(Kitimar::Util ALIAS KitimarUtil)
+set_target_properties(KitimarUtil PROPERTIES EXPORT_NAME "Util")
 
-target_include_directories(Util INTERFACE
+target_include_directories(KitimarUtil INTERFACE
     "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>"
     "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDE_DIR}>"
 )
 
-target_link_libraries(Util INTERFACE fmt::fmt ctre::ctre)
+target_link_libraries(KitimarUtil INTERFACE fmt::fmt ctre::ctre)
 
 # Install
 
-install(TARGETS Util
-    EXPORT UtilTargets
+install(TARGETS KitimarUtil
+    EXPORT KitimarUtilTargets
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 
-install(FILES ${Util_HDRS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/Kitimar/Util)
+install(FILES ${KitimarUtil_HDRS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/Kitimar/Util)
 
-install(EXPORT UtilTargets
-    FILE UtilTargets.cmake
+install(EXPORT KitimarUtilTargets
+    FILE KitimarUtilTargets.cmake
     NAMESPACE Kitimar::
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/Kitimar
 )

@@ -7,16 +7,20 @@ set(Molecule_HDRS
 
 # Library
 
-add_library(Molecule INTERFACE ${Molecule_HDRS})
+add_library(KitimarMolecule INTERFACE ${Molecule_HDRS})
+add_library(Kitimar::Molecule ALIAS KitimarMolecule)
+set_target_properties(KitimarMolecule PROPERTIES EXPORT_NAME "Molecule")
 
-target_include_directories(Molecule INTERFACE
+target_include_directories(KitimarMolecule INTERFACE
     "$<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>"
     "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDE_DIR}>"
 )
 
+target_link_libraries(KitimarMolecule INTERFACE Kitimar::Options Kitimar::Warnings)
+
 # Install
 
-install(TARGETS Molecule
+install(TARGETS KitimarMolecule
     EXPORT KitimarMoleculeTargets
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}

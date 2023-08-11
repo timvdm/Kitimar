@@ -3,15 +3,15 @@
 add_library(TestData INTERFACE TestData.hpp)
 target_compile_definitions(TestData INTERFACE -DKITIMAR_DATA_DIR="${CMAKE_SOURCE_DIR}/data")
 target_include_directories(TestData INTERFACE ${CMAKE_SOURCE_DIR}/test)
-target_link_libraries(TestData INTERFACE CTLayout)
+target_link_libraries(TestData INTERFACE Kitimar::CTLayout)
 
 add_executable(UpdateTestData UpdateTestData.cpp)
-target_link_libraries(UpdateTestData TestData CTLayout)
+target_link_libraries(UpdateTestData TestData Kitimar::CTLayout)
 if(KITIMAR_WITH_OPENBABEL)
-    target_link_libraries(UpdateTestData KitimarOpenBabel)
+    target_link_libraries(UpdateTestData Kitimar::OpenBabel)
 endif()
 if(KITIMAR_WITH_RDKIT)
-    target_link_libraries(UpdateTestData KitimarRDKit)
+    target_link_libraries(UpdateTestData Kitimar::RDKit)
 endif()
 
 # Test
@@ -22,33 +22,33 @@ target_link_libraries(Test INTERFACE TestData GTest::gtest_main)
 # Benchmark
 
 add_library(Benchmark INTERFACE Benchmark.hpp)
-target_link_libraries(Benchmark INTERFACE TestData Util)
+target_link_libraries(Benchmark INTERFACE TestData Kitimar::Util)
 
 # Molecule
 
 add_executable(TestMolecule TestMolecule.cpp)
-target_link_libraries(TestMolecule Molecule Test)
+target_link_libraries(TestMolecule Kitimar::Molecule Test)
 gtest_add_tests(TARGET TestMolecule)
 
 # CTLayout
 
 add_executable(TestCTLayout TestCTLayout.cpp)
-target_link_libraries(TestCTLayout CTLayout Test fmt::fmt)
+target_link_libraries(TestCTLayout Kitimar::CTLayout Test fmt::fmt)
 gtest_add_tests(TARGET TestCTLayout)
 
 add_executable(TestSerialize TestSerialize.cpp)
-target_link_libraries(TestSerialize CTLayout Test fmt::fmt)
+target_link_libraries(TestSerialize Kitimar::CTLayout Test fmt::fmt)
 if(KITIMAR_WITH_OPENBABEL)
-    target_link_libraries(TestSerialize KitimarOpenBabel)
+    target_link_libraries(TestSerialize Kitimar::OpenBabel)
 endif()
 gtest_add_tests(TARGET TestSerialize)
 
 # CTSmarts
 
 add_executable(TestCTSmarts TestCTSmarts.cpp)
-target_link_libraries(TestCTSmarts CTSmarts Test)
+target_link_libraries(TestCTSmarts Kitimar::CTSmarts Test)
 if(KITIMAR_WITH_OPENBABEL)
-    target_link_libraries(TestCTSmarts KitimarOpenBabel)
+    target_link_libraries(TestCTSmarts Kitimar::OpenBabel)
 endif()
 gtest_add_tests(TARGET TestCTSmarts)
 
@@ -56,7 +56,7 @@ gtest_add_tests(TARGET TestCTSmarts)
 
 if(KITIMAR_WITH_OPENBABEL)
     add_executable(TestOpenBabel TestOpenBabel.cpp)
-    target_link_libraries(TestOpenBabel KitimarOpenBabel CTLayout Test)
+    target_link_libraries(TestOpenBabel Kitimar::OpenBabel Kitimar::CTLayout Test)
     gtest_add_tests(TARGET TestOpenBabel)
 endif()
 
@@ -64,25 +64,25 @@ endif()
 
 if(KITIMAR_WITH_RDKIT)
     add_executable(TestRDKit TestRDKit.cpp)
-    target_link_libraries(TestRDKit KitimarRDKit CTLayout Test)
+    target_link_libraries(TestRDKit Kitimar::RDKit Kitimar::CTLayout Test)
     gtest_add_tests(TARGET TestRDKit)
 endif()
 
 # Benchmark
 
 add_executable(BenchmarkSerialize BenchmarkSerialize.cpp)
-target_link_libraries(BenchmarkSerialize CTLayout CTSmarts Util Benchmark)
+target_link_libraries(BenchmarkSerialize Kitimar::CTLayout Kitimar::CTSmarts Kitimar::Util Benchmark)
 if(KITIMAR_WITH_OPENBABEL)
-    target_link_libraries(BenchmarkSerialize KitimarOpenBabel)
+    target_link_libraries(BenchmarkSerialize Kitimar::OpenBabel)
 endif()
 if(KITIMAR_WITH_RDKIT)
-    target_link_libraries(BenchmarkSerialize KitimarRDKit)
+    target_link_libraries(BenchmarkSerialize Kitimar::RDKit)
 endif()
 
 #if(KITIMAR_WITH_OPENBABEL AND KITIMAR_WITH_RDKIT)
 if(KITIMAR_WITH_OPENBABEL)
     add_executable(BenchmarkCTSmarts BenchmarkCTSmarts.cpp)
     #target_link_libraries(BenchmarkCTSmarts CTSmarts KitimarOpenBabel KitimarRDKit benchmark::benchmark)
-    target_link_libraries(BenchmarkCTSmarts CTSmarts KitimarOpenBabel benchmark::benchmark)
+    target_link_libraries(BenchmarkCTSmarts Kitimar::CTSmarts Kitimar::OpenBabel benchmark::benchmark)
 endif()
 

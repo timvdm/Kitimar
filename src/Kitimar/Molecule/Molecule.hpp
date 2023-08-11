@@ -5,27 +5,6 @@
 
 namespace Kitimar::Molecule {
 
-    /*
-     *
-     * AtomSet
-     *
-     *
-     *     
-     *
-     *
-     *
-     *
-
-     *
-     * CyclicMolecule
-     * - is_cylic / is_aclyclic
-     *
-     *
-     *
-     */
-
-    //template<typename Mol>
-    //using atom_t = std::remove_cvref_t<decltype(get_atom)
 
 
     template<typename R, typename AtomBond>

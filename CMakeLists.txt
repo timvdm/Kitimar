@@ -1,90 +1,141 @@
+# CMake setup based on https://github.com/cpp-best-practices/cmake_template
+
 cmake_minimum_required(VERSION 3.16)
-project(Kitimar VERSION 0.1.0 LANGUAGES CXX)
+
+project(Kitimar
+    VERSION 0.1.0
+    DESCRIPTION "Kitimar: C++20 Cheminformatics"
+    HOMEPAGE_URL "https://github.com/timvdm/Kitimar"
+    LANGUAGES CXX
+)
 
 option(KITIMAR_WITH_OPENBABEL "Build with OpenBabel support" OFF)
 option(KITIMAR_WITH_RDKIT "Build with RDKit support" OFF)
 option(KITIMAR_WITH_COROUTINES "Build with c++20 coroutines support" OFF)
-
 option(KITIMAR_WITH_VALIDATION "Build validation executable (WARNING: uses lots of RAM during compilation)" OFF)
 
-
+# CMake module path
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules")
 
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-add_compile_options(-Wall)
-if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-    add_compile_options(-Werror)
-    add_compile_options(-ftemplate-depth=1024)
-else()
-    add_compile_options(-fbracket-depth=1024)    
+# Only set the cxx_standard if it is not set by someone else
+if (NOT DEFINED CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 20)
+  set(CMAKE_CXX_STANDARD_REQUIRED ON)
 endif()
-add_compile_options(-pedantic)
-add_compile_options(-Wno-sign-compare)
-add_compile_options(-Wno-unused-variable)
-add_compile_options(-Wno-unused-but-set-variable)
 
-#add_compile_options(-fconcepts-diagnostics-depth=3)
+# Strongly encouraged to enable this globally to avoid conflicts between
+# -Wpedantic being enabled and -std=c++20 and -std=gnu++20 for example
+# when compiling with PCH enabled
+set(CMAKE_CXX_EXTENSIONS OFF)
 
-add_compile_options(-march=native -mtune=native)
-#set(CMAKE_UNITY_BUILD ON)
+# Global configuration
+include(cmake/PreventInSourceBuilds.cmake)
+include(ProjectOptions.cmake)
+Kitimar_setup_options()
+Kitimar_global_options()
 
-#add_compile_options(-flto)
+# Dependencies
+include(Dependencies.cmake)
+Kitimar_setup_dependencies()
+
+# Local configuration
+Kitimar_local_options()
+
+target_compile_features(KitimarOptions INTERFACE cxx_std_${CMAKE_CXX_STANDARD})
 
 
+set_target_properties(KitimarOptions PROPERTIES EXPORT_NAME "Options")
+set_target_properties(KitimarWarnings PROPERTIES EXPORT_NAME "Warnings")
 
-#add_compile_definitions(_GLIBCXX_DEBUG)
-#add_compile_options(-fsanitize=address -fno-omit-frame-pointer)
-#add_link_options(-fsanitize=address)
-
-
-
+add_library(Kitimar::Options ALIAS KitimarOptions)
+add_library(Kitimar::Warnings ALIAS KitimarWarnings)
 
 
-
-include(cmake/CPM.cmake)
-
-CPMAddPackage("gh:fmtlib/fmt#10.0.0")
-CPMAddPackage("gh:hanickadot/compile-time-regular-expressions@3.7.2")
-CPMAddPackage("gh:mandreyel/mio#8b6b7d878c89e81614d05edca7936de41ccdd2da")
-CPMAddPackage("gh:google/googletest@1.13.0")
-
-CPMAddPackage(
-    NAME benchmark
-    GITHUB_REPOSITORY google/benchmark
-    VERSION 1.8.0
-    OPTIONS "BENCHMARK_ENABLE_TESTING OFF"
+target_compile_options(KitimarOptions INTERFACE
+    -march=native
+    -mtune=native
+    #-fconcepts-diagnostics-depth=3
 )
 
-if(KITIMAR_WITH_COROUTINES)
-    add_compile_definitions(KITIMAR_WITH_COROUTINES)
-    CPMAddPackage(
-        NAME cppcoro
-        GITHUB_REPOSITORY andreasbuhr/cppcoro
-        GIT_TAG 10bbcdbf2be3ad3aa56febcf4c7662d771460a99
-        OPTIONS "BUILD_TESTING OFF"
-    )
+target_compile_options(KitimarWarnings INTERFACE
+    -Wno-unused-parameter
+    -Wno-sign-compare
+    -Wno-unused-but-set-variable
+    -Wno-missing-field-initializers
+)
+
+if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    target_compile_options(KitimarOptions INTERFACE -ftemplate-depth=1024)
+else()
+    target_compile_options(KitimarOptions INTERFACE -fbracket-depth=1024)
 endif()
+
+
+install(TARGETS KitimarOptions
+    EXPORT KitimarOptionsTargets
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+install(EXPORT KitimarOptionsTargets
+    FILE KitimarOptionsTargets.cmake
+    NAMESPACE Kitimar::
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/Kitimar
+)
+
+install(TARGETS KitimarWarnings EXPORT KitimarWarningsTargets)
+install(EXPORT KitimarWarningsTargets
+    FILE KitimarWarningsTargets.cmake
+    NAMESPACE Kitimar::
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/Kitimar
+)
+
+
+
+
+
 
 add_custom_target(AdditionalFiles ALL SOURCES
     README.md
+    Config.cmake.in
+    ProjectOptions.cmake
+    Dependencies.cmake
+    cmake/PreventInSourceBuilds.cmake
+    cmake/SystemLink.cmake
+    cmake/LibFuzzer.cmake
+    cmake/InterproceduralOptimization.cmake
+    cmake/Hardening.cmake
+    cmake/StandardProjectSettings.cmake
+    cmake/VCEnvironment.cmake
+    cmake/Utilities.cmake
+    cmake/CompilerWarnings.cmake
+    cmake/Sanitizers.cmake
+    cmake/Cache.cmake
+    cmake/StaticAnalyzers.cmake
 )
 
-include(GoogleTest)
-enable_testing()
-add_custom_target(RunTests ctest)
+
 
 
 add_subdirectory(src)
-add_subdirectory(test)
-if(KITIMAR_WITH_VALIDATION)
-    add_subdirectory(validate)
-endif()
 add_subdirectory(tools)
 add_subdirectory(examples)
 add_subdirectory(single-header)
 
+# Tests
+if(BUILD_TESTING)
+    include(GoogleTest)
+    enable_testing()
+    add_custom_target(RunTests ctest)
+
+    add_subdirectory(test)
+endif()
+
+# Validation
+if(KITIMAR_WITH_VALIDATION)
+    add_subdirectory(validate)
+endif()
 
 
 
