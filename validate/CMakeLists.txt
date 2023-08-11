@@ -1,4 +1,4 @@
-if(KITIMAR_WITH_OPENBABEL)
+if(Kitimar_WITH_OPENBABEL)
     include(ValidateCTSmarts.cmake)
     add_executable(ValidateCTSmarts ValidateCTSmarts.cpp ${ValidateCTSmarts_PART_SRCS})
     target_link_libraries(ValidateCTSmarts Kitimar::CTSmarts KitimarOpenBabel Test)

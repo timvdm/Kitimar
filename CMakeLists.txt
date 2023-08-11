@@ -134,7 +134,7 @@ if(BUILD_TESTING)
 endif()
 
 # Validation
-if(KITIMAR_WITH_VALIDATION)
+if(Kitimar_WITH_VALIDATION)
     add_subdirectory(validate)
 endif()
 
