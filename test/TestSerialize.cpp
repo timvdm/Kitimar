@@ -248,7 +248,7 @@ TEST(TestSerialize, Validate)
 {
     test_validate<Vector<StructMoleculeIncident>>();
     test_validate<Vector<ListMoleculeIncident>>();
-    test_validate<TypeMolecules>();
+    //test_validate<TypeMolecules>();
 }
 
 

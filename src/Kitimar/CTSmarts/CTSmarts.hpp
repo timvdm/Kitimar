@@ -1,7 +1,8 @@
 #pragma once
 
 #include "Isomorphism.hpp"
-#include "../Molecule/MockMolecule.hpp" // for testing single header using compiler explorer
+
+#include <Kitimar/Molecule/MockMolecule.hpp>
 
 namespace Kitimar::CTSmarts {
 

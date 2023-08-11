@@ -1,0 +1,24 @@
+@PACKAGE_INIT@
+
+#include("${CMAKE_CURRENT_LIST_DIR}/CTSmartsTargets.cmake")
+#check_required_components(CTSmarts)
+
+
+@PACKAGE_INIT@
+
+set(_Kitimar_COMPONENTS Molecule CTSmarts CTLayout KitimarOpenBabel KitimarRDKit)
+
+message(STATUS "Required Kitimar components: ${Kitimar_FIND_COMPONENTS}")
+
+if(NOT Kitimar_FIND_COMPONENTS)
+      set(Kitimar_FOUND False)
+      set(Kitimar_NOT_FOUND_MESSAGE "No components specified")
+endif()
+
+foreach(_comp ${Kitimar_FIND_COMPONENTS})
+  if(NOT _comp IN_LIST _Kitimar_COMPONENTS)
+      set(Kitimar_FOUND False)
+      set(Kitimar_NOT_FOUND_MESSAGE "Unsupported component: ${_comp}")
+  endif()
+  include("${CMAKE_CURRENT_LIST_DIR}/Kitimar${_comp}Targets.cmake")
+endforeach()

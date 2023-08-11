@@ -60,6 +60,8 @@ namespace Kitimar::CTLayout {
     class FileStreamSource
     {
         public:
+            FileStreamSource() {}
+
             FileStreamSource(std::string_view path)
             {                
                 m_ifs = std::make_shared<std::ifstream>(path.data(), std::ios_base::binary);
@@ -124,6 +126,8 @@ namespace Kitimar::CTLayout {
     class InMemorySource
     {
         public:
+            InMemorySource() {}
+
             InMemorySource(std::string_view filename)
             {
                 std::ifstream ifs{filename.data(), std::ios_base::binary | std::ios_base::in};
@@ -183,6 +187,8 @@ namespace Kitimar::CTLayout {
     class MemoryMappedSource
     {
         public:
+            MemoryMappedSource() {}
+
             MemoryMappedSource(std::string_view filename)
             {
                 m_source = std::make_shared<MioMemMapSource>(filename);

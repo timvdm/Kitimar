@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-
-project(Kitimar LANGUAGES CXX)
+project(Kitimar VERSION 0.1.0 LANGUAGES CXX)
 
 option(KITIMAR_WITH_OPENBABEL "Build with OpenBabel support" OFF)
 option(KITIMAR_WITH_RDKIT "Build with RDKit support" OFF)
@@ -38,6 +37,10 @@ add_compile_options(-march=native -mtune=native)
 #add_compile_definitions(_GLIBCXX_DEBUG)
 #add_compile_options(-fsanitize=address -fno-omit-frame-pointer)
 #add_link_options(-fsanitize=address)
+
+
+
+
 
 
 include(cmake/CPM.cmake)
@@ -81,3 +84,30 @@ endif()
 add_subdirectory(tools)
 add_subdirectory(examples)
 add_subdirectory(single-header)
+
+
+
+
+
+include(CMakePackageConfigHelpers)
+
+write_basic_package_version_file(
+  ${CMAKE_CURRENT_BINARY_DIR}/KitimarConfigVersion.cmake
+  VERSION ${Kitimar_VERSION}
+  COMPATIBILITY AnyNewerVersion
+)
+
+configure_package_config_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/Config.cmake.in
+    ${CMAKE_CURRENT_BINARY_DIR}/KitimarConfig.cmake
+    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/Kitimar
+    NO_CHECK_REQUIRED_COMPONENTS_MACRO
+)
+
+
+install(FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/KitimarConfig.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/KitimarConfigVersion.cmake
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/Kitimar
+)
+

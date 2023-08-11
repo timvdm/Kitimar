@@ -60,6 +60,63 @@ namespace Kitimar::CTSmarts {
         }
     }
 
+
+    /*
+    constexpr auto unique(ctll::empty_list) noexcept
+    {
+        return ctll::empty_list{};
+    }
+
+    template<typename T, typename ...Ts>
+    constexpr auto unique(ctll::list<T, Ts...> list) noexcept
+    {
+        if constexpr (ctll::exists_in(T{}, ctll::list<Ts...>{}))
+            return unique(ctll::list<Ts...>{});
+        else
+            return ctll::push_front(T{}, unique(ctll::list<Ts...>{}));
+    }
+    */
+
+
+
+    constexpr auto unique(auto list) noexcept
+    {
+        if constexpr (ctll::empty(list))
+            return ctll::empty_list{};
+        else {
+            constexpr auto head = ctll::front(list);
+            constexpr auto tail = unique(ctll::pop_front(list));
+            if constexpr (ctll::exists_in(head, tail))
+                return tail;
+            else
+                return ctll::push_front(head, tail);
+        }
+    }
+
+
+    template<typename ...Ts, typename ...Us>
+    constexpr auto merge(ctll::list<Ts...> a, ctll::list<Us...> b) noexcept
+    {
+        return unique(ctll::concat(a, b));
+    }
+
+    /*
+    constexpr auto merge(auto a, auto b)
+    {
+        if constexpr (!ctll::size(a))
+            return b;
+        else {
+            constexpr auto head = ctll::front(a);
+            if constexpr (ctll::exists_in(head, b))
+                return b;
+            else
+                return merge(ctll::pop_front(a), ctll::push_front(head, b));
+        }
+    }
+    */
+
+
+
     template<int ...N>
     constexpr auto toArray(ctll::list<Number<N>...>)
     {

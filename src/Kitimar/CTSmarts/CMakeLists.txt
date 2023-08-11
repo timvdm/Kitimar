@@ -19,6 +19,10 @@ set(CTSmarts_HDRS
     Graph/DfsEdgeList.hpp
     Graph/CycleMembership.hpp
     Graph/DfsBondList.hpp
+    Filter/UnconditionalFilter.hpp
+    Filter/NumAtomBondFilter.hpp
+    Filter/ElementFilter.hpp
+    Filter/FilterPolicy.hpp
     Optimizer/PrimitiveFrequency.hpp
     Optimizer/ExpressionFrequency.hpp
     Optimizer/OptimizeExpression.hpp
@@ -43,7 +47,7 @@ endif()
 # Install
 
 install(TARGETS CTSmarts
-    EXPORT CTSmartsTargets
+    EXPORT KitimarCTSmartsTargets
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -52,8 +56,8 @@ install(TARGETS CTSmarts
 
 install(FILES ${CTSmarts_HDRS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/Kitimar/CTSmarts)
 
-install(EXPORT CTSmartsTargets
-    FILE CTSmartsTargets.cmake
+install(EXPORT KitimarCTSmartsTargets
+    FILE KitimarCTSmartsTargets.cmake
     NAMESPACE Kitimar::
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/Kitimar
 )

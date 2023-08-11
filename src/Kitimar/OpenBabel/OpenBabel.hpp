@@ -55,7 +55,7 @@ namespace Kitimar {
             OpenBabel::OBMol read()
             {
                 if (m_atEnd)
-                    return {};                
+                    return {};
                 auto mol = m_mol; // FIXME use shared_ptr
                 m_atEnd = !m_conv.Read(&m_mol);
                 ++m_index;
@@ -66,6 +66,8 @@ namespace Kitimar {
             {
                 return std::views::iota(0) |
                         std::views::take_while([this] (auto) {
+                            if (m_atEnd)
+                                m_numMolecules = m_index;
                             return !m_atEnd;
                         }) |
                         std::views::transform([this] (auto) {                            

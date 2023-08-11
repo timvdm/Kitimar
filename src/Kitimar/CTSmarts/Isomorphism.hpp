@@ -1,9 +1,13 @@
  #pragma once
 
-#include "../Molecule/Molecule.hpp"
-
 #include "Smarts.hpp"
 #include "MatchExpr.hpp"
+
+#include "Filter/NumAtomBondFilter.hpp"
+#include "Filter/ElementFilter.hpp"
+#include "Filter/FilterPolicy.hpp"
+
+#include <Kitimar/Molecule/Molecule.hpp>
 
 #include <set>
 #include <vector>
@@ -14,6 +18,7 @@
 #include <type_traits>
 #include <unordered_set>
 #include <cassert>
+
 
 
 #define ISOMORPHISM_DEBUG 0
@@ -63,7 +68,7 @@ namespace Kitimar::CTSmarts {
     static constexpr auto All    = MapTypeTag<MapType::All>{};
 
     template<typename Derived>
-    class MappedVector
+    class MappedVectorPolicy
     {
         public:
             constexpr void resetMapped(auto numAtoms)
@@ -98,7 +103,7 @@ namespace Kitimar::CTSmarts {
     };
 
     template<typename Derived>
-    class MappedLookup
+    class MappedLookupPolicy
     {
         public:
             bool isMapped(auto atomIndex) const noexcept
@@ -143,9 +148,16 @@ namespace Kitimar::CTSmarts {
 
 
 
+    struct NoFilterPolicy : FilterPolicy<> {};
+
+    struct UnconditionalFilterPolicy : FilterPolicy<NumAtomBondFilter> {};
+
+    struct ConditionalFilterPolicy : FilterPolicy<> {};
+
+
     template<Molecule::Molecule Mol, typename SmartsT, MapType Type,
              template<typename> class OptimizationPolicy = FullOptimizationPolicy,
-             template<typename> class MappedPolicy = MappedVector>
+             template<typename> class MappedPolicy = MappedVectorPolicy>
     class Isomorphism : public MappedPolicy<Isomorphism<Mol, SmartsT, Type>>
     {
 

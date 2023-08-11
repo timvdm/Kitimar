@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Kitimar/CTSmarts/Optimizer/ExpressionFrequency.hpp>
+#include "ExpressionFrequency.hpp"
 
 namespace Kitimar::CTSmarts {
 

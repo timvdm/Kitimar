@@ -363,8 +363,10 @@ TEST(TestCTSmarts, Charge)
     test_atom_expr<"[+1]", Charge<1> >();
     test_atom_expr<"[+3]", Charge<3> >();
 
-    //test_atom_expr<"[++]",  Charge<2> >();
-    //test_atom_expr<"[+++]",  Charge<3> >();
+    test_atom_expr<"[++]",  Charge<2> >();
+    test_atom_expr<"[+++]",  Charge<3> >();
+    test_atom_expr<"[--]",  Charge<-2> >();
+    test_atom_expr<"[---]",  Charge<-3> >();
 }
 
 TEST(TestCTSmarts, Chiral)
@@ -1376,9 +1378,115 @@ TEST(TestCTSmarts, IncidentList)
 }
 
 
+TEST(TestCTSmarts, Real)
+{
+    static_assert(Real<1>::value == 1.0);
+    static_assert(Real<1, 0>::value == 1.0);
+    static_assert(Real<1, 1>::value == 10.0);
+    static_assert(Real<1, -1>::value == 0.1);
+    static_assert(Real<2, 2>::value == 200.0);
+    static_assert(Real<2, -2>::value == 0.02);
+}
+
+TEST(TestCTSmarts, Merge)
+{
+    using A = Number<0>;
+    using B = Number<1>;
+    using C = Number<2>;
+    using D = Number<3>;
+
+    static_assert(std::is_same_v<decltype(merge(ctll::list<A, B>{}, ctll::list<C, D>{})), ctll::list<A, B, C, D>>);
+    static_assert(std::is_same_v<decltype(merge(ctll::list<A, B>{}, ctll::list<A, B>{})), ctll::list<A, B>>);
+    static_assert(std::is_same_v<decltype(merge(ctll::list<A, C, B>{}, ctll::list<B, D, C>{})), ctll::list<A, B, D, C>>);
+
+
+    //identify_type<decltype(merge(ctll::list<A, C, B>{}, ctll::list<B, D, C>{}))>{};
+
+    //static_assert(std::is_same_v<decltype(merge(ctll::list<bool, int>{}, ctll::list<float, double>{})), ctll::list<bool, int, float, double>>);
+
+
+}
+
+template<ctll::fixed_string SMARTS, typename Primitives>
+constexpr auto test_required_atom_primitives() noexcept
+{
+    auto smarts = Smarts<SMARTS>{};
+    static_assert(std::is_same_v<decltype(requiredAtomPrimitives(smarts.atoms)), Primitives>);
+
+}
+
+TEST(TestCTSmarts, RequiredAtomPrimitives)
+{
+    using C = AliphaticAtom<6>;
+    using N = AliphaticAtom<7>;
+    using O = AliphaticAtom<8>;
+    using F = AliphaticAtom<9>;
+
+    auto smarts1 = Smarts<"CCO">{};
+
+    test_required_atom_primitives<"C", ctll::list<C>>();
+    test_required_atom_primitives<"N", ctll::list<N>>();
+    test_required_atom_primitives<"O", ctll::list<O>>();
+    test_required_atom_primitives<"F", ctll::list<F>>();
+    test_required_atom_primitives<"CCCC", ctll::list<C>>();
+    test_required_atom_primitives<"CCO", ctll::list<C, O>>();
+    test_required_atom_primitives<"CCN", ctll::list<C, N>>();
+    test_required_atom_primitives<"CNOF", ctll::list<C, N, O, F>>();
+    test_required_atom_primitives<"CNOFCNOF", ctll::list<C, N, O, F>>();
+
+}
 
 
 
+TEST(TestCTSmarts, NumAtomBondFilter)
+{
+    auto mol = mockAcetateAnion(); // CC(=O)[O-]
+    auto smarts1 = Smarts<"CCC">{};
+    auto smarts2 = Smarts<"CCCCC">{}; // more atoms than mol
+
+    auto filterPolicy = FilterPolicy<NumAtomBondFilter>{};
+    auto filterPolicyHelper1 = FilterPolicyHelper{smarts1, filterPolicy.filters};
+    auto filterPolicyHelper2 = FilterPolicyHelper{smarts2, filterPolicy.filters};
+
+    EXPECT_FALSE(filterPolicyHelper1.reject(mol));
+    EXPECT_TRUE(filterPolicyHelper2.reject(mol));
+}
+
+TEST(TestCTSmarts, ElementFilter)
+{
+
+    auto mol = mockAcetateAnion(); // CC(=O)[O-]
+    auto smarts1 = Smarts<"CCO">{};
+    auto smarts2 = Smarts<"CCN">{};
+    auto smarts3 = Smarts<"[Ti]">{};
+
+    auto allElements1 = impl::enabledElements<Real<1>>(smarts1);
+    auto allElements2 = impl::enabledElements<Real<1>>(smarts2);
+    auto allElements3 = impl::enabledElements<Real<1>>(smarts3);
+
+    static_assert(std::is_same_v<decltype(allElements1), ctll::list<Number<6>, Number<8>>>);
+    static_assert(std::is_same_v<decltype(allElements2), ctll::list<Number<6>, Number<7>>>);
+    static_assert(std::is_same_v<decltype(allElements3), ctll::list<Number<22>>>);
+
+    auto rareElements1 = impl::enabledElements<Real<1, -2>>(smarts1);
+    auto rareElements2 = impl::enabledElements<Real<1, -2>>(smarts2);
+    auto rareElements3 = impl::enabledElements<Real<1, -2>>(smarts3);
+
+    static_assert(std::is_same_v<decltype(rareElements1), ctll::empty_list>);
+    static_assert(std::is_same_v<decltype(rareElements2), ctll::empty_list>);
+    static_assert(std::is_same_v<decltype(rareElements3), ctll::list<Number<22>>>);
+
+
+    auto filterPolicy = FilterPolicy<ElementFilter<Real<1>>>{};
+    auto filterPolicyHelper1 = FilterPolicyHelper{smarts1, filterPolicy.filters};
+    auto filterPolicyHelper2 = FilterPolicyHelper{smarts2, filterPolicy.filters};
+    auto filterPolicyHelper3 = FilterPolicyHelper{smarts3, filterPolicy.filters};
+
+    EXPECT_FALSE(filterPolicyHelper1.reject(mol));
+    EXPECT_TRUE(filterPolicyHelper2.reject(mol));
+    EXPECT_TRUE(filterPolicyHelper3.reject(mol));
+
+}
 
 
 
@@ -1386,9 +1494,20 @@ TEST(TestCTSmarts, IncidentList)
 
 TEST(TestCTSmarts, Debug)
 {
+    auto mol = mockAcetateAnion(); // CC(=O)[O-]
 
+    auto smarts1 = Smarts<"CCC">{};
+    auto smarts2 = Smarts<"CCCCC">{};
 
+    auto filterPolicy = FilterPolicy<NumAtomBondFilter>{};
 
+    auto filterPolicyHelper1 = FilterPolicyHelper{smarts1, filterPolicy.filters};
+    auto filterPolicyHelper2 = FilterPolicyHelper{smarts2, filterPolicy.filters};
+
+    EXPECT_FALSE(filterPolicyHelper1.reject(mol));
+    EXPECT_TRUE(filterPolicyHelper2.reject(mol));
+
+    auto filters1 = filterPolicyHelper1.filters;
 
 }
 

@@ -1084,6 +1084,10 @@ namespace Kitimar::CTLayout {
                 initTypes();
             }
 
+            auto index() const noexcept
+            {
+                return m_index;
+            }
 
             auto numMolecules()
             {
@@ -1096,8 +1100,6 @@ namespace Kitimar::CTLayout {
             auto read()
             {
                 assert (m_index < numMolecules());
-                //std::cout << m_index << std::endl;
-
                 if constexpr (contains(Layout{}, AtomList{})) {
                     auto object = toObject(Layout{}, m_source).at(m_index++);
                     return StructMoleculeObject{object};
@@ -1108,7 +1110,6 @@ namespace Kitimar::CTLayout {
                     auto object = toObject(Layout{}, m_source).get(Vector<TypeMolecule>{}).at(m_index++);
                     return TypeMoleculeObject{m_atomTypes, m_bondTypes, object};
                 }
-                //return toObject(Layout{}, m_source).at(m_index++);
             }
 
             void reset()

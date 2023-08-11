@@ -17,7 +17,7 @@ target_include_directories(Molecule INTERFACE
 # Install
 
 install(TARGETS Molecule
-    EXPORT MoleculeTargets
+    EXPORT KitimarMoleculeTargets
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -26,8 +26,8 @@ install(TARGETS Molecule
 
 install(FILES ${Molecule_HDRS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/Kitimar/Molecule)
 
-install(EXPORT MoleculeTargets
-    FILE MoleculeTargets.cmake
+install(EXPORT KitimarMoleculeTargets
+    FILE KitimarMoleculeTargets.cmake
     NAMESPACE Kitimar::
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/Kitimar
 )
