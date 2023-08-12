@@ -14,7 +14,7 @@ using namespace Kitimar;
 
 int main()
 {
-    bool matches = CTSmarts::contains<"C[O-]">(molecule);
+    bool matches = CTSmarts::match<"C[O-]">(molecule);
 
     std::cout << "Matching SMARTS \"C[O-]\" in SMILES \"CC(=O)[O-]\": "
               << matches << std::endl;

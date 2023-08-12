@@ -84,7 +84,7 @@ template<ctll::fixed_string SMARTS, typename Callback>
 auto matchesKitimar(auto &source, Callback callback)
 {
     for (auto mol : source.molecules())
-        callback(mol, CTSmarts::contains<SMARTS>(mol));
+        callback(mol, CTSmarts::match<SMARTS>(mol));
 }
 
 

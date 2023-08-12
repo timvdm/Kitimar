@@ -111,13 +111,81 @@ namespace Kitimar::CTSmarts {
 
     } // namespace detail
 
+    /*
+     *
+     * bool match(mol)
+     * bool match(mol, atom/bond)
+     *     bool match_atom(mol, atom)
+     *     bool match_bond(mol, bond)
+     *
+     * int count(mol, type = Unique)
+     * int count(mol, atom/bond, type = Unique)
+     *     int count_atom(mol, atom, type = Unique)
+     *     int count_bond(mol, bond, type = Unique)
+     *
+     * int count_unique(mol)
+     * int count_unique(mol, atom/bond)
+     *     int count_unique_atom(mol, atom)
+     *     int count_unique_bond(mol, bond)
+     *
+     * int count_all(mol)
+     * int count_all(mol, atom/bond)
+     *     int count_all_atom(mol, atom)
+     *     int count_all_bond(mol, bond)
+     *
+     * Map map(mol)
+     * Map map(mol, atom/bond)
+     *     Map atom_map(mol, atom)
+     *     Map bond_map(mol, bond)
+     *
+     * Maps maps(mol, type = Unique)
+     * Maps maps(mol, atom/bond, type = Unique)
+     *     Maps atom_maps(mol, atom, type = Unqiue)
+     *     Maps bond_maps(mol, bond, type = Unique)
+     *
+     * Maps unique_maps(mol)
+     * Maps unique_maps(mol, atom/bond)
+     *     Maps unique_atom_maps(mol, atom)
+     *     Maps unique_bond_maps(mol, bond)
+     *
+     * Maps all_maps(mol)
+     * Maps all_maps(mol, atom/bond)
+     *     Maps all_atom_maps(mol, atom)
+     *     Maps all_bond_maps(mol, bond)
+     *
+     * (bool, Atom...) capture(mol)
+     * (bool, Atom...) capture(mol, atom/bond)
+     *     (bool, Atom...) atom_capture(mol, atom)
+     *     (bool, Atom...) bond_capture(mol, bond)
+     *
+     * Maps captures(mol, type = Unique)
+     * Maps captures(mol, atom/bond, type = Unique)
+     *     Maps atom_captures(mol, atom, type = Unique)
+     *     Maps bond_captures(mol, bond, type = Unique)
+     *
+     * Maps unique_captures(mol)
+     * Maps unique_captures(mol, atom/bond)
+     *     Maps unique_atom_captures(mol, atom)
+     *     Maps unique_bond_captures(mol)
+     *
+     * Maps all_captures(mol)
+     * Maps all_captures(mol, atom/bond)
+     *     Maps all_atom_captures(mol, atom)
+     *     Maps all_bond_captures(mol)
+     *
+     *
+     *
+     */
+
+
+
 
     //
-    // CTSmarts::contains<"SMARTS">(mol) -> bool
+    // ctse::match<"SMARTS">(mol) -> bool
     //
 
     template<ctll::fixed_string SMARTS, Molecule::Molecule Mol>
-    constexpr bool contains(Mol &mol)
+    constexpr bool match(Mol &mol)
     {
         auto smarts = Smarts<SMARTS>{};
         if constexpr (smarts.isSingleAtom) {
@@ -139,11 +207,11 @@ namespace Kitimar::CTSmarts {
     }
 
     //
-    // CTSmarts::atom<"SMARTS">(mol, atom) -> bool
+    // ctse::match_atom<"SMARTS">(mol, atom) -> bool
     //
 
     template<ctll::fixed_string SMARTS, Molecule::Molecule Mol>
-    constexpr bool atom(Mol &mol, const auto &atom)
+    constexpr bool match_atom(Mol &mol, const auto &atom)
     {
         auto smarts = Smarts<SMARTS>{};
         if constexpr (smarts.isSingleAtom) {
@@ -167,11 +235,11 @@ namespace Kitimar::CTSmarts {
     }
 
     //
-    // CTSmarts::bond<"SMARTS">(mol, bond) -> bool
+    // ctse::match_bond<"SMARTS">(mol, bond) -> bool
     //
 
     template<ctll::fixed_string SMARTS, Molecule::Molecule Mol>
-    constexpr bool bond(Mol &mol, const auto &bond)
+    constexpr bool match_bond(Mol &mol, const auto &bond)
     {
         auto smarts = Smarts<SMARTS>{};
         //std::cout << "CTSmarts::bond<" << smarts.input() << ">(mol, " << get_index(mol, bond) << ")" << std::endl;
@@ -405,3 +473,5 @@ namespace Kitimar::CTSmarts {
     }
 
 } // namespace Kitimar::CTSmarts
+
+namespace ctse = Kitimar::CTSmarts;

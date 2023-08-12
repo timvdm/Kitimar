@@ -45,12 +45,8 @@ gtest_add_tests(TARGET TestSerialize)
 
 # CTSmarts
 
-add_executable(TestCTSmarts TestCTSmarts.cpp)
-target_link_libraries(TestCTSmarts Kitimar::CTSmarts Test)
-if(Kitimar_WITH_OPENBABEL)
-    target_link_libraries(TestCTSmarts Kitimar::OpenBabel)
-endif()
-gtest_add_tests(TARGET TestCTSmarts)
+add_subdirectory(CTSmarts)
+
 
 # OpenBabel
 

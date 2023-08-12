@@ -9,7 +9,7 @@ using namespace Kitimar;
 template<ctll::fixed_string SMARTS>
 void validate_contains(OpenBabel::OBMol &mol)
 {
-    auto ctMatch = CTSmarts::contains<SMARTS>(mol);
+    auto ctMatch = CTSmarts::match<SMARTS>(mol);
 
     OpenBabel::OBSmartsPattern obsmarts;
     obsmarts.Init(Util::toString(SMARTS));
