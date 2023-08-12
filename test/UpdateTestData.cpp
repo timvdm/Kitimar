@@ -70,9 +70,9 @@ void serializeOpenBabelSmilesToKitimarTypeIndex()
 
 #ifdef KITIMAR_WITH_RDKIT
 
-void serializeRDKit(auto &source)
+void serializeRDKit(auto &source, const std::string &suffix)
 {
-    std::ofstream ofs(chembl_rdkit_filename(), std::ios_base::binary);
+    std::ofstream ofs(chembl_rdkit_filename(suffix), std::ios_base::binary);
     std::string pickle;
     int n = 0;
     for (auto mol : source.molecules()) {
@@ -82,10 +82,10 @@ void serializeRDKit(auto &source)
     }
 }
 
-void serializeRDKitSmilesToRDKit()
+void serializeRDKitSmilesToRDKit(const std::string &suffix = {})
 {
-    RDKitSmilesMolSource source{chembl_smi_filename()};
-    serializeRDKit(source);
+    RDKitSmilesMolSource source{chembl_smi_filename(suffix)};
+    serializeRDKit(source, suffix);
 }
 
 #endif // #ifdef KITIMAR_WITH_RDKIT
@@ -98,14 +98,14 @@ int main()
     //serializeOpenBabelSmilesToKitimar<Vector<StructMolecule>>();
     //serializeOpenBabelSmilesToKitimar<Vector<StructMoleculeIncident>>();
     //serializeOpenBabelSmilesToKitimar<Vector<ListMoleculeIncident>>();
-    serializeOpenBabelSmilesToKitimar<TypeMolecules>();
+    //serializeOpenBabelSmilesToKitimar<TypeMolecules>();
 
     //serializeOpenBabelSmilesToKitimarTypeIndex<StructMoleculeIncident>();
 #endif
 
 #ifdef KITIMAR_WITH_RDKIT
     // RDKit SMILES -> RDKit Pickle
-    //serializeRDKitSmilesToRDKit();
+    serializeRDKitSmilesToRDKit("1K");
 #endif
 
 

@@ -10,7 +10,7 @@ set(KitimarRDKit_HDRS
     RDKit.hpp
 )
 
-add_library(KitimarRDKit INTERFACE ${KitmarRDKit_HDRS})
+add_library(KitimarRDKit INTERFACE ${KitimarRDKit_HDRS})
 add_library(Kitimar::RDKit ALIAS KitimarRDKit)
 set_target_properties(KitimarRDKit PROPERTIES EXPORT_NAME "RDKit")
 

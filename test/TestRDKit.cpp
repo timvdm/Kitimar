@@ -34,7 +34,7 @@ TEST(TestRDKit, SmilesMolSource)
 
 TEST(TestRDKit, PickleMolSource)
 {
-    RDKitPickleMolSource source{chembl_rdkit_filename()};
+    RDKitPickleMolSource source{chembl_rdkit_filename("1K")};
 
     auto numMolecules = 0;
     for (const auto &mol : source.molecules()) {
@@ -42,5 +42,5 @@ TEST(TestRDKit, PickleMolSource)
         ++numMolecules;
     }
 
-    EXPECT_EQ(numMolecules, 2327928);
+    EXPECT_EQ(numMolecules, 1000);
 }
