@@ -56,6 +56,11 @@ namespace Kitimar::CTSmarts {
             return matchAtomExpr(mol, atom, get<0>(smarts.atoms).expr);
         }
 
+        constexpr bool singleBondMatchHelper(auto smarts, auto &mol, const auto &bond, const auto &source, const auto &target)
+        {
+            return matchAtomExpr(mol, source, get<0>(smarts.atoms).expr) && matchAtomExpr(mol, target, get<1>(smarts.atoms).expr);
+        }
+
         // 0 -> no match
         // 1 -> source is SMARTS atom 0, target is SMARTS atom 1
         // 2 -> source is SMARTS atom 1, target is SMARTS atom 0
@@ -65,11 +70,25 @@ namespace Kitimar::CTSmarts {
             auto target = get_target(mol, bond);
             if (!matchBondExpr(mol, bond, get<0>(smarts.bonds).expr))
                 return 0;
-            if (matchAtomExpr(mol, source, get<0>(smarts.atoms).expr) && matchAtomExpr(mol, target, get<1>(smarts.atoms).expr))
+            if (singleBondMatchHelper(smarts, mol, bond, source, target))
                 return 1;
-            if (matchAtomExpr(mol, source, get<1>(smarts.atoms).expr) && matchAtomExpr(mol, target, get<0>(smarts.atoms).expr))
+            if (singleBondMatchHelper(smarts, mol, bond, target, source))
                 return 2;
             return 0;
+        }
+
+        constexpr int singleBondCount(auto smarts, auto &mol, const auto &bond)
+        {
+            auto source = get_source(mol, bond);
+            auto target = get_target(mol, bond);
+            if (!matchBondExpr(mol, bond, get<0>(smarts.bonds).expr))
+                return 0;
+            auto n = 0;
+            if (singleBondMatchHelper(smarts, mol, bond, source, target))
+                ++n;;
+            if (singleBondMatchHelper(smarts, mol, bond, target, source))
+                ++n;
+            return n;
         }
 
         constexpr auto singleBondCapture(auto smarts, auto &mol, const auto &bond, int singleBondMatchType)
@@ -272,9 +291,14 @@ namespace Kitimar::CTSmarts {
         } else if constexpr (smarts.isSingleBond) {
             // Optimize single bond SMARTS
             auto n = 0;
-            for (auto bond : get_bonds(mol))
-                if (detail::singleBondMatch(smarts, mol, bond))
-                    ++n;
+            for (auto bond : get_bonds(mol)) {
+                if constexpr (M == MapType::Unique) {
+                    if (detail::singleBondMatch(smarts, mol, bond))
+                        ++n;
+                } else {
+                    n += detail::singleBondCount(smarts, mol, bond);
+                }
+            }
             return n;
         } else {
             auto iso = Isomorphism<Mol, decltype(smarts), M>{};

@@ -40,6 +40,7 @@ TEST_CASE("count")
     CHECK(ctse::count<"CC(=O)[O-]">(mol, ctse::Unique) == 1);
     CHECK(ctse::count<"CC([O-])=O">(mol, ctse::Unique) == 1);
     CHECK(ctse::count<"O=C(C)[O-]">(mol, ctse::Unique) == 1);
+    CHECK(ctse::count<"*~*(~*)~*">(mol, ctse::Unique) == 1);
 
     CHECK(ctse::count<"CC(=O)N">(mol, ctse::Unique) == 0);
 
@@ -66,6 +67,7 @@ TEST_CASE("count")
     CHECK(ctse::count<"CC(=O)[O-]">(mol, ctse::All) == 1);
     CHECK(ctse::count<"CC([O-])=O">(mol, ctse::All) == 1);
     CHECK(ctse::count<"O=C(C)[O-]">(mol, ctse::All) == 1);
+    CHECK(ctse::count<"*~*(~*)~*">(mol, ctse::All) == 6);
 
     CHECK(ctse::count<"CC(=O)N">(mol, ctse::All) == 0);
 }
