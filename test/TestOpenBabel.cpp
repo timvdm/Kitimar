@@ -2,7 +2,8 @@
 
 #include "TestData.hpp"
 
-#include <gtest/gtest.h>
+#include <catch2/catch_test_macros.hpp>
+
 
 static_assert(Kitimar::Molecule::IsAtomList<OpenBabel::OBMol>);
 static_assert(Kitimar::Molecule::IsBondList<OpenBabel::OBMol>);
@@ -19,7 +20,7 @@ static_assert(Kitimar::Molecule::AromaticLayer<OpenBabel::OBMol>);
 using namespace Kitimar;
 
 
-TEST(TestOpenBabel, SmilesMolSource)
+TEST_CASE("SmilesMolSource")
 {
     OpenBabelSmilesMolSource source{chembl_smi_filename("1K")};
 
@@ -27,5 +28,5 @@ TEST(TestOpenBabel, SmilesMolSource)
     for (const auto &mol : source.molecules())
         ++numMolecules;
 
-    EXPECT_EQ(numMolecules, 1000);
+    CHECK(numMolecules == 1000);
 }

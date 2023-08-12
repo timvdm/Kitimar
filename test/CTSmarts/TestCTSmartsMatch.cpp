@@ -1,5 +1,5 @@
 #include <Kitimar/CTSmarts/CTSmarts.hpp>
-#include <gtest/gtest.h>
+#include <catch2/catch_test_macros.hpp>
 
 using namespace Kitimar;
 using namespace Kitimar::CTSmarts;
@@ -15,36 +15,36 @@ auto mockAcetateAnion()
     return mol;
 }
 
-TEST(TestCTSmartsMatch, CTSmarts_match)
+TEST_CASE("match")
 {
     auto mol = mockAcetateAnion(); // CC(=O)[O-]
 
     // single atom
-    EXPECT_TRUE(ctse::match<"C">(mol));
-    EXPECT_TRUE(ctse::match<"O">(mol));
-    EXPECT_TRUE(ctse::match<"[O-]">(mol));
+    CHECK(ctse::match<"C">(mol));
+    CHECK(ctse::match<"O">(mol));
+    CHECK(ctse::match<"[O-]">(mol));
 
-    EXPECT_FALSE(ctse::match<"N">(mol));
-    EXPECT_FALSE(ctse::match<"[O+]">(mol));
+    CHECK(!ctse::match<"N">(mol));
+    CHECK(!ctse::match<"[O+]">(mol));
 
     // single bond
-    EXPECT_TRUE(ctse::match<"CC">(mol));
-    EXPECT_TRUE(ctse::match<"C=O">(mol));
-    EXPECT_TRUE(ctse::match<"C[O-]">(mol));
+    CHECK(ctse::match<"CC">(mol));
+    CHECK(ctse::match<"C=O">(mol));
+    CHECK(ctse::match<"C[O-]">(mol));
 
-    EXPECT_FALSE(ctse::match<"C=C">(mol));
-    EXPECT_FALSE(ctse::match<"C#O">(mol));
-    EXPECT_FALSE(ctse::match<"C[O+]">(mol));
+    CHECK(!ctse::match<"C=C">(mol));
+    CHECK(!ctse::match<"C#O">(mol));
+    CHECK(!ctse::match<"C[O+]">(mol));
 
     // general case
-    EXPECT_TRUE(ctse::match<"CC(=O)[O-]">(mol));
-    EXPECT_TRUE(ctse::match<"CC([O-])=O">(mol));
-    EXPECT_TRUE(ctse::match<"O=C(C)[O-]">(mol));
+    CHECK(ctse::match<"CC(=O)[O-]">(mol));
+    CHECK(ctse::match<"CC([O-])=O">(mol));
+    CHECK(ctse::match<"O=C(C)[O-]">(mol));
 
-    EXPECT_FALSE(ctse::match<"CC(=O)N">(mol));
+    CHECK(!ctse::match<"CC(=O)N">(mol));
 }
 
-TEST(TestCTSmartsMatch, CTSmarts_match_atom)
+TEST_CASE("match_atom")
 {
     auto mol = mockAcetateAnion(); // CC(=O)[O-]
 
@@ -54,38 +54,38 @@ TEST(TestCTSmartsMatch, CTSmarts_match_atom)
     auto O3 = get_atom(mol, 3);
 
     // single atom
-    EXPECT_TRUE(ctse::match_atom<"C">(mol, C0));
-    EXPECT_TRUE(ctse::match_atom<"C">(mol, C1));
-    EXPECT_TRUE(ctse::match_atom<"O">(mol, O2));
-    EXPECT_TRUE(ctse::match_atom<"[O-]">(mol, O3));
+    CHECK(ctse::match_atom<"C">(mol, C0));
+    CHECK(ctse::match_atom<"C">(mol, C1));
+    CHECK(ctse::match_atom<"O">(mol, O2));
+    CHECK(ctse::match_atom<"[O-]">(mol, O3));
 
-    EXPECT_FALSE(ctse::match_atom<"C">(mol, O2));
-    EXPECT_FALSE(ctse::match_atom<"[O-]">(mol, O2));
+    CHECK(!ctse::match_atom<"C">(mol, O2));
+    CHECK(!ctse::match_atom<"[O-]">(mol, O2));
 
     // single bond
-    EXPECT_TRUE(ctse::match_atom<"CC">(mol, C0));
-    EXPECT_TRUE(ctse::match_atom<"CC">(mol, C1));
-    EXPECT_TRUE(ctse::match_atom<"CO">(mol, C1));
-    EXPECT_TRUE(ctse::match_atom<"O=C">(mol, O2));
-    EXPECT_TRUE(ctse::match_atom<"OC">(mol, O3));
+    CHECK(ctse::match_atom<"CC">(mol, C0));
+    CHECK(ctse::match_atom<"CC">(mol, C1));
+    CHECK(ctse::match_atom<"CO">(mol, C1));
+    CHECK(ctse::match_atom<"O=C">(mol, O2));
+    CHECK(ctse::match_atom<"OC">(mol, O3));
 
-    EXPECT_FALSE(ctse::match_atom<"CO">(mol, C0));
-    EXPECT_FALSE(ctse::match_atom<"CO">(mol, O2));
-    EXPECT_FALSE(ctse::match_atom<"OC">(mol, C1));
+    CHECK(!ctse::match_atom<"CO">(mol, C0));
+    CHECK(!ctse::match_atom<"CO">(mol, O2));
+    CHECK(!ctse::match_atom<"OC">(mol, C1));
 
     // general case
-    EXPECT_TRUE(ctse::match_atom<"CC(=O)[O-]">(mol, C0));
-    EXPECT_TRUE(ctse::match_atom<"C(C)(=O)[O-]">(mol, C1));
-    EXPECT_TRUE(ctse::match_atom<"O=CO">(mol, O2));
-    EXPECT_TRUE(ctse::match_atom<"OC=O">(mol, O3));
+    CHECK(ctse::match_atom<"CC(=O)[O-]">(mol, C0));
+    CHECK(ctse::match_atom<"C(C)(=O)[O-]">(mol, C1));
+    CHECK(ctse::match_atom<"O=CO">(mol, O2));
+    CHECK(ctse::match_atom<"OC=O">(mol, O3));
 
-    EXPECT_FALSE(ctse::match_atom<"CC(=O)[O-]">(mol, C1));
-    EXPECT_FALSE(ctse::match_atom<"C(C)(=O)[O-]">(mol, C0));
-    EXPECT_FALSE(ctse::match_atom<"O=CO">(mol, O3));
-    EXPECT_FALSE(ctse::match_atom<"OC=O">(mol, O2));
+    CHECK(!ctse::match_atom<"CC(=O)[O-]">(mol, C1));
+    CHECK(!ctse::match_atom<"C(C)(=O)[O-]">(mol, C0));
+    CHECK(!ctse::match_atom<"O=CO">(mol, O3));
+    CHECK(!ctse::match_atom<"OC=O">(mol, O2));
 }
 
-TEST(TestCTSmartsMatch, CTSmarts_match_bond)
+TEST_CASE("match_bond")
 {
     auto mol = mockAcetateAnion(); // CC(=O)[O-]
 
@@ -94,33 +94,33 @@ TEST(TestCTSmartsMatch, CTSmarts_match_bond)
     auto CO2 = get_bond(mol, 2);
 
     // single bond
-    EXPECT_TRUE(ctse::match_bond<"CC">(mol, CC0));
-    EXPECT_TRUE(ctse::match_bond<"C=O">(mol, CO1));
-    EXPECT_TRUE(ctse::match_bond<"O=C">(mol, CO1));
-    EXPECT_TRUE(ctse::match_bond<"CO">(mol, CO2));
-    EXPECT_TRUE(ctse::match_bond<"OC">(mol, CO2));
+    CHECK(ctse::match_bond<"CC">(mol, CC0));
+    CHECK(ctse::match_bond<"C=O">(mol, CO1));
+    CHECK(ctse::match_bond<"O=C">(mol, CO1));
+    CHECK(ctse::match_bond<"CO">(mol, CO2));
+    CHECK(ctse::match_bond<"OC">(mol, CO2));
 
-    EXPECT_FALSE(ctse::match_bond<"C=C">(mol, CC0));
-    EXPECT_FALSE(ctse::match_bond<"NC">(mol, CC0));
-    EXPECT_FALSE(ctse::match_bond<"CN">(mol, CC0));
-    EXPECT_FALSE(ctse::match_bond<"CO">(mol, CO1));
-    EXPECT_FALSE(ctse::match_bond<"N=O">(mol, CO1));
-    EXPECT_FALSE(ctse::match_bond<"C=N">(mol, CO1));
-    EXPECT_FALSE(ctse::match_bond<"C=O">(mol, CO2));
+    CHECK(!ctse::match_bond<"C=C">(mol, CC0));
+    CHECK(!ctse::match_bond<"NC">(mol, CC0));
+    CHECK(!ctse::match_bond<"CN">(mol, CC0));
+    CHECK(!ctse::match_bond<"CO">(mol, CO1));
+    CHECK(!ctse::match_bond<"N=O">(mol, CO1));
+    CHECK(!ctse::match_bond<"C=N">(mol, CO1));
+    CHECK(!ctse::match_bond<"C=O">(mol, CO2));
 
     // general case
-    EXPECT_TRUE(ctse::match_bond<"CCO">(mol, CC0));
-    EXPECT_TRUE(ctse::match_bond<"C(C)O">(mol, CC0));
-    EXPECT_TRUE(ctse::match_bond<"O=CO">(mol, CO1));
-    EXPECT_TRUE(ctse::match_bond<"C(=O)O">(mol, CO1));
-    EXPECT_TRUE(ctse::match_bond<"OC=O">(mol, CO2));
-    EXPECT_TRUE(ctse::match_bond<"C(O)=O">(mol, CO2));
+    CHECK(ctse::match_bond<"CCO">(mol, CC0));
+    CHECK(ctse::match_bond<"C(C)O">(mol, CC0));
+    CHECK(ctse::match_bond<"O=CO">(mol, CO1));
+    CHECK(ctse::match_bond<"C(=O)O">(mol, CO1));
+    CHECK(ctse::match_bond<"OC=O">(mol, CO2));
+    CHECK(ctse::match_bond<"C(O)=O">(mol, CO2));
 
-    EXPECT_FALSE(ctse::match_bond<"CCO">(mol, CO1));
-    EXPECT_FALSE(ctse::match_bond<"OCC">(mol, CC0));
-    EXPECT_FALSE(ctse::match_bond<"O(C)C">(mol, CC0));
-    EXPECT_FALSE(ctse::match_bond<"OC=O">(mol, CO1));
-    EXPECT_FALSE(ctse::match_bond<"C(O)=O">(mol, CO1));
-    EXPECT_FALSE(ctse::match_bond<"O=CO">(mol, CO2));
-    EXPECT_FALSE(ctse::match_bond<"C(=O)O">(mol, CO2));
+    CHECK(!ctse::match_bond<"CCO">(mol, CO1));
+    CHECK(!ctse::match_bond<"OCC">(mol, CC0));
+    CHECK(!ctse::match_bond<"O(C)C">(mol, CC0));
+    CHECK(!ctse::match_bond<"OC=O">(mol, CO1));
+    CHECK(!ctse::match_bond<"C(O)=O">(mol, CO1));
+    CHECK(!ctse::match_bond<"O=CO">(mol, CO2));
+    CHECK(!ctse::match_bond<"C(=O)O">(mol, CO2));
 }

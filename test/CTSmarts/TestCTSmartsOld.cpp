@@ -5,7 +5,7 @@
 #include <openbabel/parsmart.h>
 #endif
 
-#include <gtest/gtest.h>
+#include <catch2/catch_test_macros.hpp>
 
 using namespace Kitimar;
 using namespace Kitimar::CTSmarts;
@@ -53,12 +53,12 @@ void compare_maps(auto &&maps, const auto &refMaps)
     auto map = std::begin(maps);
     auto refMap = std::begin(refMaps);
     while (map != std::end(maps) && refMap != std::end(refMaps)) {
-        EXPECT_TRUE(std::ranges::equal(*map, *refMap));
+        CHECK(std::ranges::equal(*map, *refMap));
         ++map;
         ++refMap;
     }
-    EXPECT_EQ(map, std::end(maps));
-    EXPECT_EQ(refMap, std::end(refMaps));
+    CHECK(map == std::end(maps));
+    CHECK(refMap == std::end(refMaps));
 }
 
 template<ctll::fixed_string SMARTS>
@@ -73,7 +73,7 @@ void test_all(auto &mol, std::initializer_list<std::array<int, Smarts<SMARTS>::n
     compare_maps(CTSmarts::multi<SMARTS>(mol, CTSmarts::All), refMaps);
 }
 
-TEST(TestCTSmarts, CTSmarts_multi)
+TEST_CASE("CTSmarts_multi")
 {
     auto mol = mockAcetateAnion(); // CC(=O)[O-]
     auto mol2 = mockButane(); // CCCCC
@@ -89,7 +89,7 @@ TEST(TestCTSmarts, CTSmarts_multi)
     test_all<"*~*(~*)~*">(mol, { {0, 1, 2, 3}, {0, 1, 3, 2}, {2, 1, 0, 3}, {2, 1, 3, 0}, {3, 1, 0, 2}, {3, 1, 2, 0} });
 }
 
-TEST(TestCTSmarts, CTSmarts_capture)
+TEST_CASE("CTSmarts_capture")
 {
     auto mol = mockAcetateAnion(); // CC(=O)[O-]
 
@@ -99,32 +99,32 @@ TEST(TestCTSmarts, CTSmarts_capture)
     auto O3 = get_atom(mol, 3);
 
     // single atom
-    EXPECT_EQ(CTSmarts::capture<"C">(mol), std::make_tuple(true, C0));
-    EXPECT_EQ(CTSmarts::capture<"O">(mol), std::make_tuple(true, O2));
+    CHECK(CTSmarts::capture<"C">(mol) == std::make_tuple(true, C0));
+    CHECK(CTSmarts::capture<"O">(mol) == std::make_tuple(true, O2));
 
-    EXPECT_EQ(CTSmarts::capture<"N">(mol), std::make_tuple(false, null_atom(mol)));
+    CHECK(CTSmarts::capture<"N">(mol) == std::make_tuple(false, null_atom(mol)));
 
     // single bond
-    EXPECT_EQ(CTSmarts::capture<"CC">(mol), std::make_tuple(true, C0, C1));
-    EXPECT_EQ(CTSmarts::capture<"C=O">(mol), std::make_tuple(true, C1, O2));
-    EXPECT_EQ(CTSmarts::capture<"CO">(mol), std::make_tuple(true, C1, O3));
+    CHECK(CTSmarts::capture<"CC">(mol) == std::make_tuple(true, C0, C1));
+    CHECK(CTSmarts::capture<"C=O">(mol) == std::make_tuple(true, C1, O2));
+    CHECK(CTSmarts::capture<"CO">(mol) == std::make_tuple(true, C1, O3));
 
-    EXPECT_EQ(CTSmarts::capture<"[C:1]=[O:2]">(mol), std::make_tuple(true, C1, O2));
-    EXPECT_EQ(CTSmarts::capture<"[C:2]=[O:1]">(mol), std::make_tuple(true, O2, C1));
-    EXPECT_EQ(CTSmarts::capture<"[C:1]=O">(mol), std::make_tuple(true, C1));
-    EXPECT_EQ(CTSmarts::capture<"C=[O:1]">(mol), std::make_tuple(true, O2));
+    CHECK(CTSmarts::capture<"[C:1]=[O:2]">(mol) == std::make_tuple(true, C1, O2));
+    CHECK(CTSmarts::capture<"[C:2]=[O:1]">(mol) == std::make_tuple(true, O2, C1));
+    CHECK(CTSmarts::capture<"[C:1]=O">(mol) == std::make_tuple(true, C1));
+    CHECK(CTSmarts::capture<"C=[O:1]">(mol) == std::make_tuple(true, O2));
 
-    EXPECT_EQ(CTSmarts::capture<"*#*">(mol), std::make_tuple(false, null_atom(mol), null_atom(mol)));
+    CHECK(CTSmarts::capture<"*#*">(mol) == std::make_tuple(false, null_atom(mol), null_atom(mol)));
 
     // general case
-    EXPECT_EQ(CTSmarts::capture<"CC=O">(mol), std::make_tuple(true, C0, C1, O2));
-    EXPECT_EQ(CTSmarts::capture<"O=CC">(mol), std::make_tuple(true, O2, C1, C0));
-    EXPECT_EQ(CTSmarts::capture<"C(=O)C">(mol), std::make_tuple(true, C1, O2, C0));
-    EXPECT_EQ(CTSmarts::capture<"CC(=O)O">(mol), std::make_tuple(true, C0, C1, O2, O3));
-    EXPECT_EQ(CTSmarts::capture<"CC(O)=O">(mol), std::make_tuple(true, C0, C1, O3, O2));
+    CHECK(CTSmarts::capture<"CC=O">(mol) == std::make_tuple(true, C0, C1, O2));
+    CHECK(CTSmarts::capture<"O=CC">(mol) == std::make_tuple(true, O2, C1, C0));
+    CHECK(CTSmarts::capture<"C(=O)C">(mol) == std::make_tuple(true, C1, O2, C0));
+    CHECK(CTSmarts::capture<"CC(=O)O">(mol) == std::make_tuple(true, C0, C1, O2, O3));
+    CHECK(CTSmarts::capture<"CC(O)=O">(mol) == std::make_tuple(true, C0, C1, O3, O2));
 }
 
-TEST(TestCTSmarts, CTSmarts_captureAtom)
+TEST_CASE("CTSmarts_captureAtom")
 {
     auto mol = mockAcetateAnion(); // CC(=O)[O-]
 
@@ -134,52 +134,52 @@ TEST(TestCTSmarts, CTSmarts_captureAtom)
     auto O3 = get_atom(mol, 3);
 
     // single atom
-    EXPECT_EQ(CTSmarts::captureAtom<"C">(mol), C0);
-    EXPECT_EQ(CTSmarts::captureAtom<"O">(mol), O2);
+    CHECK(CTSmarts::captureAtom<"C">(mol) == C0);
+    CHECK(CTSmarts::captureAtom<"O">(mol) == O2);
 
-    EXPECT_EQ(CTSmarts::captureAtom<"N">(mol), null_atom(mol));
+    CHECK(CTSmarts::captureAtom<"N">(mol) == null_atom(mol));
 
     // single bond
-    EXPECT_EQ(CTSmarts::captureAtom<"CC">(mol), C0);
-    EXPECT_EQ(CTSmarts::captureAtom<"C=O">(mol), C1);
-    EXPECT_EQ(CTSmarts::captureAtom<"CO">(mol), C1);
-    EXPECT_EQ(CTSmarts::captureAtom<"O=C">(mol), O2);
-    EXPECT_EQ(CTSmarts::captureAtom<"OC">(mol), O3);
+    CHECK(CTSmarts::captureAtom<"CC">(mol) == C0);
+    CHECK(CTSmarts::captureAtom<"C=O">(mol) == C1);
+    CHECK(CTSmarts::captureAtom<"CO">(mol) == C1);
+    CHECK(CTSmarts::captureAtom<"O=C">(mol) == O2);
+    CHECK(CTSmarts::captureAtom<"OC">(mol) == O3);
 
-    EXPECT_EQ(CTSmarts::captureAtom<"[C:1]C">(mol), C0);
-    EXPECT_EQ(CTSmarts::captureAtom<"[C:1]=O">(mol), C1);
-    EXPECT_EQ(CTSmarts::captureAtom<"[C:1]O">(mol), C1);
-    EXPECT_EQ(CTSmarts::captureAtom<"[O:1]=C">(mol), O2);
-    EXPECT_EQ(CTSmarts::captureAtom<"[O:1]C">(mol), O3);
+    CHECK(CTSmarts::captureAtom<"[C:1]C">(mol) == C0);
+    CHECK(CTSmarts::captureAtom<"[C:1]=O">(mol) == C1);
+    CHECK(CTSmarts::captureAtom<"[C:1]O">(mol) == C1);
+    CHECK(CTSmarts::captureAtom<"[O:1]=C">(mol) == O2);
+    CHECK(CTSmarts::captureAtom<"[O:1]C">(mol) == O3);
 
-    EXPECT_EQ(CTSmarts::captureAtom<"C[C:1]">(mol), C1);
-    EXPECT_EQ(CTSmarts::captureAtom<"C=[O:1]">(mol), O2);
-    EXPECT_EQ(CTSmarts::captureAtom<"C[O:1]">(mol), O3);
-    EXPECT_EQ(CTSmarts::captureAtom<"O=[C:1]">(mol), C1);
-    EXPECT_EQ(CTSmarts::captureAtom<"O[C:1]">(mol), C1);
+    CHECK(CTSmarts::captureAtom<"C[C:1]">(mol) == C1);
+    CHECK(CTSmarts::captureAtom<"C=[O:1]">(mol) == O2);
+    CHECK(CTSmarts::captureAtom<"C[O:1]">(mol) == O3);
+    CHECK(CTSmarts::captureAtom<"O=[C:1]">(mol) == C1);
+    CHECK(CTSmarts::captureAtom<"O[C:1]">(mol) == C1);
 
-    EXPECT_EQ(CTSmarts::captureAtom<"C#C">(mol), null_atom(mol));
+    CHECK(CTSmarts::captureAtom<"C#C">(mol) == null_atom(mol));
 
     // general case
-    EXPECT_EQ(CTSmarts::captureAtom<"CCO">(mol), C0);
-    EXPECT_EQ(CTSmarts::captureAtom<"CO">(mol), C1);
-    EXPECT_EQ(CTSmarts::captureAtom<"OCC">(mol), O3);
-    EXPECT_EQ(CTSmarts::captureAtom<"O=CC">(mol), O2);
-    EXPECT_EQ(CTSmarts::captureAtom<"CC(=O)O">(mol), C0);
-    EXPECT_EQ(CTSmarts::captureAtom<"C(C)(=O)O">(mol), C1);
+    CHECK(CTSmarts::captureAtom<"CCO">(mol) == C0);
+    CHECK(CTSmarts::captureAtom<"CO">(mol) == C1);
+    CHECK(CTSmarts::captureAtom<"OCC">(mol) == O3);
+    CHECK(CTSmarts::captureAtom<"O=CC">(mol) == O2);
+    CHECK(CTSmarts::captureAtom<"CC(=O)O">(mol) == C0);
+    CHECK(CTSmarts::captureAtom<"C(C)(=O)O">(mol) == C1);
 
-    EXPECT_EQ(CTSmarts::captureAtom<"[C:1]C(=O)O">(mol), C0);
-    EXPECT_EQ(CTSmarts::captureAtom<"C[C:1](=O)O">(mol), C1);
-    EXPECT_EQ(CTSmarts::captureAtom<"CC(=[O:1])O">(mol), O2);
-    EXPECT_EQ(CTSmarts::captureAtom<"CC(=O)[O:1]">(mol), O3);
+    CHECK(CTSmarts::captureAtom<"[C:1]C(=O)O">(mol) == C0);
+    CHECK(CTSmarts::captureAtom<"C[C:1](=O)O">(mol) == C1);
+    CHECK(CTSmarts::captureAtom<"CC(=[O:1])O">(mol) == O2);
+    CHECK(CTSmarts::captureAtom<"CC(=O)[O:1]">(mol) == O3);
 
-    EXPECT_EQ(CTSmarts::captureAtom<"CC(=O)N">(mol), null_atom(mol));
+    CHECK(CTSmarts::captureAtom<"CC(=O)N">(mol) == null_atom(mol));
 }
 
 template<typename T>
 struct identify_type;
 
-TEST(TestCTSmarts, EdgeList)
+TEST_CASE("EdgeList")
 {
     auto smarts = Smarts<"*1*(*)*1">{};
 
@@ -193,7 +193,7 @@ TEST(TestCTSmarts, EdgeList)
 }
 
 
-TEST(TestCTSmarts, DfsSearch)
+TEST_CASE("DfsSearch")
 {
 
     //auto smarts = Smarts<"CC(C)C">{};
@@ -217,7 +217,7 @@ TEST(TestCTSmarts, DfsSearch)
 }
 
 
-TEST(TestCTSmarts, ExpressionFrequency)
+TEST_CASE("ExpressionFrequency")
 {
     using C = AliphaticAtom<6>;
     using O = AliphaticAtom<8>;
@@ -245,7 +245,7 @@ constexpr void test_selection_sort(Expr expr, OptimizedExpr)
     static_assert(std::is_same_v<decltype(selectionSort<ProjExprFrequency, Compare>(expr)), OptimizedExpr>);
 }
 
-TEST(TestCTSmarts, CtllSort)
+TEST_CASE("CtllSort")
 {
     using C = AliphaticAtom<6>;
     using O = AliphaticAtom<8>;
@@ -283,7 +283,7 @@ constexpr void test_std_sort(Expr expr, OptimizedExpr)
     static_assert(std::is_same_v<decltype(stdSort<ProjExprFrequency, Compare>(expr)), OptimizedExpr>);
 }
 
-TEST(TestCTSmarts, StdSort)
+TEST_CASE("StdSort)
 {
     using C = AliphaticAtom<6>;
     using O = AliphaticAtom<8>;
@@ -321,7 +321,7 @@ constexpr void test_optimize_expression(Expr expr, OptimizedExpr)
     static_assert(std::is_same_v<decltype(optimizeExpression<Goal>(expr)), OptimizedExpr>);
 }
 
-TEST(TestCTSmarts, OptimizeExpression)
+TEST_CASE("OptimizeExpression")
 {
     // 6    0.49
     // 8    0.17
@@ -434,7 +434,7 @@ constexpr void test_optimize_expressions(Expr expr, OptimizedExpr)
     static_assert(std::is_same_v<decltype(optimizeExpressions<Goal>(expr)), OptimizedExpr>);
 }
 
-TEST(TestCTSmarts, OptimizeExpressions)
+TEST_CASE("OptimizeExpressions")
 {
     // 6    0.49
     // 8    0.17
@@ -490,7 +490,7 @@ TEST(TestCTSmarts, OptimizeExpressions)
 }
 
 
-TEST(TestCTSmarts, AtomFrequency)
+TEST_CASE("AtomFrequency")
 {
     using C = AliphaticAtom<6>;
     using N = AliphaticAtom<7>;
@@ -506,7 +506,7 @@ TEST(TestCTSmarts, AtomFrequency)
     static_assert(atomFreq[2] == expressionFrequency(O{}));
 }
 
-TEST(TestCTSmarts, IncidentList)
+TEST_CASE("IncidentList")
 {
     /*
     using C = AliphaticAtom<6>;
@@ -544,7 +544,7 @@ TEST(TestCTSmarts, IncidentList)
 }
 
 
-TEST(TestCTSmarts, Real)
+TEST_CASE("Real")
 {
     static_assert(Real<1>::value == 1.0);
     static_assert(Real<1, 0>::value == 1.0);
@@ -554,7 +554,7 @@ TEST(TestCTSmarts, Real)
     static_assert(Real<2, -2>::value == 0.02);
 }
 
-TEST(TestCTSmarts, Merge)
+TEST_CASE("Merge")
 {
     using A = Number<0>;
     using B = Number<1>;
@@ -581,7 +581,7 @@ constexpr auto test_required_atom_primitives() noexcept
 
 }
 
-TEST(TestCTSmarts, RequiredAtomPrimitives)
+TEST_CASE("RequiredAtomPrimitives")
 {
     using C = AliphaticAtom<6>;
     using N = AliphaticAtom<7>;
@@ -604,7 +604,7 @@ TEST(TestCTSmarts, RequiredAtomPrimitives)
 
 
 
-TEST(TestCTSmarts, NumAtomBondFilter)
+TEST_CASE("NumAtomBondFilter")
 {
     auto mol = mockAcetateAnion(); // CC(=O)[O-]
     auto smarts1 = Smarts<"CCC">{};
@@ -614,11 +614,11 @@ TEST(TestCTSmarts, NumAtomBondFilter)
     auto filterPolicyHelper1 = FilterPolicyHelper{smarts1, filterPolicy.filters};
     auto filterPolicyHelper2 = FilterPolicyHelper{smarts2, filterPolicy.filters};
 
-    EXPECT_FALSE(filterPolicyHelper1.reject(mol));
-    EXPECT_TRUE(filterPolicyHelper2.reject(mol));
+    CHECK(!filterPolicyHelper1.reject(mol));
+    CHECK(filterPolicyHelper2.reject(mol));
 }
 
-TEST(TestCTSmarts, ElementFilter)
+TEST_CASE("ElementFilter")
 {
 
     auto mol = mockAcetateAnion(); // CC(=O)[O-]
@@ -648,9 +648,9 @@ TEST(TestCTSmarts, ElementFilter)
     auto filterPolicyHelper2 = FilterPolicyHelper{smarts2, filterPolicy.filters};
     auto filterPolicyHelper3 = FilterPolicyHelper{smarts3, filterPolicy.filters};
 
-    EXPECT_FALSE(filterPolicyHelper1.reject(mol));
-    EXPECT_TRUE(filterPolicyHelper2.reject(mol));
-    EXPECT_TRUE(filterPolicyHelper3.reject(mol));
+    CHECK(!filterPolicyHelper1.reject(mol));
+    CHECK(filterPolicyHelper2.reject(mol));
+    CHECK(filterPolicyHelper3.reject(mol));
 
 }
 
@@ -658,7 +658,7 @@ TEST(TestCTSmarts, ElementFilter)
 
 
 
-TEST(TestCTSmarts, Debug)
+TEST_CASE("Debug")
 {
     auto mol = mockAcetateAnion(); // CC(=O)[O-]
 
@@ -670,8 +670,8 @@ TEST(TestCTSmarts, Debug)
     auto filterPolicyHelper1 = FilterPolicyHelper{smarts1, filterPolicy.filters};
     auto filterPolicyHelper2 = FilterPolicyHelper{smarts2, filterPolicy.filters};
 
-    EXPECT_FALSE(filterPolicyHelper1.reject(mol));
-    EXPECT_TRUE(filterPolicyHelper2.reject(mol));
+    CHECK(!filterPolicyHelper1.reject(mol));
+    CHECK(filterPolicyHelper2.reject(mol));
 
     auto filters1 = filterPolicyHelper1.filters;
 

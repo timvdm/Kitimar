@@ -1,5 +1,5 @@
 #include <Kitimar/CTSmarts/CTSmarts.hpp>
-#include <gtest/gtest.h>
+#include <catch2/catch_test_macros.hpp>
 
 using namespace Kitimar;
 using namespace Kitimar::CTSmarts;
@@ -15,57 +15,57 @@ auto mockAcetateAnion()
     return mol;
 }
 
-TEST(TestCTSmartsMatch, CTSmarts_count)
+TEST_CASE("count")
 {
     auto mol = mockAcetateAnion(); // CC(=O)[O-]
 
     // single atom
-    EXPECT_EQ(ctse::count<"C">(mol, ctse::Unique), 2);
-    EXPECT_EQ(ctse::count<"O">(mol, ctse::Unique), 2);
-    EXPECT_EQ(ctse::count<"[O-]">(mol, ctse::Unique), 1);
+    CHECK(ctse::count<"C">(mol, ctse::Unique) == 2);
+    CHECK(ctse::count<"O">(mol, ctse::Unique) == 2);
+    CHECK(ctse::count<"[O-]">(mol, ctse::Unique) == 1);
 
-    EXPECT_EQ(ctse::count<"N">(mol, ctse::Unique), 0);
-    EXPECT_EQ(ctse::count<"[O+]">(mol, ctse::Unique), 0);
+    CHECK(ctse::count<"N">(mol, ctse::Unique) == 0);
+    CHECK(ctse::count<"[O+]">(mol, ctse::Unique) == 0);
 
     // single bond
-    EXPECT_EQ(ctse::count<"CC">(mol, ctse::Unique), 1);
-    EXPECT_EQ(ctse::count<"C=O">(mol, ctse::Unique), 1);
-    EXPECT_EQ(ctse::count<"C[O-]">(mol, ctse::Unique), 1);
+    CHECK(ctse::count<"CC">(mol, ctse::Unique) == 1);
+    CHECK(ctse::count<"C=O">(mol, ctse::Unique) == 1);
+    CHECK(ctse::count<"C[O-]">(mol, ctse::Unique) == 1);
 
-    EXPECT_EQ(ctse::count<"C=C">(mol, ctse::Unique), 0);
-    EXPECT_EQ(ctse::count<"C#O">(mol, ctse::Unique), 0);
-    EXPECT_EQ(ctse::count<"C[O+]">(mol, ctse::Unique), 0);
+    CHECK(ctse::count<"C=C">(mol, ctse::Unique) == 0);
+    CHECK(ctse::count<"C#O">(mol, ctse::Unique) == 0);
+    CHECK(ctse::count<"C[O+]">(mol, ctse::Unique) == 0);
 
     // general case
-    EXPECT_EQ(ctse::count<"CC(=O)[O-]">(mol, ctse::Unique), 1);
-    EXPECT_EQ(ctse::count<"CC([O-])=O">(mol, ctse::Unique), 1);
-    EXPECT_EQ(ctse::count<"O=C(C)[O-]">(mol, ctse::Unique), 1);
+    CHECK(ctse::count<"CC(=O)[O-]">(mol, ctse::Unique) == 1);
+    CHECK(ctse::count<"CC([O-])=O">(mol, ctse::Unique) == 1);
+    CHECK(ctse::count<"O=C(C)[O-]">(mol, ctse::Unique) == 1);
 
-    EXPECT_EQ(ctse::count<"CC(=O)N">(mol, ctse::Unique), 0);
+    CHECK(ctse::count<"CC(=O)N">(mol, ctse::Unique) == 0);
 
 
     // single atom
-    EXPECT_EQ(ctse::count<"C">(mol, ctse::All), 2);
-    EXPECT_EQ(ctse::count<"O">(mol, ctse::All), 2);
-    EXPECT_EQ(ctse::count<"[O-]">(mol, ctse::All), 1);
+    CHECK(ctse::count<"C">(mol, ctse::All) == 2);
+    CHECK(ctse::count<"O">(mol, ctse::All) == 2);
+    CHECK(ctse::count<"[O-]">(mol, ctse::All) == 1);
 
-    EXPECT_EQ(ctse::count<"N">(mol, ctse::All), 0);
-    EXPECT_EQ(ctse::count<"[O+]">(mol, ctse::All), 0);
+    CHECK(ctse::count<"N">(mol, ctse::All) == 0);
+    CHECK(ctse::count<"[O+]">(mol, ctse::All) == 0);
 
     // single bond
-    EXPECT_EQ(ctse::count<"CC">(mol, ctse::All), 2);
-    EXPECT_EQ(ctse::count<"C=O">(mol, ctse::All), 1);
-    EXPECT_EQ(ctse::count<"C[O-]">(mol, ctse::All), 1);
+    CHECK(ctse::count<"CC">(mol, ctse::All) == 2);
+    CHECK(ctse::count<"C=O">(mol, ctse::All) == 1);
+    CHECK(ctse::count<"C[O-]">(mol, ctse::All) == 1);
 
-    EXPECT_EQ(ctse::count<"C=C">(mol, ctse::All), 0);
-    EXPECT_EQ(ctse::count<"C#O">(mol, ctse::All), 0);
-    EXPECT_EQ(ctse::count<"C[O+]">(mol, ctse::All), 0);
+    CHECK(ctse::count<"C=C">(mol, ctse::All) == 0);
+    CHECK(ctse::count<"C#O">(mol, ctse::All) == 0);
+    CHECK(ctse::count<"C[O+]">(mol, ctse::All) == 0);
 
     // general case
-    EXPECT_EQ(ctse::count<"CC(~O)~O">(mol, ctse::All), 2);
-    EXPECT_EQ(ctse::count<"CC(=O)[O-]">(mol, ctse::All), 1);
-    EXPECT_EQ(ctse::count<"CC([O-])=O">(mol, ctse::All), 1);
-    EXPECT_EQ(ctse::count<"O=C(C)[O-]">(mol, ctse::All), 1);
+    CHECK(ctse::count<"CC(~O)~O">(mol, ctse::All) == 2);
+    CHECK(ctse::count<"CC(=O)[O-]">(mol, ctse::All) == 1);
+    CHECK(ctse::count<"CC([O-])=O">(mol, ctse::All) == 1);
+    CHECK(ctse::count<"O=C(C)[O-]">(mol, ctse::All) == 1);
 
-    EXPECT_EQ(ctse::count<"CC(=O)N">(mol, ctse::All), 0);
+    CHECK(ctse::count<"CC(=O)N">(mol, ctse::All) == 0);
 }

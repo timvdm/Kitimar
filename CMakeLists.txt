@@ -125,11 +125,8 @@ add_subdirectory(examples)
 add_subdirectory(single-header)
 
 # Tests
-if(BUILD_TESTING)
-    include(GoogleTest)
+if(BUILD_TESTING)    
     enable_testing()
-    add_custom_target(RunTests ctest)
-
     add_subdirectory(test)
 endif()
 

@@ -8,9 +8,8 @@
 
 #include "TestData.hpp"
 
+#include <catch2/catch_test_macros.hpp>
 
-
-#include <gtest/gtest.h>
 
 using namespace Kitimar;
 using namespace Kitimar::CTLayout;
@@ -39,7 +38,7 @@ void test_molecule()
     //static_assert(AromaticLayer<MolObj>);
 }
 
-TEST(TestSerialize, Molecule)
+TEST_CASE("Molecule")
 {
     test_molecule<StructObject<StructMolecule>>();
 
@@ -58,31 +57,29 @@ TEST(TestSerialize, Molecule)
 
 void compare(auto &mol, auto &ref)
 {
-    ASSERT_EQ(num_atoms(mol), num_atoms(ref));
-    ASSERT_EQ(num_bonds(mol), num_bonds(ref));
+    REQUIRE(num_atoms(mol) == num_atoms(ref));
+    REQUIRE(num_bonds(mol) == num_bonds(ref));
 
     for (auto i = 0; i < num_atoms(ref); ++i) {
         auto refAtom = get_atom(ref, i);
         auto atom = get_atom(mol, i);
-        ASSERT_EQ(get_index(mol, atom), get_index(ref, refAtom));
-        ASSERT_EQ(get_element(mol, atom), get_element(ref, refAtom));
-        ASSERT_EQ(get_isotope(mol, atom), get_isotope(ref, refAtom));
-        ASSERT_EQ(get_charge(mol, atom), get_charge(ref, refAtom));
-        ASSERT_EQ(get_implicit_hydrogens(mol, atom), get_implicit_hydrogens(ref, refAtom));
-        ASSERT_EQ(get_degree(mol, atom), get_degree(ref, refAtom));
-        ASSERT_EQ(is_aromatic_atom(mol, atom), is_aromatic_atom(ref, refAtom));
+        REQUIRE(get_index(mol, atom) == get_index(ref, refAtom));
+        REQUIRE(get_element(mol, atom) == get_element(ref, refAtom));
+        REQUIRE(get_isotope(mol, atom) == get_isotope(ref, refAtom));
+        REQUIRE(get_charge(mol, atom) == get_charge(ref, refAtom));
+        REQUIRE(get_implicit_hydrogens(mol, atom) == get_implicit_hydrogens(ref, refAtom));
+        REQUIRE(get_degree(mol, atom) == get_degree(ref, refAtom));
+        REQUIRE(is_aromatic_atom(mol, atom) == is_aromatic_atom(ref, refAtom));
     }
 
     for (auto i = 0; i < num_bonds(ref); ++i) {
         auto refBond = get_bond(ref, i);
         auto bond = get_bond(mol, i);
-        ASSERT_EQ(get_index(mol, bond), get_index(ref, refBond));
-        ASSERT_EQ(get_index(mol, get_source(mol, bond)),
-                  get_index(ref, get_source(ref, refBond)));
-        ASSERT_EQ(get_index(mol, get_target(mol, bond)),
-                  get_index(ref, get_target(ref, refBond)));
-        ASSERT_EQ(get_order(mol, bond), get_order(ref, refBond));
-        ASSERT_EQ(is_aromatic_bond(mol, bond), is_aromatic_bond(ref, refBond));
+        REQUIRE(get_index(mol, bond) == get_index(ref, refBond));
+        REQUIRE(get_index(mol, get_source(mol, bond)) == get_index(ref, get_source(ref, refBond)));
+        REQUIRE(get_index(mol, get_target(mol, bond)) == get_index(ref, get_target(ref, refBond)));
+        REQUIRE(get_order(mol, bond) == get_order(ref, refBond));
+        REQUIRE(is_aromatic_bond(mol, bond) == is_aromatic_bond(ref, refBond));
     }
 
     for (auto i = 0; i < num_atoms(ref); ++i) {
@@ -94,8 +91,8 @@ void compare(auto &mol, auto &ref)
         auto bonds = get_bonds(mol, atom);
         auto nbrs = get_nbrs(mol, atom);
 
-        ASSERT_EQ(std::ranges::distance(bonds), std::ranges::distance(refBonds));
-        ASSERT_EQ(std::ranges::distance(nbrs), std::ranges::distance(refNbrs));
+        REQUIRE(std::ranges::distance(bonds) == std::ranges::distance(refBonds));
+        REQUIRE(std::ranges::distance(nbrs) == std::ranges::distance(refNbrs));
 
         // not sorted...
         /*
@@ -136,7 +133,7 @@ void test_serialize(const std::string &smiles)
     compare(mol, obmol);
 }
 
-TEST(TestSerialize, Serialize)
+TEST_CASE("Serialize")
 {
     test_serialize<StructMolecule>("CC(=O)[O-]");
     test_serialize<StructMoleculeIncident>("CC(=O)[O-]");
@@ -175,7 +172,7 @@ auto serializeSmilesFileStreamSink(const std::string &SMILES, const std::string 
 }
 
 
-TEST(TestSerialize, StlVectorSinkInMemorySource)
+TEST_CASE("StlVectorSinkInMemorySource")
 {
     using Layout = StructMoleculeIncident;
     // Compare
@@ -188,7 +185,7 @@ TEST(TestSerialize, StlVectorSinkInMemorySource)
     compare(mol, ref);
 }
 
-TEST(TestSerialize, StlVectorSinkMemoryMappedSource)
+TEST_CASE("StlVectorSinkMemoryMappedSource")
 {
     using Layout = StructMoleculeIncident;
     // Compare
@@ -201,7 +198,7 @@ TEST(TestSerialize, StlVectorSinkMemoryMappedSource)
     compare(mol, ref);
 }
 
-TEST(TestSerialize, FileStreamSinkMemoryMappedSource)
+TEST_CASE("FileStreamSinkMemoryMappedSource")
 {
     using Layout = StructMoleculeIncident;
     // Compare
@@ -235,7 +232,7 @@ void test_validate()
     auto source = InMemorySource{path};
     BytePtrMolSource<Layout> molSource{source.toPtrSource()};
 
-    ASSERT_EQ(molSource.numMolecules(), obMolSource.numMolecules());
+    REQUIRE(molSource.numMolecules() == obMolSource.numMolecules());
 
     for (auto i = 0; i < numMolecules; ++i) {
         auto obmol = obMolSource.read();
@@ -244,7 +241,7 @@ void test_validate()
     }
 }
 
-TEST(TestSerialize, Validate)
+TEST_CASE("Validate")
 {
     test_validate<Vector<StructMoleculeIncident>>();
     test_validate<Vector<ListMoleculeIncident>>();
@@ -256,14 +253,14 @@ TEST(TestSerialize, Validate)
 
 
 /*
-TEST(TestSerialize, ValidateMemory)
+TEST_CASE("ValidateMemory)
 {
     using Layout = StructMoleculeIncident;
 
     MemoryMappedSource<Layout> mmap{chembl_serialized_filename(Layout{})};
     InMemorySource<Layout> mem{chembl_serialized_filename(Layout{})};
 
-    ASSERT_EQ(mem.size(), mmap.size());
+    REQUIRE(mem.size(), mmap.size());
 
     for (auto i = 0; i < mmap.size(); ++i) {
         auto memMol = mem.read();
@@ -273,14 +270,14 @@ TEST(TestSerialize, ValidateMemory)
 }
 */
 
-//TEST(TestSerialize, CompareMemoryMappedInMemory)
+//TEST_CASE("CompareMemoryMappedInMemory)
 //{
 //    using Layout = StructMoleculeIncident;
 
 //    MemoryMappedSource<Layout> mmap{chembl_serialized_filename(Layout{})};
 //    InMemorySource<Layout> mem{chembl_serialized_filename(Layout{})};
 
-//    ASSERT_EQ(mem.size(), mmap.size());
+//    REQUIRE(mem.size(), mmap.size());
 
 //    for (auto i = 0; i < mmap.size(); ++i) {
 //        auto memMol = mem.read();
@@ -326,9 +323,9 @@ TEST(TestSerialize, ValidateMemory)
 //    auto obMatches = findOBMatches(std::string{SMARTS.begin(), SMARTS.end()});
 
 
-//    ASSERT_EQ(ctMatches.size(), obMatches.size());
+//    REQUIRE(ctMatches.size(), obMatches.size());
 
-//    ASSERT_EQ(std::ranges::count(ctMatches, true),
+//    REQUIRE(std::ranges::count(ctMatches, true),
 //              std::ranges::count(obMatches, true));
 
 //}
@@ -337,7 +334,7 @@ TEST(TestSerialize, ValidateMemory)
 //#define VALIDATE_OPENBABEL 0
 
 
-//TEST(TestSerialize, ValidateOpenBabel)
+//TEST_CASE("ValidateOpenBabel)
 //{
 //    if (!VALIDATE_OPENBABEL)
 //        return;

@@ -2,7 +2,7 @@
 
 #include "TestData.hpp"
 
-#include <gtest/gtest.h>
+#include <catch2/catch_test_macros.hpp>
 
 static_assert(Kitimar::Molecule::IsAtomList<RDKit::ROMol>);
 static_assert(Kitimar::Molecule::IsBondList<RDKit::ROMol>);
@@ -19,28 +19,28 @@ static_assert(Kitimar::Molecule::AromaticLayer<RDKit::ROMol>);
 using namespace Kitimar;
 
 
-TEST(TestRDKit, SmilesMolSource)
+TEST_CASE("SmilesMolSource")
 {
     RDKitSmilesMolSource source{chembl_smi_filename("1K")};
 
     auto numMolecules = 0;
     for (const auto &mol : source.molecules()) {
-        ASSERT_TRUE(mol.get());
+        REQUIRE(mol.get());
         ++numMolecules;
     }
 
-    EXPECT_EQ(numMolecules, 1000);
+    CHECK(numMolecules == 1000);
 }
 
-TEST(TestRDKit, PickleMolSource)
+TEST_CASE("PickleMolSource")
 {
     RDKitPickleMolSource source{chembl_rdkit_filename("1K")};
 
     auto numMolecules = 0;
     for (const auto &mol : source.molecules()) {
-        ASSERT_TRUE(mol.get());
+        REQUIRE(mol.get());
         ++numMolecules;
     }
 
-    EXPECT_EQ(numMolecules, 1000);
+    CHECK(numMolecules == 1000);
 }

@@ -1,8 +1,9 @@
-#include <benchmark/benchmark.h>
-
 #include <Kitimar/CTSmarts/CTSmarts.hpp>
 #include <Kitimar/OpenBabel/OpenBabel.hpp>
 //#include <Kitimar/RDKit/RDKit.hpp>
+
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/benchmark/catch_benchmark.hpp>
 
 #include <cstring>
 
@@ -12,26 +13,18 @@ auto mol = Kitimar::readSmilesOpenBabel("N1(C(=O)[C@H]2N(C(=O)CNC(=O)[C@@H](NC(=
 //auto molPtr = Kitimar::readSmilesRDKit("N1(C(=O)[C@H]2N(C(=O)CNC(=O)[C@@H](NC(=O)[C@@H](N)CCCN=C(N)N)CO)CCC2)[C@H](C(=O)NCC(=O)N[C@H](C(=O)N[C@H](C(=O)NCC(=O)N[C@H](C(=O)N[C@H](C(=O)N[C@H](C(=O)N[C@H](C(=O)N[C@H](C(=O)N([C@H](C(=O)N[C@H](C(=O)N[C@H](C(=O)N[C@H](C(=O)NCC(=O)N[C@H](C(=O)N[C@H](C(=O)N[C@H](C(=O)N[C@H](C(=O)NCC(=O)N[C@H](C(=O)O)[C@H](CC)C)C)C)Cc2nc[nH]c2)CC(=O)N)CO)C)CCC(=O)N)CC(C)C)C)CC(C)C)CCCN=C(N)N)CCC(=O)N)CC(C)C)CCCN=C(N)N)CCC(=O)N)CC(C)C)CCC1");
 //auto &mol = *molPtr;
 
-#define BM_COUNT(SMARTS, name) \
-    void BM_count_##name(benchmark::State& state) { \
-        for (auto _ : state) { \
-            auto n = ctse::count<SMARTS>(mol, ctse::All); \
-            benchmark::DoNotOptimize(n); \
-            benchmark::ClobberMemory(); \
-        } \
-    } \
-    BENCHMARK(BM_count_##name);
 
-#define BM_ALL(SMARTS, name) \
-    void BM_all_##name(benchmark::State& state) { \
-        for (auto _ : state) { \
-            auto maps = ctse::multi<SMARTS>(mol, ctse::All); \
-            auto n = std::ranges::distance(maps); \
-            benchmark::DoNotOptimize(n); \
-            benchmark::ClobberMemory(); \
-        } \
-    } \
-    BENCHMARK(BM_all_##name);
+#define BM_COUNT(SMARTS) \
+    BENCHMARK(SMARTS) { \
+        return ctse::count<SMARTS>(mol, ctse::All); \
+    }
+
+#define BM_ALL(SMARTS) \
+    BENCHMARK(SMARTS) { \
+        return ctse::multi<SMARTS>(mol, ctse::All); \
+    }
+
+
 
 /*
 
@@ -334,60 +327,61 @@ MappedVector vs MappedLookup
 */
 
 
+TEST_CASE("CountAll")
+{
+    BM_COUNT("C");
+    BM_COUNT("CC");
+    BM_COUNT("***");
+    BM_COUNT("****");
+    BM_COUNT("*****");
+    BM_COUNT("******");
+    BM_COUNT("*******");
+    BM_COUNT("********");
+    BM_COUNT("***********");
+    BM_COUNT("**************");
+    BM_COUNT("*****************");
+    BM_COUNT("**(*)(*)*");
+    BM_COUNT("**(*)*(*)*");
+    BM_COUNT("**(*)*(*)*(*)*");
 
+    BM_COUNT("CCCCCCCl");
+    BM_COUNT("ClCCCCCC");
 
-BM_COUNT("C", C);
-BM_COUNT("CC", CC);
-BM_COUNT("***", xxx);
-BM_COUNT("****", xxxx);
-BM_COUNT("*****", xxxxx);
-BM_COUNT("******", xxxxxx);
-BM_COUNT("*******", xxxxxxx);
-BM_COUNT("********", xxxxxxxx);
-BM_COUNT("***********", xxxxxxxxxxx);
-BM_COUNT("**************", xxxxxxxxxxxxxx);
-BM_COUNT("*****************", xxxxxxxxxxxxxxxxx);
-BM_COUNT("**(*)(*)*", xx_x__x_x);
-BM_COUNT("**(*)*(*)*", xx_x_x_x_x);
-BM_COUNT("**(*)*(*)*(*)*", xx_x_x_x_x_x_x_x);
+    /*
+    BM_COUNT("c1ccccc1", c1ccccc1);
+    BM_COUNT("c1ccccc1CCN", c1ccccc1CCN);
+    BM_COUNT("CCCCCCCCCCCCCCCCCCC", CCCCCCCCCCCCCCCCCCCC);
+    BM_COUNT("c1ccccc1CCCc1ccccc1", c1ccccc1CCCc1ccccc1);
+    BM_COUNT("AAAAAAAAAAAAAAAAAAA", AAAAAAAAAAAAAAAAAAA);
+    */
+}
 
-BM_COUNT("CCCCCCCl", CCCCCCCl);
-BM_COUNT("ClCCCCCC", ClCCCCCC);
+TEST_CASE("AllMaps")
+{
+    BM_ALL("C");
+    BM_ALL("CC");
+    BM_ALL("***");
+    BM_ALL("****");
+    BM_ALL("*****");
+    BM_ALL("******");
+    BM_ALL("*******");
+    BM_ALL("********");
+    BM_ALL("***********");
+    BM_ALL("**************");
+    BM_ALL("*****************");
+    BM_ALL("**(*)(*)*");
+    BM_ALL("**(*)*(*)*");
+    BM_ALL("**(*)*(*)*(*)*");
 
-/*
-BM_COUNT("c1ccccc1", c1ccccc1);
-BM_COUNT("c1ccccc1CCN", c1ccccc1CCN);
-BM_COUNT("CCCCCCCCCCCCCCCCCCC", CCCCCCCCCCCCCCCCCCCC);
-BM_COUNT("c1ccccc1CCCc1ccccc1", c1ccccc1CCCc1ccccc1);
-BM_COUNT("AAAAAAAAAAAAAAAAAAA", AAAAAAAAAAAAAAAAAAA);
-*/
+    BM_ALL("CCCCCCCl");
+    BM_ALL("ClCCCCCC");
 
-BM_ALL("C", C);
-BM_ALL("CC", CC);
-BM_ALL("***", xxx);
-BM_ALL("****", xxxx);
-BM_ALL("*****", xxxxx);
-BM_ALL("******", xxxxxx);
-BM_ALL("*******", xxxxxxx);
-BM_ALL("********", xxxxxxxx);
-BM_ALL("***********", xxxxxxxxxxx);
-BM_ALL("**************", xxxxxxxxxxxxxx);
-BM_ALL("*****************", xxxxxxxxxxxxxxxxx);
-BM_ALL("**(*)(*)*", xx_x__x_x);
-BM_ALL("**(*)*(*)*", xx_x_x_x_x);
-BM_ALL("**(*)*(*)*(*)*", xx_x_x_x_x_x_x_x);
+    /*
+    BM_ALL("c1ccccc1", c1ccccc1);
+    BM_ALL("c1ccccc1CCN", c1ccccc1CCN);
+    BM_ALL("CCCCCCCCCCCCCCCCCCC", CCCCCCCCCCCCCCCCCCCC);
+    BM_ALL("c1ccccc1CCCc1ccccc1", c1ccccc1CCCc1ccccc1);
+    BM_ALL("AAAAAAAAAAAAAAAAAAA", AAAAAAAAAAAAAAAAAAA);
+    */
 
-BM_ALL("CCCCCCCl", CCCCCCCl);
-BM_ALL("ClCCCCCC", ClCCCCCC);
-
-/*
-BM_ALL("c1ccccc1", c1ccccc1);
-BM_ALL("c1ccccc1CCN", c1ccccc1CCN);
-BM_ALL("CCCCCCCCCCCCCCCCCCC", CCCCCCCCCCCCCCCCCCCC);
-BM_ALL("c1ccccc1CCCc1ccccc1", c1ccccc1CCCc1ccccc1);
-BM_ALL("AAAAAAAAAAAAAAAAAAA", AAAAAAAAAAAAAAAAAAA);
-*/
-
-
-// Run the benchmark
-BENCHMARK_MAIN();
+}

@@ -5,7 +5,7 @@
 //#include <Kitimar/CTLayout/CTLayout.hpp>
 #include <Kitimar/Util/Util.hpp>
 
-#include <gtest/gtest.h>
+#include <catch2/catch_test_macros.hpp>
 
 #include <cmath>
 #include <numeric>
@@ -126,7 +126,7 @@ Struct              N
 
 */
 
-TEST(TestCTLayout, Value)
+TEST_CASE("Value")
 {
     struct IntValue : Value<int> {};
     struct BoolValue : Value<bool> {};
@@ -147,7 +147,7 @@ TEST(TestCTLayout, Value)
     static_assert(offset(BoolValue{}, IntValue{}) == sizeOf(BoolValue{}));
 }
 
-TEST(TestCTLayout, FixedSizeStruct)
+TEST_CASE("FixedSizeStruct")
 {
     struct IntValue : Value<int> {};
     struct ShortValue : Value<short> {};
@@ -172,7 +172,7 @@ TEST(TestCTLayout, FixedSizeStruct)
     static_assert(offset(S{}, ShortValue{}) == sizeOf(S{}));
 }
 
-TEST(TestCTLayout, FixedSizeVector)
+TEST_CASE("FixedSizeVector")
 {
     struct IntValue : Value<int> {};
     struct BoolValue : Value<bool> {};
@@ -193,18 +193,18 @@ TEST(TestCTLayout, FixedSizeVector)
 
     auto source = PtrSource{data.data()};
 
-    EXPECT_EQ(sizeOf(V{}, source), data.size());
+    CHECK(sizeOf(V{}, source) == data.size());
 
     static_assert(offset(V{}, V{}) == 0);
-    EXPECT_EQ(offset(V{}, IntValue{}, source, 0), sizeof(V::Length));
-    EXPECT_EQ(offset(V{}, IntValue{}, source, 1), sizeof(V::Length) + sizeOf(IntValue{}));
-    EXPECT_EQ(offset(V{}, IntValue{}, source, 2), sizeof(V::Length) + 2 * sizeOf(IntValue{}));
-    EXPECT_EQ(offset(V{}, IntValue{}, source, 3), sizeof(V::Length) + 3 * sizeOf(IntValue{}));
-    EXPECT_EQ(offset(V{}, IntValue{}, source, 4), sizeof(V::Length) + 4 * sizeOf(IntValue{}));
-    EXPECT_EQ(offset(V{}, BoolValue{}, source, 0), sizeOf(V{}, source));
+    CHECK(offset(V{}, IntValue{}, source, 0) == sizeof(V::Length));
+    CHECK(offset(V{}, IntValue{}, source, 1) == sizeof(V::Length) + sizeOf(IntValue{}));
+    CHECK(offset(V{}, IntValue{}, source, 2) == sizeof(V::Length) + 2 * sizeOf(IntValue{}));
+    CHECK(offset(V{}, IntValue{}, source, 3) == sizeof(V::Length) + 3 * sizeOf(IntValue{}));
+    CHECK(offset(V{}, IntValue{}, source, 4) == sizeof(V::Length) + 4 * sizeOf(IntValue{}));
+    CHECK(offset(V{}, BoolValue{}, source, 0) == sizeOf(V{}, source));
 }
 
-TEST(TestCTLayout, VariableSizeStruct)
+TEST_CASE("VariableSizeStruct")
 {
     struct IntValue : Value<int> {};
     struct ShortValue : Value<short> {};
@@ -233,20 +233,20 @@ TEST(TestCTLayout, VariableSizeStruct)
     print(S{}, source);
     std::cout << std::endl;
 
-    EXPECT_EQ(sizeOf(S{}, source), data.size());
+    CHECK(sizeOf(S{}, source) == data.size());
 
-    EXPECT_EQ(offset(S{}, S{}), 0);
-    EXPECT_EQ(offset(S{}, IntValue{}, source), 0);
-    EXPECT_EQ(offset(S{}, V{}, source), sizeOf(IntValue{}));
-    EXPECT_EQ(offset(S{}, ShortValue{}, source, 0), sizeOf(IntValue{}) + sizeof(V::Length));
-    EXPECT_EQ(offset(S{}, ShortValue{}, source, 1), sizeOf(IntValue{}) + sizeof(V::Length) + sizeOf(V::Type{}));
-    EXPECT_EQ(offset(S{}, ShortValue{}, source, 2), sizeOf(IntValue{}) + sizeof(V::Length) + 2 * sizeOf(V::Type{}));
-    EXPECT_EQ(offset(S{}, BoolValue{}, source), sizeOf(IntValue{}) + sizeof(V::Length) + 3 * sizeOf(V::Type{}));
-    EXPECT_EQ(offset(S{}, DoubleValue{}, source), sizeOf(S{}, source));
+    CHECK(offset(S{}, S{}) == 0);
+    CHECK(offset(S{}, IntValue{}, source) == 0);
+    CHECK(offset(S{}, V{}, source) == sizeOf(IntValue{}));
+    CHECK(offset(S{}, ShortValue{}, source, 0) == sizeOf(IntValue{}) + sizeof(V::Length));
+    CHECK(offset(S{}, ShortValue{}, source, 1) == sizeOf(IntValue{}) + sizeof(V::Length) + sizeOf(V::Type{}));
+    CHECK(offset(S{}, ShortValue{}, source, 2) == sizeOf(IntValue{}) + sizeof(V::Length) + 2 * sizeOf(V::Type{}));
+    CHECK(offset(S{}, BoolValue{}, source) == sizeOf(IntValue{}) + sizeof(V::Length) + 3 * sizeOf(V::Type{}));
+    CHECK(offset(S{}, DoubleValue{}, source) == sizeOf(S{}, source));
 
 }
 
-TEST(TestCTLayout, VariableSizeVector)
+TEST_CASE("VariableSizeVector")
 {
     struct ShortValue : Value<short> {};
 
@@ -287,33 +287,33 @@ TEST(TestCTLayout, VariableSizeVector)
 
     auto source = PtrSource{data.data()};
 
-    EXPECT_EQ(sizeOf(V1{}, source), data.size());
+    CHECK(sizeOf(V1{}, source) == data.size());
 
     static_assert(offset(V1{}, V1{}) == 0);
-    EXPECT_EQ(offset(V1{}, V2{}, source, 0), V2_0);
-    EXPECT_EQ(offset(V1{}, V2{}, source, 1), V2_1);
-    EXPECT_EQ(offset(V1{}, V2{}, source, 2), V2_2);
-    EXPECT_EQ(offset(V1{}, ShortValue{}, source, 0), V2_0 + sizeof(Length));
-    EXPECT_EQ(offset(V1{}, ShortValue{}, source, 1, 0), V2_1 + sizeof(Length));
-    EXPECT_EQ(offset(V1{}, ShortValue{}, source, 1, 1), V2_1 + sizeof(Length) + sizeOf(V2::type));
-    EXPECT_EQ(offset(V1{}, ShortValue{}, source, 2), V2_2 + sizeof(Length));
-    EXPECT_EQ(offset(V1{}, Value<bool>{}, source), sizeOf(V1{}, source));
+    CHECK(offset(V1{}, V2{}, source, 0) == V2_0);
+    CHECK(offset(V1{}, V2{}, source, 1) == V2_1);
+    CHECK(offset(V1{}, V2{}, source, 2) == V2_2);
+    CHECK(offset(V1{}, ShortValue{}, source, 0) == V2_0 + sizeof(Length));
+    CHECK(offset(V1{}, ShortValue{}, source, 1, 0) == V2_1 + sizeof(Length));
+    CHECK(offset(V1{}, ShortValue{}, source, 1, 1) == V2_1 + sizeof(Length) + sizeOf(V2::type));
+    CHECK(offset(V1{}, ShortValue{}, source, 2) == V2_2 + sizeof(Length));
+    CHECK(offset(V1{}, Value<bool>{}, source) == sizeOf(V1{}, source));
 }
 
 
-TEST(TestCTLayout, ValueObject)
+TEST_CASE("ValueObject")
 {
     struct IntValue : Value<int> {};
     std::vector<std::byte> data(sizeOf(IntValue{}));
     auto source = PtrSink{data.data()};
     auto obj = toObject(IntValue{}, source);
     obj.set(42);
-    EXPECT_EQ(obj.get(), 42);
+    CHECK(obj.get() == 42);
 }
 
 
 
-TEST(TestCTLayout, FixedSizeStructObject)
+TEST_CASE("FixedSizeStructObject")
 {
     struct IntValue : Value<int> {};
     struct ShortValue : Value<short> {};
@@ -325,17 +325,17 @@ TEST(TestCTLayout, FixedSizeStructObject)
 
     auto intObj = obj.get(IntValue{});
     auto shortObj = obj.get(ShortValue{});
-    //EXPECT_EQ(intObj.data(), obj.data());
-    //EXPECT_EQ(shortObj.data(), obj.data() + sizeOf(IntValue{}));
+    //CHECK(intObj.data(), obj.data());
+    //CHECK(shortObj.data(), obj.data() + sizeOf(IntValue{}));
 
     intObj.set(42);
     shortObj.set(24);
-    EXPECT_EQ(intObj.get(), 42);
-    EXPECT_EQ(shortObj.get(), 24);
+    CHECK(intObj.get() == 42);
+    CHECK(shortObj.get() == 24);
 }
 
 
-TEST(TestCTLayout, FixedSizeVectorObject)
+TEST_CASE("FixedSizeVectorObject")
 {
     struct IntValue : Value<int> {};
     struct V : Vector<IntValue> {};
@@ -350,22 +350,22 @@ TEST(TestCTLayout, FixedSizeVectorObject)
     auto source = PtrSink{data.data()};
 
     auto v = toObject(V{}, source);
-    EXPECT_EQ(v.length(), l);
-    EXPECT_EQ(v.at(0).get(), 1);
-    EXPECT_EQ(v.at(1).get(), 2);
-    EXPECT_EQ(v.at(2).get(), 3);
+    REQUIRE(v.length() == l);
+    CHECK(v.at(0).get() == 1);
+    CHECK(v.at(1).get() == 2);
+    CHECK(v.at(2).get() == 3);
 
     v.at(0).set(42);
     v.at(1).set(24);
     v.at(2).set(48);
 
-    EXPECT_EQ(v.at(0).get(), 42);
-    EXPECT_EQ(v.at(1).get(), 24);
-    EXPECT_EQ(v.at(2).get(), 48);
+    CHECK(v.at(0).get() == 42);
+    CHECK(v.at(1).get() == 24);
+    CHECK(v.at(2).get() == 48);
 }
 
 
-TEST(TestCTLayout, VariableSizeStructObject)
+TEST_CASE("VariableSizeStructObject")
 {
     struct IntValue : Value<int> {};
     struct ShortValue : Value<short> {};
@@ -393,12 +393,12 @@ TEST(TestCTLayout, VariableSizeStructObject)
 
     auto obj = toObject(S{}, source);
     auto v = obj.get(V{});
-    EXPECT_EQ(obj.get(IntValue{}).get(), 1);
-    EXPECT_EQ(v.length(), l);
-    EXPECT_EQ(v.at(0).get(), 2);
-    EXPECT_EQ(v.at(1).get(), 3);
-    EXPECT_EQ(v.at(2).get(), 4);
-    EXPECT_EQ(obj.get(BoolValue{}).get(), true);
+    CHECK(obj.get(IntValue{}).get() == 1);
+    REQUIRE(v.length() == l);
+    CHECK(v.at(0).get() == 2);
+    CHECK(v.at(1).get() == 3);
+    CHECK(v.at(2).get() == 4);
+    CHECK(obj.get(BoolValue{}).get() == true);
 
 
     obj.get(IntValue{}).set(1000);
@@ -407,15 +407,15 @@ TEST(TestCTLayout, VariableSizeStructObject)
     v.at(2).set(4000);
     obj.get(BoolValue{}).set(false);
 
-    EXPECT_EQ(obj.get(IntValue{}).get(), 1000);
-    EXPECT_EQ(v.length(), l);
-    EXPECT_EQ(v.at(0).get(), 2000);
-    EXPECT_EQ(v.at(1).get(), 3000);
-    EXPECT_EQ(v.at(2).get(), 4000);
-    EXPECT_EQ(obj.get(BoolValue{}).get(), false);
+    CHECK(obj.get(IntValue{}).get() == 1000);
+    REQUIRE(v.length() == l);
+    CHECK(v.at(0).get() == 2000);
+    CHECK(v.at(1).get() == 3000);
+    CHECK(v.at(2).get() == 4000);
+    CHECK(obj.get(BoolValue{}).get() == false);
 }
 
-TEST(TestCTLayout, VariableSizeVectorObject)
+TEST_CASE("VariableSizeVectorObject")
 {
     struct ShortValue : Value<short> {};
 
@@ -454,15 +454,15 @@ TEST(TestCTLayout, VariableSizeVectorObject)
 
     auto v1 = toObject(V1{}, source);
 
-    EXPECT_EQ(v1.length(), l1);
-    EXPECT_EQ(v1.at(0).length(), l2[0]);
-    EXPECT_EQ(v1.at(1).length(), l2[1]);
-    EXPECT_EQ(v1.at(2).length(), l2[2]);
+    REQUIRE(v1.length() == l1);
+    CHECK(v1.at(0).length() == l2[0]);
+    CHECK(v1.at(1).length() == l2[1]);
+    CHECK(v1.at(2).length() == l2[2]);
 
-    EXPECT_EQ(v1.at(0).at(0).get(), 10);
-    EXPECT_EQ(v1.at(1).at(0).get(), 20);
-    EXPECT_EQ(v1.at(1).at(1).get(), 30);
-    EXPECT_EQ(v1.at(2).at(0).get(), 40);
+    CHECK(v1.at(0).at(0).get() == 10);
+    CHECK(v1.at(1).at(0).get() == 20);
+    CHECK(v1.at(1).at(1).get() == 30);
+    CHECK(v1.at(2).at(0).get() == 40);
 
 
     v1.at(0).at(0).set(1000);
@@ -470,14 +470,14 @@ TEST(TestCTLayout, VariableSizeVectorObject)
     v1.at(1).at(1).set(3000);
     v1.at(2).at(0).set(4000);
 
-    EXPECT_EQ(v1.at(0).at(0).get(), 1000);
-    EXPECT_EQ(v1.at(1).at(0).get(), 2000);
-    EXPECT_EQ(v1.at(1).at(1).get(), 3000);
-    EXPECT_EQ(v1.at(2).at(0).get(), 4000);
+    CHECK(v1.at(0).at(0).get() == 1000);
+    CHECK(v1.at(1).at(0).get() == 2000);
+    CHECK(v1.at(1).at(1).get() == 3000);
+    CHECK(v1.at(2).at(0).get() == 4000);
 }
 
 
-TEST(TestCTLayout, ValueWriter)
+TEST_CASE("ValueWriter")
 {
     struct IntValue : Value<int> {};
 
@@ -486,14 +486,14 @@ TEST(TestCTLayout, ValueWriter)
 
     ValueWriter writer{IntValue{}, sink};
     writer.write(42);
-    ASSERT_EQ(data.size(), sizeOf(IntValue{}));
+    REQUIRE(data.size() == sizeOf(IntValue{}));
 
     auto source = PtrSource{data.data()};
     auto obj = toObject(IntValue{}, source);
-    ASSERT_EQ(obj.get(), 42);
+    REQUIRE(obj.get() == 42);
 }
 
-TEST(TestCTLayout, FileStreamSink)
+TEST_CASE("FileStreamSink")
 {
     auto path = "test_FileStreamSink.bin";
     FileStreamSink sink{path};
@@ -502,13 +502,13 @@ TEST(TestCTLayout, FileStreamSink)
     sink.close();
 
     auto data = Util::readFileData(path);
-    EXPECT_EQ(data.size(), 2 * sizeof(int));
-    EXPECT_EQ(*reinterpret_cast<int*>(data.data()), 1);
-    EXPECT_EQ(*reinterpret_cast<int*>(data.data() + sizeof(int)), 2);
+    CHECK(data.size() == 2 * sizeof(int));
+    CHECK(*reinterpret_cast<int*>(data.data()) == 1);
+    CHECK(*reinterpret_cast<int*>(data.data() + sizeof(int)) == 2);
 }
 
 
-TEST(TestCTLayout, StructWriter)
+TEST_CASE("StructWriter")
 {
     struct A : Value<int> {};
     struct B : Value<short> {};
@@ -520,15 +520,15 @@ TEST(TestCTLayout, StructWriter)
     StructWriter writer{S{}, sink};
     writer.get(A{}).write(1);
     writer.get(B{}).write(2);    
-    EXPECT_EQ(data.size(), sizeOf(S{}));
+    CHECK(data.size() == sizeOf(S{}));
 
     auto source = PtrSource{data.data()};
     auto obj = toObject(S{}, source);
-    EXPECT_EQ(obj.get(A{}).get(), 1);
-    EXPECT_EQ(obj.get(B{}).get(), 2);
+    CHECK(obj.get(A{}).get() == 1);
+    CHECK(obj.get(B{}).get() == 2);
 }
 
-TEST(TestCTLayout, FixedSizeVectorWriter)
+TEST_CASE("FixedSizeVectorWriter")
 {
     struct T : Value<int> {};
     struct V : Vector<T> {};
@@ -538,8 +538,8 @@ TEST(TestCTLayout, FixedSizeVectorWriter)
 
     VectorWriter writer{V{}, sink};
     writer.setLength(3);
-    EXPECT_EQ(data.size(), sizeof(V::Length));
-    EXPECT_EQ(writer.length(), 3);
+    CHECK(data.size() == sizeof(V::Length));
+    CHECK(writer.length() == 3);
 
     writer.at(0).write(10);
     writer.at(1).write(20);
@@ -547,10 +547,10 @@ TEST(TestCTLayout, FixedSizeVectorWriter)
 
     auto source = PtrSource{data.data()};
     auto v = toObject(V{}, source);
-    EXPECT_EQ(v.length(), 3);
-    EXPECT_EQ(v.at(0).get(), 10);
-    EXPECT_EQ(v.at(1).get(), 20);
-    EXPECT_EQ(v.at(2).get(), 30);
+    REQUIRE(v.length() == 3);
+    CHECK(v.at(0).get() == 10);
+    CHECK(v.at(1).get() == 20);
+    CHECK(v.at(2).get() == 30);
 }
 
 
@@ -572,7 +572,7 @@ TEST(TestCTLayout, FixedSizeVectorWriter)
 
 */
 
-TEST(TestCTLayout, VariableSizeVectorWriter)
+TEST_CASE("VariableSizeVectorWriter")
 {
     struct T : Value<int> {};
     struct W : Vector<T> {};
@@ -583,40 +583,40 @@ TEST(TestCTLayout, VariableSizeVectorWriter)
 
     VectorWriter writer{V{}, sink};
     writer.setLength(3);
-    EXPECT_EQ(data.size(), sizeof(V::Length));
-    EXPECT_EQ(writer.length(), 3);
+    CHECK(data.size() == sizeof(V::Length));
+    REQUIRE(writer.length() == 3);
 
     auto v0 = writer.at(0);
     v0.setLength(1);
-    EXPECT_EQ(v0.length(), 1);
+    CHECK(v0.length() == 1);
     v0.at(0).write(10);
 
 
 
     auto v1 = writer.at(1);
     v1.setLength(2);
-    EXPECT_EQ(v1.length(), 2);    
+    CHECK(v1.length() == 2);
     v1.at(0).write(20);
     v1.at(1).write(30);    
 
     auto v2 = writer.at(2);
     v2.setLength(1);
-    EXPECT_EQ(v2.length(), 1);
+    CHECK(v2.length() == 1);
     v2.at(0).write(40);
 
-    EXPECT_EQ(writer.length(), 3);
+    CHECK(writer.length() == 3);
 
     auto source = PtrSource{data.data()};
     auto v = toObject(V{}, source);
-    EXPECT_EQ(v.length(), 3);
-    EXPECT_EQ(v.at(0).length(), 1);
-    EXPECT_EQ(v.at(1).length(), 2);
-    EXPECT_EQ(v.at(2).length(), 1);
-    EXPECT_EQ(v.at(0).at(0).get(), 10);
-    EXPECT_EQ(v.at(1).at(0).get(), 20);
-    EXPECT_EQ(v.at(1).at(1).get(), 30);
-    EXPECT_EQ(v.at(2).at(0).get(), 40);    
-    EXPECT_EQ(sizeOf(V{}, sink), 56);
+    REQUIRE(v.length() == 3);
+    REQUIRE(v.at(0).length() == 1);
+    REQUIRE(v.at(1).length() == 2);
+    REQUIRE(v.at(2).length() == 1);
+    CHECK(v.at(0).at(0).get() == 10);
+    CHECK(v.at(1).at(0).get() == 20);
+    CHECK(v.at(1).at(1).get() == 30);
+    CHECK(v.at(2).at(0).get() == 40);
+    CHECK(sizeOf(V{}, sink) == 56);
 }
 
 
@@ -663,7 +663,7 @@ struct NumStructs : ArraySize {};
 struct StructArray : Array<ValueStruct, NumStructs> {};
 
 
-TEST(TestCTLayout, IsType)
+TEST_CASE("IsType)
 {
     // isValue(T)
     static_assert( isValue(IntValue()));
@@ -681,7 +681,7 @@ TEST(TestCTLayout, IsType)
     static_assert( isArray(ValueArray()));
 }
 
-TEST(TestCTLayout, Size)
+TEST_CASE("Size)
 {
     // Value<T>::size()
     static_assert(CharValue::size() == sizeof(char));
@@ -697,7 +697,7 @@ TEST(TestCTLayout, Size)
     static_assert(StructArray::stride() == ValueStruct::size());
 }
 
-TEST(TestCTLayout, Find)
+TEST_CASE("Find)
 {
     // find(Value<T>, Value<T>)
     static_assert(detail::find(IntValue(), IntValue()) == 0);
@@ -746,7 +746,7 @@ auto set_data = [] <typename T> (std::byte *ptr, auto offset, T value) {
     *p = value;
 };
 
-TEST(TestCTLayout, Layout1)
+TEST_CASE("Layout1)
 {
     struct Layout1 : Layout<FloatValue, ValueArray, DoubleValue, StructArray, BoolValue> {};
 
@@ -834,7 +834,7 @@ TEST(TestCTLayout, Layout1)
 }
 
 
-TEST(TestCTLayout, Layout2)
+TEST_CASE("Layout2)
 {
     //
     // Array::n > 1
@@ -886,7 +886,7 @@ TEST(TestCTLayout, Layout2)
     assert(obj2.value<ShortValue>(3) == 6);
 }
 
-TEST(TestCTLayout, BitArray)
+TEST_CASE("BitArray)
 {
     BitArray<NumValues> bits;
 

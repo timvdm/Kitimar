@@ -1,5 +1,5 @@
 #include <Kitimar/CTSmarts/CTSmarts.hpp>
-#include <gtest/gtest.h>
+#include <catch2/catch_test_macros.hpp>
 
 using namespace Kitimar;
 using namespace Kitimar::CTSmarts;
@@ -50,7 +50,7 @@ constexpr void test_error()
     static_assert(std::is_same_v<decltype(error), Error>);
 }
 
-TEST(TestCTSmartsParser, AliphaticAtom)
+TEST_CASE("AliphaticAtom")
 {
     // 'B' | 'C' | 'N' | 'O' | 'S' | 'P' | 'F' | 'Cl' | 'Br' | 'I'
     test_atom_expr<"B",  AliphaticAtom<5>>();
@@ -65,7 +65,7 @@ TEST(TestCTSmartsParser, AliphaticAtom)
     test_atom_expr<"I",  AliphaticAtom<53>>();
 }
 
-TEST(TestCTSmartsParser, AromaticAtom)
+TEST_CASE("AromaticAtom")
 {
     // 'b' | 'c' | 'n' | 'o' | 's' | 'p'
     test_atom_expr<"b",  AromaticAtom<5>>();
@@ -76,14 +76,14 @@ TEST(TestCTSmartsParser, AromaticAtom)
     test_atom_expr<"s",  AromaticAtom<16>>();
 }
 
-TEST(TestCTSmartsParser, AnyAtom)
+TEST_CASE("AnyAtom")
 {
     test_atom_expr<"*",  AnyAtom>();
     test_atom_expr<"a",  AnyAromatic>();
     test_atom_expr<"A",  AnyAliphatic>();
 }
 
-TEST(TestCTSmartsParser, BracketAliphaticAtom)
+TEST_CASE("BracketAliphaticAtom")
 {
     test_atom_expr<"[H]",  AliphaticAtom<1> >();
     test_atom_expr<"[He]", AliphaticAtom<2> >();
@@ -190,7 +190,7 @@ TEST(TestCTSmartsParser, BracketAliphaticAtom)
     test_atom_expr<"[Lr]", AliphaticAtom<103> >();
 }
 
-TEST(TestCTSmartsParser, BracketAromaticAtom)
+TEST_CASE("BracketAromaticAtom")
 {
     test_atom_expr<"[b]",  AromaticAtom<5> >();
     test_atom_expr<"[c]",  AromaticAtom<6> >();
@@ -202,14 +202,14 @@ TEST(TestCTSmartsParser, BracketAromaticAtom)
     test_atom_expr<"[se]", AromaticAtom<34> >();
 }
 
-TEST(TestCTSmartsParser, BracketAnyAtom)
+TEST_CASE("BracketAnyAtom")
 {
     test_atom_expr<"[*]", AnyAtom >();
     test_atom_expr<"[a]", AnyAromatic >();
     test_atom_expr<"[A]", AnyAliphatic >();
 }
 
-TEST(TestCTSmartsParser, Isotope)
+TEST_CASE("Isotope")
 {
     test_atom_expr<"[1]",   Isotope<1> >();
     test_atom_expr<"[2]",   Isotope<2> >();
@@ -218,7 +218,7 @@ TEST(TestCTSmartsParser, Isotope)
     test_atom_expr<"[123]", Isotope<123> >();
 }
 
-TEST(TestCTSmartsParser, Element)
+TEST_CASE("Element")
 {
     test_atom_expr<"[#1]",   Element<1> >();
     test_atom_expr<"[#2]",   Element<2> >();
@@ -227,7 +227,7 @@ TEST(TestCTSmartsParser, Element)
     test_atom_expr<"[#123]", Element<123> >();
 }
 
-TEST(TestCTSmartsParser, Degree)
+TEST_CASE("Degree")
 {
     test_atom_expr<"[D]",   Degree<1> >();
     test_atom_expr<"[D1]",  Degree<1> >();
@@ -236,7 +236,7 @@ TEST(TestCTSmartsParser, Degree)
     test_atom_expr<"[D42]", Degree<42> >();
 }
 
-TEST(TestCTSmartsParser, Valence)
+TEST_CASE("Valence")
 {
     test_atom_expr<"[v]",   Valence<1> >();
     test_atom_expr<"[v1]",  Valence<1> >();
@@ -245,7 +245,7 @@ TEST(TestCTSmartsParser, Valence)
     test_atom_expr<"[v42]", Valence<42> >();
 }
 
-TEST(TestCTSmartsParser, Connectivity)
+TEST_CASE("Connectivity")
 {
     test_atom_expr<"[X]",   Connectivity<1> >();
     test_atom_expr<"[X1]",  Connectivity<1> >();
@@ -254,7 +254,7 @@ TEST(TestCTSmartsParser, Connectivity)
     test_atom_expr<"[X42]", Connectivity<42> >();
 }
 
-TEST(TestCTSmartsParser, TotalH)
+TEST_CASE("TotalH")
 {
     test_atom_expr<"[H]",   AliphaticAtom<1> >();
     test_atom_expr<"[rH]",  And<Cyclic, AliphaticAtom<1>> >();
@@ -287,7 +287,7 @@ TEST(TestCTSmartsParser, TotalH)
     test_atom_expr<"[NH,NH2]", Or<And<AliphaticAtom<7>, TotalH<1>>, And<AliphaticAtom<7>, TotalH<2>>> >();
 }
 
-TEST(TestCTSmartsParser, ImplicitH)
+TEST_CASE("ImplicitH")
 {
     test_atom_expr<"[h]",  ImplicitH<1> >();
     test_atom_expr<"[h0]", ImplicitH<0> >();
@@ -295,35 +295,35 @@ TEST(TestCTSmartsParser, ImplicitH)
     test_atom_expr<"[h3]", ImplicitH<3> >();
 }
 
-TEST(TestCTSmartsParser, CyclicAtom)
+TEST_CASE("CyclicAtom")
 {
     test_atom_expr<"[R]", Cyclic >();
     test_atom_expr<"[r]", Cyclic >();
     test_atom_expr<"[x]", Cyclic >();
 }
 
-TEST(TestCTSmartsParser, AcyclicAtom)
+TEST_CASE("AcyclicAtom")
 {
     //test_atom_expr<"[R0]", Acyclic >();  FIXME
     test_atom_expr<"[r0]", Acyclic >();
     test_atom_expr<"[x0]", Acyclic >();
 }
 
-TEST(TestCTSmartsParser, RingCount)
+TEST_CASE("RingCount")
 {
     test_atom_expr<"[R1]",  RingCount<1> >();
     test_atom_expr<"[R2]",  RingCount<2> >();
     test_atom_expr<"[R42]", RingCount<42> >();
 }
 
-TEST(TestCTSmartsParser, RingSize)
+TEST_CASE("RingSize")
 {
     test_atom_expr<"[r1]",  RingSize<1> >();
     test_atom_expr<"[r2]",  RingSize<2> >();
     test_atom_expr<"[r42]", RingSize<42> >();
 }
 
-TEST(TestCTSmartsParser, RingConnectivity)
+TEST_CASE("RingConnectivity")
 {
     test_atom_expr<"[x1]",  RingConnectivity<1> >();
     test_atom_expr<"[x2]",  RingConnectivity<2> >();
@@ -331,7 +331,7 @@ TEST(TestCTSmartsParser, RingConnectivity)
 }
 
 
-TEST(TestCTSmartsParser, Charge)
+TEST_CASE("Charge")
 {
     test_atom_expr<"[-]",  Charge<-1> >();
     test_atom_expr<"[-0]", Charge<0> >();
@@ -349,15 +349,15 @@ TEST(TestCTSmartsParser, Charge)
     test_atom_expr<"[---]",  Charge<-3> >();
 }
 
-TEST(TestCTSmartsParser, Chiral)
+TEST_CASE("Chiral")
 {
 }
 
-TEST(TestCTSmartsParser, Class)
+TEST_CASE("Class")
 {
 }
 
-TEST(TestCTSmartsParser, BracketAtom)
+TEST_CASE("BracketAtom")
 {
     using N = AliphaticAtom<7>;
     using O = AliphaticAtom<8>;
@@ -383,7 +383,7 @@ TEST(TestCTSmartsParser, BracketAtom)
 }
 
 
-TEST(TestCTSmartsParser, BondPrimitive)
+TEST_CASE("BondPrimitive")
 {
     test_bond_expr<"**",    ImplicitBond >();
     test_bond_expr<"*-*",   BondOrder<1> >();
@@ -405,7 +405,7 @@ TEST(TestCTSmartsParser, BondPrimitive)
     test_bond_expr<"[*]=[*]",  BondOrder<2> >();
 }
 
-TEST(TestCTSmartsParser, BondExpr)
+TEST_CASE("BondExpr")
 {
     using Single = BondOrder<1>;
     using Double = BondOrder<2>;
@@ -420,7 +420,7 @@ TEST(TestCTSmartsParser, BondExpr)
     test_bond_expr<"*-,=;@*", And<Or<Single, Double>, RingBond> >();
 }
 
-TEST(TestCTSmartsParser, RingBond)
+TEST_CASE("RingBond")
 {
     using Single = BondOrder<1>;
     using Double = BondOrder<2>;
@@ -452,7 +452,7 @@ TEST(TestCTSmartsParser, RingBond)
     test_error<"*-1***=1", ConflicingRingBondError>();
 }
 
-TEST(TestCTSmartsParser, Operators)
+TEST_CASE("Operators")
 {
     using C = AliphaticAtom<6>;
     using N = AliphaticAtom<7>;
@@ -527,18 +527,18 @@ TEST(TestCTSmartsParser, Operators)
     */
 }
 
-TEST(TestCTSmartsParser, GetCentralAtom)
+TEST_CASE("GetCentralAtom")
 {
-    EXPECT_EQ(getCentralAtom(Smarts<"C">{}), -1);
-    EXPECT_EQ(getCentralAtom(Smarts<"CC">{}), -1);
-    EXPECT_EQ(getCentralAtom(Smarts<"CCC">{}), 1);
-    EXPECT_EQ(getCentralAtom(Smarts<"C(C)C">{}), 0);
-    EXPECT_EQ(getCentralAtom(Smarts<"CCCC">{}), -1);
-    EXPECT_EQ(getCentralAtom(Smarts<"CC(C)C">{}), 1);
-    EXPECT_EQ(getCentralAtom(Smarts<"C(C)(C)C">{}), 0);
-    EXPECT_EQ(getCentralAtom(Smarts<"CCCCC">{}), -1);
-    EXPECT_EQ(getCentralAtom(Smarts<"CC(C)CC">{}), -1);
-    EXPECT_EQ(getCentralAtom(Smarts<"CC(C)(C)C">{}), 1);
-    EXPECT_EQ(getCentralAtom(Smarts<"C(C)(C)(C)C">{}), 0);
-    EXPECT_EQ(getCentralAtom(Smarts<"C1CC1">{}), -1);
+    CHECK(getCentralAtom(Smarts<"C">{}) == -1);
+    CHECK(getCentralAtom(Smarts<"CC">{}) == -1);
+    CHECK(getCentralAtom(Smarts<"CCC">{}) == 1);
+    CHECK(getCentralAtom(Smarts<"C(C)C">{}) == 0);
+    CHECK(getCentralAtom(Smarts<"CCCC">{}) == -1);
+    CHECK(getCentralAtom(Smarts<"CC(C)C">{}) == 1);
+    CHECK(getCentralAtom(Smarts<"C(C)(C)C">{}) == 0);
+    CHECK(getCentralAtom(Smarts<"CCCCC">{}) == -1);
+    CHECK(getCentralAtom(Smarts<"CC(C)CC">{}) == -1);
+    CHECK(getCentralAtom(Smarts<"CC(C)(C)C">{}) == 1);
+    CHECK(getCentralAtom(Smarts<"C(C)(C)(C)C">{}) == 0);
+    CHECK(getCentralAtom(Smarts<"C1CC1">{}) == -1);
 }
