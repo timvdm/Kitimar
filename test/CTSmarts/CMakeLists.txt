@@ -1,8 +1,10 @@
 
+add_library(TestCTSmarts INTERFACE TestCTSmarts.hpp)
 
 Kitimar_add_test(CTSmartsParser)
 Kitimar_add_test(CTSmartsMatch)
 Kitimar_add_test(CTSmartsCount)
+Kitimar_add_test(CTSmartsMap)
 
 
 Kitimar_add_test(CTSmartsOld)

@@ -105,6 +105,14 @@ namespace Kitimar::Molecule {
                        IsotopeLayer<Mol>;
 
 
+    template<Molecule Mol>
+    struct MoleculeTraits
+    {
+        using Atom = decltype(get_atom(std::declval<Mol>(), 0));
+        using Bond = decltype(get_bond(std::declval<Mol>(), 0));
+        constexpr static inline bool SameAtomBondType = std::is_same_v<Atom, Bond>;
+    };
+
 
     constexpr auto get_nbr(const auto &mol, auto bond, auto atom) noexcept -> decltype(get_atom(mol, 0))
     {

@@ -17,7 +17,7 @@ function(Kitimar_setup_dependencies)
     endif()
 
     if(NOT TARGET ctre::ctre)
-        CPMAddPackage("gh:hanickadot/compile-time-regular-expressions@3.7.2")
+        CPMAddPackage("gh:hanickadot/compile-time-regular-expressions@3.8")
     endif()
 
     if(NOT TARGET mio::mio)

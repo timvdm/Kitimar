@@ -7,7 +7,7 @@ set(KitimarUtil_HDRS
 
 # Library
 
-add_library(KitimarUtil INTERFACE ${Util_HDRS})
+add_library(KitimarUtil INTERFACE ${KitimarUtil_HDRS})
 add_library(Kitimar::Util ALIAS KitimarUtil)
 set_target_properties(KitimarUtil PROPERTIES EXPORT_NAME "Util")
 

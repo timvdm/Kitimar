@@ -186,40 +186,13 @@ namespace Kitimar::CTSmarts {
                 return m_map;
             }
 
+            // match
+
             bool match(Mol &mol)
             {
                 matchDfs(mol, nullptr);
                 return isDone();
             }
-
-            auto count(Mol &mol, int startAtom = -1)
-            {
-                auto n = 0;
-                auto cb = [&n] (const auto &array) { ++n; };
-                matchDfs(mol, cb, startAtom);
-                return n;
-            }
-
-
-            auto single(Mol &mol, int startAtom = -1)
-            {
-                matchDfs(mol, nullptr, startAtom);
-                return std::make_tuple(isDone(), m_map);
-            }
-
-            Maps all(Mol &mol, int startAtom = -1)
-            {
-                Maps maps;
-                auto cb = [&maps] (const auto &map) {
-                    maps.push_back(map);
-                };
-                matchDfs(mol, cb, startAtom);
-                return maps;
-            }
-
-            //
-            // Atom
-            //
 
             bool matchAtom(Mol &mol, const auto &atom)
             {
@@ -250,6 +223,98 @@ namespace Kitimar::CTSmarts {
                 matchDfs(mol, targetCallback, targetIndex);
                 return isDone() && m_map[1] == sourceIndex;
             }
+
+            // count
+
+            auto count(Mol &mol, int startAtom = -1)
+            {
+                auto n = 0;
+                auto cb = [&n] (const auto &array) { ++n; };
+                matchDfs(mol, cb, startAtom);
+                return n;
+            }
+
+            auto countAtom(Mol &mol, const auto &atom)
+            {
+                return count(mol, get_index(mol, atom));
+            }
+
+            auto countBond(Mol &mol, const auto &bond)
+            {
+                reset(mol);
+                auto source = get_source(mol, bond);
+                auto target = get_target(mol, bond);
+                auto sourceIndex = get_index(mol, source);
+                auto targetIndex = get_index(mol, target);
+
+                auto n = 0;
+                auto sourceCallback = [this, targetIndex, &n] (const auto &map) {
+                    if (m_map[1] == targetIndex)
+                        ++n;
+                };
+                matchDfs(mol, sourceCallback, sourceIndex);
+                auto targetCallback = [this, sourceIndex, &n] (const auto &map) {
+                    if (m_map[1] == sourceIndex)
+                        ++n;
+                };
+                matchDfs(mol, targetCallback, targetIndex);
+                return n;
+            }
+
+            // single
+
+            auto single(Mol &mol, int startAtom = -1)
+            {
+                matchDfs(mol, nullptr, startAtom);
+                return std::make_tuple(isDone(), m_map);
+            }
+
+            auto singleAtom(Mol &mol, const auto &atom)
+            {
+                return single(mol, get_index(mol, atom));
+            }
+
+            auto singleBond(Mol &mol, const auto &bond)
+            {
+                reset(mol);
+                auto source = get_source(mol, bond);
+                auto target = get_target(mol, bond);
+                auto sourceIndex = get_index(mol, source);
+                auto targetIndex = get_index(mol, target);
+
+                auto sourceCallback = [this, targetIndex] (const auto &map) {
+                    if (m_map[1] == targetIndex)
+                        setDone(true);
+                };
+                matchDfs(mol, sourceCallback, sourceIndex);
+                if (isDone() && m_map[1] == targetIndex)
+                    return std::make_tuple(true, m_map);
+
+                auto targetCallback = [this, sourceIndex] (const auto &map) {
+                    if (m_map[1] == sourceIndex)
+                        setDone(true);
+                };
+                matchDfs(mol, targetCallback, targetIndex);
+                if (isDone() && m_map[1] == sourceIndex)
+                    return std::make_tuple(true, m_map);
+
+                return std::make_tuple(false, Map{});
+            }
+
+            // all
+
+            Maps all(Mol &mol, int startAtom = -1)
+            {
+                Maps maps;
+                auto cb = [&maps] (const auto &map) {
+                    maps.push_back(map);
+                };
+                matchDfs(mol, cb, startAtom);
+                return maps;
+            }
+
+
+
 
         private:
 
