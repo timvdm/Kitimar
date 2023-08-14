@@ -28,6 +28,11 @@ set(CTSmarts_HDRS
     Optimizer/OptimizeExpression.hpp
     Optimizer/AtomFrequency.hpp
     Optimizer/OptimizeIncidentList.hpp
+    API/Util.hpp
+    API/Match.hpp
+    API/Count.hpp
+    API/Map.hpp
+    API/Maps.hpp
 )
 
 # Library

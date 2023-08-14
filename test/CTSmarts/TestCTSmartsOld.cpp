@@ -37,13 +37,13 @@ void compare_maps(auto &&maps, const auto &refMaps)
 template<ctll::fixed_string SMARTS>
 void test_unique(auto &mol, std::initializer_list<std::array<int, Smarts<SMARTS>::numAtoms>> refMaps)
 {
-    compare_maps(CTSmarts::multi<SMARTS>(mol), refMaps);
+    compare_maps(CTSmarts::maps<SMARTS>(mol), refMaps);
 }
 
 template<ctll::fixed_string SMARTS>
 void test_all(auto &mol, std::initializer_list<std::array<int, Smarts<SMARTS>::numAtoms>> refMaps)
 {
-    compare_maps(CTSmarts::multi<SMARTS>(mol, CTSmarts::All), refMaps);
+    compare_maps(CTSmarts::maps<SMARTS>(mol, CTSmarts::All), refMaps);
 }
 
 TEST_CASE("CTSmarts_multi")

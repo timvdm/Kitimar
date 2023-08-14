@@ -42,4 +42,42 @@ struct IndexTypeTestCase : TypeTestCase<MolFactory, SMARTS, Expected>
     constexpr static inline auto index = Index;
 };
 
+template<uint32_t ...Index>
+struct TestMap
+{
+    static constexpr inline bool found = sizeof...(Index);
+    static constexpr inline std::array<uint32_t, sizeof...(Index)> map = {Index...};
+};
 
+template<int ...Index>
+using Map = TestMap<Index...>;
+
+using EmptyMap = TestMap<>;
+
+static auto toVectorMaps(const auto &arrays)
+{
+    std::vector<std::vector<uint32_t>> vectors;
+    for (const auto &array : arrays)
+        vectors.push_back({std::begin(array), std::end(array)});
+    return vectors;
+}
+
+template<typename ...MapTs>
+struct TestMaps
+{
+
+    static std::vector<std::vector<uint32_t>> maps()
+    {
+        if constexpr (sizeof...(MapTs)) {
+            using T = std::common_type_t<decltype(MapTs::map)...>;
+            std::array<T, sizeof...(MapTs)> arrays = {MapTs::map...};
+            return toVectorMaps(arrays);
+        } else
+            return {};
+    }
+};
+
+template<typename ...MapTs>
+using Maps = TestMaps<MapTs...>;
+
+using EmptyMaps = TestMaps<>;

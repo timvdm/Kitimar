@@ -118,12 +118,13 @@ using CountAtomUniqueCases = std::tuple<
     IndexValueTestCase<MockAcetateAnion, "CC(=O)[O-]", 0, 1>,
     IndexValueTestCase<MockAcetateAnion, "CC([O-])=O", 0, 1>,
     IndexValueTestCase<MockAcetateAnion, "O=C(C)[O-]", 2, 1>,
+    IndexValueTestCase<MockAcetateAnion, "*~*~*", 0, 2>,
     IndexValueTestCase<MockAcetateAnion, "*~*(~*)~*", 0, 1>,
     IndexValueTestCase<MockAcetateAnion, "CC(=O)N", 0, 0>
 >;
 
 template<typename Mol, typename Case>
-void test_atom_count_unique()
+void test_count_atom_unique()
 {
     auto mol = Case::template mol<Mol>();
     auto atom = get_atom(mol, Case::index);
@@ -139,8 +140,8 @@ void test_atom_count_unique()
 
 TEMPLATE_LIST_TEST_CASE("count_atom_unique", "", CountAtomUniqueCases)
 {
-    test_atom_count_unique<Molecule::MockIndexMolecule, TestType>();
-    test_atom_count_unique<Molecule::MockProxyMolecule, TestType>();
+    test_count_atom_unique<Molecule::MockIndexMolecule, TestType>();
+    test_count_atom_unique<Molecule::MockProxyMolecule, TestType>();
 }
 
 //
@@ -172,7 +173,7 @@ using CountAtomAllCases = std::tuple<
 >;
 
 template<typename Mol, typename Case>
-void test_atom_count_all()
+void test_count_atom_all()
 {
     auto mol = Case::template mol<Mol>();
     auto atom = get_atom(mol, Case::index);
@@ -186,8 +187,8 @@ void test_atom_count_all()
 
 TEMPLATE_LIST_TEST_CASE("count_atom_all", "", CountAtomAllCases)
 {
-    test_atom_count_all<Molecule::MockIndexMolecule, TestType>();
-    test_atom_count_all<Molecule::MockProxyMolecule, TestType>();
+    test_count_atom_all<Molecule::MockIndexMolecule, TestType>();
+    test_count_atom_all<Molecule::MockProxyMolecule, TestType>();
 }
 
 //
@@ -217,7 +218,7 @@ using CountBondUniqueCases = std::tuple<
 >;
 
 template<typename Mol, typename Case>
-void test_bond_count_unique()
+void test_count_bond_unique()
 {
     auto mol = Case::template mol<Mol>();
     auto bond = get_bond(mol, Case::index);
@@ -233,8 +234,8 @@ void test_bond_count_unique()
 
 TEMPLATE_LIST_TEST_CASE("count_bond_unique", "", CountBondUniqueCases)
 {
-    test_bond_count_unique<Molecule::MockIndexMolecule, TestType>();
-    test_bond_count_unique<Molecule::MockProxyMolecule, TestType>();
+    test_count_bond_unique<Molecule::MockIndexMolecule, TestType>();
+    test_count_bond_unique<Molecule::MockProxyMolecule, TestType>();
 }
 
 //
@@ -264,7 +265,7 @@ using CountBondAllCases = std::tuple<
 >;
 
 template<typename Mol, typename Case>
-void test_bond_count_all()
+void test_count_bond_all()
 {
     auto mol = Case::template mol<Mol>();
     auto bond = get_bond(mol, Case::index);
@@ -278,6 +279,6 @@ void test_bond_count_all()
 
 TEMPLATE_LIST_TEST_CASE("count_bond_all", "", CountBondAllCases)
 {
-    test_bond_count_all<Molecule::MockIndexMolecule, TestType>();
-    test_bond_count_all<Molecule::MockProxyMolecule, TestType>();
+    test_count_bond_all<Molecule::MockIndexMolecule, TestType>();
+    test_count_bond_all<Molecule::MockProxyMolecule, TestType>();
 }

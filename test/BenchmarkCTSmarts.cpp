@@ -21,7 +21,7 @@ auto mol = Kitimar::readSmilesOpenBabel("N1(C(=O)[C@H]2N(C(=O)CNC(=O)[C@@H](NC(=
 
 #define BM_ALL(SMARTS) \
     BENCHMARK(SMARTS) { \
-        return ctse::multi<SMARTS>(mol, ctse::All); \
+        return ctse::maps<SMARTS>(mol, ctse::All); \
     }
 
 
@@ -36,7 +36,7 @@ First iterative implementation
     Callback + Recursive (A)
     ------------------------
 
-    * Optimize multi for single bond case (BM_count_CC vs BM_all_CC)
+    * Optimize maps for single bond case (BM_count_CC vs BM_all_CC)
     * BM_all slow when there are many mappings (BM_count_xxx vs BM_all_xxx) -> avoid constructing std::vector<std::vector<int>>
 
         ------------------------------------------------------------------------

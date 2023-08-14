@@ -74,7 +74,7 @@ namespace Kitimar::CTSmarts {
     // See: https://www.scs.stanford.edu/~dm/blog/param-pack.html#array-of-function-pointers
     //
 
-    namespace detail {
+    namespace impl {
 
         template<std::size_t I, typename R, typename F>
         inline constexpr R with_integral_constant(F f)
@@ -88,7 +88,7 @@ namespace Kitimar::CTSmarts {
     inline constexpr R with_n(int n, F &&f)
     {
         constexpr auto invokeArray = [] <std::size_t...I> (std::index_sequence<I...>) {
-            return std::array{ detail::with_integral_constant<I, R, F&&>... };
+            return std::array{ impl::with_integral_constant<I, R, F&&>... };
         }(std::make_index_sequence<N>{});
 
         return invokeArray.at(n)(std::forward<F>(f));

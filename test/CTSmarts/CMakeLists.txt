@@ -5,6 +5,7 @@ Kitimar_add_test(CTSmartsParser)
 Kitimar_add_test(CTSmartsMatch)
 Kitimar_add_test(CTSmartsCount)
 Kitimar_add_test(CTSmartsMap)
+Kitimar_add_test(CTSmartsMaps)
 
 
 Kitimar_add_test(CTSmartsOld)

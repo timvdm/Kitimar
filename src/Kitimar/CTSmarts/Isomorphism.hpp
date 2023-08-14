@@ -313,8 +313,32 @@ namespace Kitimar::CTSmarts {
                 return maps;
             }
 
+            auto allAtom(Mol &mol, const auto &atom)
+            {
+                return all(mol, get_index(mol, atom));
+            }
 
+            auto allBond(Mol &mol, const auto &bond)
+            {
+                reset(mol);
+                auto source = get_source(mol, bond);
+                auto target = get_target(mol, bond);
+                auto sourceIndex = get_index(mol, source);
+                auto targetIndex = get_index(mol, target);
 
+                Maps maps;
+                auto sourceCallback = [this, targetIndex, &maps] (const auto &map) {
+                    if (m_map[1] == targetIndex)
+                        maps.push_back(m_map);
+                };
+                matchDfs(mol, sourceCallback, sourceIndex);
+                auto targetCallback = [this, sourceIndex, &maps] (const auto &map) {
+                    if (m_map[1] == sourceIndex)
+                        maps.push_back(m_map);
+                };
+                matchDfs(mol, targetCallback, targetIndex);
+                return maps;
+            }
 
         private:
 

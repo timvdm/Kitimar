@@ -10,18 +10,6 @@ using namespace Kitimar::CTSmarts;
 
 using Molecule::MockAcetateAnion;
 
-template<int ...Indexes>
-struct TestMap
-{
-    static constexpr inline bool found = sizeof...(Indexes);
-    static constexpr inline std::array<int, sizeof...(Indexes)> map = {Indexes...};
-};
-
-template<int ...Indexes>
-using Map = TestMap<Indexes...>;
-
-using EmptyMap = TestMap<>;
-
 //
 // map(mol)
 //
