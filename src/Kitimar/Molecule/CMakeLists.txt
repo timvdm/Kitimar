@@ -8,7 +8,8 @@ set(Molecule_HDRS
 # Library
 
 add_library(KitimarMolecule INTERFACE ${Molecule_HDRS}
-    MockMolecules.hpp)
+    MockMolecules.hpp
+    NoInlineMolecule.hpp)
 add_library(Kitimar::Molecule ALIAS KitimarMolecule)
 set_target_properties(KitimarMolecule PROPERTIES EXPORT_NAME "Molecule")
 

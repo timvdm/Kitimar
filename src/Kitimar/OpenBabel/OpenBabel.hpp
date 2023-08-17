@@ -228,6 +228,13 @@ namespace OpenBabel {
         return atom->GetFormalCharge();
     }
 
+    // ValenceLayer
+
+    inline auto get_valence(const OpenBabel::OBMol &mol, OpenBabel::OBAtom *atom)
+    {
+        return atom->GetTotalValence();
+    }
+
     // BonderOrderLayer
 
     inline auto get_order(const OpenBabel::OBMol &mol, OpenBabel::OBBond *bond)
@@ -243,6 +250,23 @@ namespace OpenBabel {
         return atom->GetImplicitHCount();
     }
 
+    inline auto get_total_hydrogens(const OpenBabel::OBMol &mol, OpenBabel::OBAtom *atom)
+    {
+        return atom->ExplicitHydrogenCount() + atom->GetImplicitHCount();
+    }
+
+    // RingLayer
+
+    inline auto is_ring_atom(const OpenBabel::OBMol &mol, OpenBabel::OBAtom *atom)
+    {
+        return atom->IsInRing();
+    }
+
+    inline auto is_ring_bond(const OpenBabel::OBMol &mol, OpenBabel::OBBond *bond)
+    {
+        return bond->IsInRing();
+    }
+
     // AromaticLayer
 
     inline auto is_aromatic_atom(const OpenBabel::OBMol &mol, OpenBabel::OBAtom *atom)
@@ -255,47 +279,24 @@ namespace OpenBabel {
         return bond->IsAromatic();
     }
 
-    inline auto is_cyclic_atom(const OpenBabel::OBMol &mol, OpenBabel::OBAtom *atom)
-    {
-        return atom->IsInRing();
-    }
+    // RingSetLayer
 
-    inline auto is_cyclic_bond(const OpenBabel::OBMol &mol, OpenBabel::OBBond *bond)
-    {
-        return bond->IsInRing();
-    }
-
-    // Smarts
-
-    inline auto get_connectivity(const OpenBabel::OBMol &mol, OpenBabel::OBAtom *atom)
-    {
-        return atom->GetTotalDegree();
-    }
-
-    inline auto get_total_hydrogens(const OpenBabel::OBMol &mol, OpenBabel::OBAtom *atom)
-    {
-        return atom->ExplicitHydrogenCount() + atom->GetImplicitHCount();
-    }
-
+    // is the atom part of a ring with the specified size
     inline auto is_in_ring_size(const OpenBabel::OBMol &mol, OpenBabel::OBAtom *atom, int ringSize)
     {
         return atom->IsInRingSize(ringSize);
     }
 
+    // number of rings the atom is part of (depends on used ring set!)
     inline auto get_ring_count(const OpenBabel::OBMol &mol, OpenBabel::OBAtom *atom)
     {
         return atom->MemberOfRingCount();
     }
 
-    inline auto get_ring_connectivity(const OpenBabel::OBMol &mol, OpenBabel::OBAtom *atom)
+    // number of ring bonds around the atom
+    inline auto get_ring_degree(const OpenBabel::OBMol &mol, OpenBabel::OBAtom *atom)
     {
         return atom->CountRingBonds();
     }
-
-    inline auto get_valence(const OpenBabel::OBMol &mol, OpenBabel::OBAtom *atom)
-    {
-        return atom->GetTotalValence();
-    }
-
 
 } // namespace OpenBabel

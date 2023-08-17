@@ -33,6 +33,8 @@ set(CTSmarts_HDRS
     API/Count.hpp
     API/Map.hpp
     API/Maps.hpp
+    API/Capture.hpp
+    API/Captures.hpp
 )
 
 # Library

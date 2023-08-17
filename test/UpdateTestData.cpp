@@ -51,7 +51,7 @@ void serializeOpenBabelSmilesToKitimarTypeIndex()
         for (auto bond : get_bonds(mol)) {
             auto type = BondType{
                 static_cast<uint8_t>(get_order(mol, bond)),
-                is_cyclic_bond(mol, bond),
+                is_ring_bond(mol, bond),
                 is_aromatic_bond(mol, bond)
             };
 

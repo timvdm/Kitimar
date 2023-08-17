@@ -14,6 +14,10 @@ option(Kitimar_WITH_RDKIT "Build with RDKit support" OFF)
 option(Kitimar_WITH_COROUTINES "Build with c++20 coroutines support" OFF)
 option(Kitimar_WITH_VALIDATION "Build validation executable (WARNING: uses lots of RAM during compilation)" OFF)
 
+# Including <iostream> results in code being added to empty executables.
+# Without this, generated assembly code is easier to implement.
+option(Kitimar_WITH_IOSTREAM "Use STL iostream" ON)
+
 # CMake module path
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules")
 
@@ -43,13 +47,15 @@ Kitimar_local_options()
 
 target_compile_features(KitimarOptions INTERFACE cxx_std_${CMAKE_CXX_STANDARD})
 
-
 set_target_properties(KitimarOptions PROPERTIES EXPORT_NAME "Options")
 set_target_properties(KitimarWarnings PROPERTIES EXPORT_NAME "Warnings")
 
 add_library(Kitimar::Options ALIAS KitimarOptions)
 add_library(Kitimar::Warnings ALIAS KitimarWarnings)
 
+if(Kitimar_WITH_IOSTREAM)
+    target_compile_definitions(KitimarOptions INTERFACE -DKITIMAR_WITH_IOSTREAM)
+endif()
 
 target_compile_options(KitimarOptions INTERFACE
     -march=native

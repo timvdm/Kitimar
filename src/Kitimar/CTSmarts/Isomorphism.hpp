@@ -12,17 +12,16 @@
 #include <set>
 #include <vector>
 #include <algorithm>
-#include <iostream>
 #include <functional>
 #include <variant>
 #include <type_traits>
 #include <unordered_set>
 #include <cassert>
 
-
-
 #define ISOMORPHISM_DEBUG 0
 
+#ifdef KITIMAR_WITH_IOSTREAM
+#include <iostream>
 
 template<std::integral I, auto N>
 std::ostream& operator<<(std::ostream &os, const std::array<I, N> &map)
@@ -43,6 +42,12 @@ std::ostream& operator<<(std::ostream &os, const std::vector<I> &v)
     os << "]";
     return os;
 }
+
+#endif // KITIMAR_WITH_IOSTREAM
+
+
+
+
 
 namespace Kitimar::CTSmarts {
 
@@ -342,14 +347,17 @@ namespace Kitimar::CTSmarts {
 
         private:
 
+
             template<typename Arg, typename ...Args>
             void debug(Arg &&arg, Args &&...args)
             {
+                #ifdef KITIMAR_WITH_IOSTREAM
                 if constexpr (ISOMORPHISM_DEBUG) {
                     std::cout << std::forward<Arg>(arg);
                     ((std::cout << std::forward<Args>(args)), ...);
                     std::cout << '\n';
                 }
+                #endif // KITIMAR_WITH_IOSTREAM
             }
 
 
@@ -364,7 +372,7 @@ namespace Kitimar::CTSmarts {
             bool matchBond(Mol &mol, const auto &bond, int queryBondIndex, auto queryBond) const noexcept
             {
                 if constexpr (queryBond.isCyclic)
-                    if (!is_cyclic_bond(mol, bond))
+                    if (!is_ring_bond(mol, bond))
                         return false;
 
                 return matchBondExpr(mol, bond, queryBond.expr);
@@ -412,7 +420,7 @@ namespace Kitimar::CTSmarts {
                 });
             }
 
-
+            #ifdef KITIMAR_WITH_IOSTREAM
             void debugPoint(int queryBondIndex)
             {
                 std::cout << "matchDfs<\"" << smarts.input() << "\">(queryBondIndex = " << queryBondIndex << "):" << std::endl;
@@ -450,7 +458,7 @@ namespace Kitimar::CTSmarts {
                 }
                 */
             }
-
+            #endif // KITIMAR_WITH_IOSTREAM
 
 
             template<typename Bonds = decltype(dfsBonds)>

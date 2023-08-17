@@ -300,7 +300,7 @@ namespace RDKit {
         return bond->getIsAromatic();
     }
 
-    inline auto is_cyclic_bond(const RDKit::ROMol &mol, const RDKit::Bond *bond)
+    inline auto is_ring_bond(const RDKit::ROMol &mol, const RDKit::Bond *bond)
     {
         if (!mol.getRingInfo()->isInitialized())
             RDKit::MolOps::findSSSR(mol);

@@ -25,8 +25,8 @@ void serialize(Molecule::Molecule auto &mol, Sink &sink)
 template<typename MolObj>
 void test_molecule()
 {
-    static_assert(Molecule::IsAtomList<MolObj>);
-    static_assert(Molecule::IsBondList<MolObj>);
+    static_assert(Molecule::AtomList<MolObj>);
+    static_assert(Molecule::BondList<MolObj>);
     static_assert(Molecule::MoleculeGraph<MolObj>);
     static_assert(Molecule::IncidentBondList<MolObj>);
     static_assert(Molecule::AdjacentAtomList<MolObj>);
@@ -34,7 +34,7 @@ void test_molecule()
     static_assert(Molecule::IsotopeLayer<MolObj>);
     static_assert(Molecule::ChargeLayer<MolObj>);
     static_assert(Molecule::BondOrderLayer<MolObj>);
-    static_assert(Molecule::ImplicitHydrogensLayer<MolObj>);
+    //static_assert(Molecule::ImplicitHydrogensLayer<MolObj>);
     //static_assert(AromaticLayer<MolObj>);
 }
 

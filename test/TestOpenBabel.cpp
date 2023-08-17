@@ -5,8 +5,8 @@
 #include <catch2/catch_test_macros.hpp>
 
 
-static_assert(Kitimar::Molecule::IsAtomList<OpenBabel::OBMol>);
-static_assert(Kitimar::Molecule::IsBondList<OpenBabel::OBMol>);
+static_assert(Kitimar::Molecule::AtomList<OpenBabel::OBMol>);
+static_assert(Kitimar::Molecule::BondList<OpenBabel::OBMol>);
 static_assert(Kitimar::Molecule::MoleculeGraph<OpenBabel::OBMol>);
 static_assert(Kitimar::Molecule::IncidentBondList<OpenBabel::OBMol>);
 static_assert(Kitimar::Molecule::AdjacentAtomList<OpenBabel::OBMol>);

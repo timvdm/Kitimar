@@ -54,7 +54,7 @@ int main()
 
     std::cout << "match 5:" << std::endl;
     i = 0;
-    for (auto [C5a, C5b] : CTSmarts::captures<"CC">(molecule, get_atom(molecule, 1))) {
+    for (auto [C5a, C5b] : CTSmarts::captures_atom<"CC">(molecule, get_atom(molecule, 1))) {
         std::cout << "    capture " << i++ << std::endl;
         std::cout << "        C:1 -> " << C5a << std::endl;
         std::cout << "        C:2 -> " << C5b << std::endl;

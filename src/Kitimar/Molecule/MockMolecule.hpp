@@ -49,16 +49,16 @@ namespace Kitimar::Molecule {
 
     struct MockProxyAtom
     {
-        const MockProxyMolecule *molecule;
-        uint32_t index;
+        const MockProxyMolecule *molecule = nullptr;
+        uint32_t index = -1;
 
         bool operator==(const MockProxyAtom &other) const noexcept = default;
     };
 
     struct MockProxyBond
     {
-        const MockProxyMolecule *molecule;
-        uint32_t index;
+        const MockProxyMolecule *molecule = nullptr;
+        uint32_t index = -1;
     };
 
     struct MockProxyMolecule
@@ -212,7 +212,7 @@ namespace Kitimar::Molecule {
     }
 
     template<MockMolecule Mol>
-    inline auto is_cyclic_atom(const Mol &mol, typename Mol::Atom atom) noexcept
+    inline auto is_ring_atom(const Mol &mol, typename Mol::Atom atom) noexcept
     {
         assert(get_index(mol, atom) < num_atoms(mol));
         return mol.atoms[get_index(mol, atom)].cyclic;
@@ -253,7 +253,10 @@ namespace Kitimar::Molecule {
     template<MockMolecule Mol>
     inline Mol::Atom null_atom(const Mol &mol) noexcept
     {
-        return -1;
+        if constexpr (std::is_same_v<Mol, MockIndexMolecule>)
+            return -1;
+        if constexpr (std::is_same_v<Mol, MockProxyMolecule>)
+            return {};
     }
 
     //
@@ -282,7 +285,7 @@ namespace Kitimar::Molecule {
     }
 
     template<MockMolecule Mol>
-    inline auto is_cyclic_bond(const Mol &mol, typename Mol::Bond bond) noexcept
+    inline auto is_ring_bond(const Mol &mol, typename Mol::Bond bond) noexcept
     {
         assert(get_index(mol, bond) < num_bonds(mol));
         return mol.bonds[get_index(mol, bond)].cyclic;
@@ -298,7 +301,10 @@ namespace Kitimar::Molecule {
     template<MockMolecule Mol>
     inline Mol::Bond null_bond(const Mol &mol) noexcept
     {
-        return -1;
+        if constexpr (std::is_same_v<Mol, MockIndexMolecule>)
+            return -1;
+        if constexpr (std::is_same_v<Mol, MockProxyMolecule>)
+            return {};
     }
 
 } // namespace Kitimar::Molecule

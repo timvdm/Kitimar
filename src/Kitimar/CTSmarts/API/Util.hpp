@@ -4,6 +4,7 @@
 
 #include <vector>
 #include <algorithm>
+#include <functional>
 
 namespace Kitimar::CTSmarts {
 
@@ -38,7 +39,6 @@ namespace Kitimar::CTSmarts {
             return std::tuple_cat(std::make_tuple(found), captureAtoms(mol, smarts, found, map, cap));
         }
 
-
         template<auto N>
         auto copyCapture(Molecule::Molecule auto &mol, const auto &iso, const std::array<int, N> &cap, const auto &caps) noexcept
         {
@@ -50,6 +50,25 @@ namespace Kitimar::CTSmarts {
             });
             std::ranges::copy(r, std::back_inserter(v));
             return v;
+        }
+
+        constexpr std::size_t captureHash(auto &mol, const auto &capture)
+        {
+            auto atoms = std::vector<bool>(num_atoms(mol));
+            for (const auto &atom : capture)
+                atoms[get_index(mol, atom)] = true;
+            return std::hash<std::vector<bool>>()(atoms);
+        }
+
+        template<typename Proj = std::identity>
+        constexpr auto numInversions(const auto &permutation, Proj proj = {})
+        {
+            std::size_t n = 0;
+            for (auto i = 0; i < permutation.size(); ++i)
+                for (auto j = i + 1; j < permutation.size(); ++j)
+                    if (std::invoke(proj, permutation[i]) > std::invoke(proj, permutation[j]))
+                        ++n;
+            return n;
         }
 
         constexpr bool singleAtomMatch(auto smarts, auto &mol, const auto &atom)
@@ -153,14 +172,36 @@ namespace Kitimar::CTSmarts {
                     return std::make_tuple(true, source, target);
                 return std::make_tuple(true, target, source);
             }
+        }
 
+        template<typename AtomMap>
+        constexpr void singleBondCaptures(auto smarts, auto &mol, const auto &bond, const auto &cap, std::vector<AtomMap> &maps, bool unique)
+        {
+            using IndexMap = std::array<decltype(get_index(mol, get_atom(mol, 0))), 2>;
+            auto source = get_source(mol, bond);
+            auto target = get_target(mol, bond);
+            if (!matchBondExpr(mol, bond, get<0>(smarts.bonds).expr))
+                return;
+
+            if (singleBondMatchHelper(smarts, mol, bond, source, target)) {
+                auto map = IndexMap{get_index(mol, get_source(mol, bond)),
+                                    get_index(mol, get_target(mol, bond))};
+                maps.push_back(impl::captureAtoms(mol, smarts, true, map, cap));
+                if (unique)
+                    return;
+            }
+
+            if (singleBondMatchHelper(smarts, mol, bond, target, source)) {
+                auto map = IndexMap{get_index(mol, get_target(mol, bond)),
+                                    get_index(mol, get_source(mol, bond))};
+                maps.push_back(impl::captureAtoms(mol, smarts, true, map, cap));
+            }
         }
 
         constexpr auto centralAtomMap(auto smarts, auto &mol, const auto &atom)
         {
             std::array<int, smarts.numAtoms> map;
         }
-
 
     } // namespace impl
 

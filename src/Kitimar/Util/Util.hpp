@@ -96,10 +96,12 @@ namespace Kitimar::Util {
         assert(ifs);
         auto size = std::filesystem::file_size(path);
         std::vector<std::byte> data(size);
-        std::transform(std::istreambuf_iterator<char>(ifs),
-                       std::istreambuf_iterator<char>(),
-                       data.begin(),
-                       [] (auto c) { return static_cast<std::byte>(c); });
+        if (size) {
+            std::transform(std::istreambuf_iterator<char>(ifs),
+                           std::istreambuf_iterator<char>(),
+                           data.begin(),
+                           [] (auto c) { return static_cast<std::byte>(c); });
+        }
         return data;
     }
 

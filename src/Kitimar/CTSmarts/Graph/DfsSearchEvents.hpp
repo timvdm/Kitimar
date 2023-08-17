@@ -1,7 +1,10 @@
 #pragma once
 
 #include <array>
+
+#ifdef KITIMAR_WITH_IOSTREAM
 #include <iostream>
+#endif
 
 namespace Kitimar::CTSmarts {
 
@@ -25,6 +28,7 @@ namespace Kitimar::CTSmarts {
                 bool flag = false;
             };
 
+            #ifdef KITIMAR_WITH_IOSTREAM
             friend std::ostream& operator<<(std::ostream &os, const Event &event)
             {
                 switch (event.type) {
@@ -47,6 +51,7 @@ namespace Kitimar::CTSmarts {
 
                 return os;
             }
+            #endif // KITIMAR_WITH_IOSTREAM
 
             using Events = std::array<Event, 2 * (SmartsT::numAtoms + SmartsT::numBonds)>;
 

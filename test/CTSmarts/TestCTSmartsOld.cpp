@@ -1,101 +1,15 @@
-#include <Kitimar/CTSmarts/CTSmarts.hpp>
-#include <Kitimar/Molecule/MockMolecules.hpp>
+#include "TestCTSmarts.hpp"
 
 #ifdef KITIMAR_WITH_OPENBABEL
 #include <Kitimar/OpenBabel/OpenBabel.hpp>
 #include <openbabel/parsmart.h>
 #endif
 
-#include <catch2/catch_test_macros.hpp>
+
 
 using namespace Kitimar;
 using namespace Kitimar::CTSmarts;
 
-void compare_maps(auto &&maps, const auto &refMaps)
-{
-
-    std::cout << "maps:" << std::endl;
-    for (const auto &map : maps)
-        std::cout << "    " << map << std::endl;
-
-    std::cout << "refMaps:" << std::endl;
-    for (const auto &map : refMaps)
-        std::cout << "    " << map << std::endl;
-
-
-    auto map = std::begin(maps);
-    auto refMap = std::begin(refMaps);
-    while (map != std::end(maps) && refMap != std::end(refMaps)) {
-        CHECK(std::ranges::equal(*map, *refMap));
-        ++map;
-        ++refMap;
-    }
-    CHECK(map == std::end(maps));
-    CHECK(refMap == std::end(refMaps));
-}
-
-template<ctll::fixed_string SMARTS>
-void test_unique(auto &mol, std::initializer_list<std::array<int, Smarts<SMARTS>::numAtoms>> refMaps)
-{
-    compare_maps(CTSmarts::maps<SMARTS>(mol), refMaps);
-}
-
-template<ctll::fixed_string SMARTS>
-void test_all(auto &mol, std::initializer_list<std::array<int, Smarts<SMARTS>::numAtoms>> refMaps)
-{
-    compare_maps(CTSmarts::maps<SMARTS>(mol, CTSmarts::All), refMaps);
-}
-
-TEST_CASE("CTSmarts_multi")
-{
-    auto mol = Molecule::mockAcetateAnion(); // CC(=O)[O-]
-    auto mol2 = Molecule::mockButane(); // CCCCC
-
-    test_unique<"*~*">(mol, { {0, 1}, {1, 2}, {1, 3} });
-    test_unique<"*~*~*">(mol, { {0, 1, 2}, {0, 1, 3}, {2, 1, 3} });
-    test_unique<"*~*~*~*">(mol2, { {0, 1, 2, 3} });
-    test_unique<"*~*(~*)~*">(mol, { {0, 1, 2, 3} });
-
-    test_all<"*~*">(mol, { {0, 1}, {1, 0}, {1, 2}, {2, 1}, {1, 3}, {3, 1} });
-    test_all<"*~*~*">(mol, { {0, 1, 2}, {0, 1, 3}, {2, 1, 0}, {2, 1, 3}, {3, 1, 0}, {3, 1, 2} });
-    test_all<"*~*~*~*">(mol2, { {0, 1, 2, 3}, {3, 2, 1, 0} });
-    test_all<"*~*(~*)~*">(mol, { {0, 1, 2, 3}, {0, 1, 3, 2}, {2, 1, 0, 3}, {2, 1, 3, 0}, {3, 1, 0, 2}, {3, 1, 2, 0} });
-}
-
-TEST_CASE("CTSmarts_capture")
-{
-    auto mol = Molecule::mockAcetateAnion(); // CC(=O)[O-]
-
-    auto C0 = get_atom(mol, 0);
-    auto C1 = get_atom(mol, 1);
-    auto O2 = get_atom(mol, 2);
-    auto O3 = get_atom(mol, 3);
-
-    // single atom
-    CHECK(CTSmarts::capture<"C">(mol) == std::make_tuple(true, C0));
-    CHECK(CTSmarts::capture<"O">(mol) == std::make_tuple(true, O2));
-
-    CHECK(CTSmarts::capture<"N">(mol) == std::make_tuple(false, null_atom(mol)));
-
-    // single bond
-    CHECK(CTSmarts::capture<"CC">(mol) == std::make_tuple(true, C0, C1));
-    CHECK(CTSmarts::capture<"C=O">(mol) == std::make_tuple(true, C1, O2));
-    CHECK(CTSmarts::capture<"CO">(mol) == std::make_tuple(true, C1, O3));
-
-    CHECK(CTSmarts::capture<"[C:1]=[O:2]">(mol) == std::make_tuple(true, C1, O2));
-    CHECK(CTSmarts::capture<"[C:2]=[O:1]">(mol) == std::make_tuple(true, O2, C1));
-    CHECK(CTSmarts::capture<"[C:1]=O">(mol) == std::make_tuple(true, C1));
-    CHECK(CTSmarts::capture<"C=[O:1]">(mol) == std::make_tuple(true, O2));
-
-    CHECK(CTSmarts::capture<"*#*">(mol) == std::make_tuple(false, null_atom(mol), null_atom(mol)));
-
-    // general case
-    CHECK(CTSmarts::capture<"CC=O">(mol) == std::make_tuple(true, C0, C1, O2));
-    CHECK(CTSmarts::capture<"O=CC">(mol) == std::make_tuple(true, O2, C1, C0));
-    CHECK(CTSmarts::capture<"C(=O)C">(mol) == std::make_tuple(true, C1, O2, C0));
-    CHECK(CTSmarts::capture<"CC(=O)O">(mol) == std::make_tuple(true, C0, C1, O2, O3));
-    CHECK(CTSmarts::capture<"CC(O)=O">(mol) == std::make_tuple(true, C0, C1, O3, O2));
-}
 
 TEST_CASE("CTSmarts_captureAtom")
 {
@@ -107,46 +21,46 @@ TEST_CASE("CTSmarts_captureAtom")
     auto O3 = get_atom(mol, 3);
 
     // single atom
-    CHECK(CTSmarts::captureAtom<"C">(mol) == C0);
-    CHECK(CTSmarts::captureAtom<"O">(mol) == O2);
+    CHECK(CTSmarts::find_atom<"C">(mol) == C0);
+    CHECK(CTSmarts::find_atom<"O">(mol) == O2);
 
-    CHECK(CTSmarts::captureAtom<"N">(mol) == null_atom(mol));
+    CHECK(CTSmarts::find_atom<"N">(mol) == null_atom(mol));
 
     // single bond
-    CHECK(CTSmarts::captureAtom<"CC">(mol) == C0);
-    CHECK(CTSmarts::captureAtom<"C=O">(mol) == C1);
-    CHECK(CTSmarts::captureAtom<"CO">(mol) == C1);
-    CHECK(CTSmarts::captureAtom<"O=C">(mol) == O2);
-    CHECK(CTSmarts::captureAtom<"OC">(mol) == O3);
+    CHECK(CTSmarts::find_atom<"CC">(mol) == C0);
+    CHECK(CTSmarts::find_atom<"C=O">(mol) == C1);
+    CHECK(CTSmarts::find_atom<"CO">(mol) == C1);
+    CHECK(CTSmarts::find_atom<"O=C">(mol) == O2);
+    CHECK(CTSmarts::find_atom<"OC">(mol) == O3);
 
-    CHECK(CTSmarts::captureAtom<"[C:1]C">(mol) == C0);
-    CHECK(CTSmarts::captureAtom<"[C:1]=O">(mol) == C1);
-    CHECK(CTSmarts::captureAtom<"[C:1]O">(mol) == C1);
-    CHECK(CTSmarts::captureAtom<"[O:1]=C">(mol) == O2);
-    CHECK(CTSmarts::captureAtom<"[O:1]C">(mol) == O3);
+    CHECK(CTSmarts::find_atom<"[C:1]C">(mol) == C0);
+    CHECK(CTSmarts::find_atom<"[C:1]=O">(mol) == C1);
+    CHECK(CTSmarts::find_atom<"[C:1]O">(mol) == C1);
+    CHECK(CTSmarts::find_atom<"[O:1]=C">(mol) == O2);
+    CHECK(CTSmarts::find_atom<"[O:1]C">(mol) == O3);
 
-    CHECK(CTSmarts::captureAtom<"C[C:1]">(mol) == C1);
-    CHECK(CTSmarts::captureAtom<"C=[O:1]">(mol) == O2);
-    CHECK(CTSmarts::captureAtom<"C[O:1]">(mol) == O3);
-    CHECK(CTSmarts::captureAtom<"O=[C:1]">(mol) == C1);
-    CHECK(CTSmarts::captureAtom<"O[C:1]">(mol) == C1);
+    CHECK(CTSmarts::find_atom<"C[C:1]">(mol) == C1);
+    CHECK(CTSmarts::find_atom<"C=[O:1]">(mol) == O2);
+    CHECK(CTSmarts::find_atom<"C[O:1]">(mol) == O3);
+    CHECK(CTSmarts::find_atom<"O=[C:1]">(mol) == C1);
+    CHECK(CTSmarts::find_atom<"O[C:1]">(mol) == C1);
 
-    CHECK(CTSmarts::captureAtom<"C#C">(mol) == null_atom(mol));
+    CHECK(CTSmarts::find_atom<"C#C">(mol) == null_atom(mol));
 
     // general case
-    CHECK(CTSmarts::captureAtom<"CCO">(mol) == C0);
-    CHECK(CTSmarts::captureAtom<"CO">(mol) == C1);
-    CHECK(CTSmarts::captureAtom<"OCC">(mol) == O3);
-    CHECK(CTSmarts::captureAtom<"O=CC">(mol) == O2);
-    CHECK(CTSmarts::captureAtom<"CC(=O)O">(mol) == C0);
-    CHECK(CTSmarts::captureAtom<"C(C)(=O)O">(mol) == C1);
+    CHECK(CTSmarts::find_atom<"CCO">(mol) == C0);
+    CHECK(CTSmarts::find_atom<"CO">(mol) == C1);
+    CHECK(CTSmarts::find_atom<"OCC">(mol) == O3);
+    CHECK(CTSmarts::find_atom<"O=CC">(mol) == O2);
+    CHECK(CTSmarts::find_atom<"CC(=O)O">(mol) == C0);
+    CHECK(CTSmarts::find_atom<"C(C)(=O)O">(mol) == C1);
 
-    CHECK(CTSmarts::captureAtom<"[C:1]C(=O)O">(mol) == C0);
-    CHECK(CTSmarts::captureAtom<"C[C:1](=O)O">(mol) == C1);
-    CHECK(CTSmarts::captureAtom<"CC(=[O:1])O">(mol) == O2);
-    CHECK(CTSmarts::captureAtom<"CC(=O)[O:1]">(mol) == O3);
+    CHECK(CTSmarts::find_atom<"[C:1]C(=O)O">(mol) == C0);
+    CHECK(CTSmarts::find_atom<"C[C:1](=O)O">(mol) == C1);
+    CHECK(CTSmarts::find_atom<"CC(=[O:1])O">(mol) == O2);
+    CHECK(CTSmarts::find_atom<"CC(=O)[O:1]">(mol) == O3);
 
-    CHECK(CTSmarts::captureAtom<"CC(=O)N">(mol) == null_atom(mol));
+    CHECK(CTSmarts::find_atom<"CC(=O)N">(mol) == null_atom(mol));
 }
 
 template<typename T>
@@ -168,25 +82,19 @@ TEST_CASE("EdgeList")
 
 TEST_CASE("DfsSearch")
 {
-
-    //auto smarts = Smarts<"CC(C)C">{};
-    //auto smarts = Smarts<"*1**1">{};
-    //auto smarts = Smarts<"*1**1*">{};
     auto smarts = Smarts<"*1**12**2*">{};
 
     auto edges = EdgeList(smarts);
     auto degrees = VertexDegree(smarts, edges);
     auto adjList = IncidentList(smarts, edges, degrees);
 
-    //DfsSearchEventsVisitor visitor(smarts);
-    //dfsSearch(smarts, visitor, adjList);
 
     auto dfsSearchEvents = DfsSearchEvents(smarts, adjList);
 
-    //for (const auto &event : visitor.events)
+#ifdef KITIMAR_WITH_IOSTREAM
     for (const auto &event : dfsSearchEvents.events)
         std::cout << event << std::endl;
-
+#endif
 }
 
 
@@ -628,25 +536,56 @@ TEST_CASE("ElementFilter")
 }
 
 
+#include <catch2/benchmark/catch_benchmark.hpp>
 
 
+
+/*
+constexpr auto benchmarkSMARTS = std::make_tuple(
+    ctll::fixed_string{"CC"},
+    ctll::fixed_string{"CO"}
+);
+
+using BenchmarkSMARTS = std::remove_cvref_t<decltype(benchmarkSMARTS)>;
+*/
+
+template<ctll::fixed_string SMARTS>
+struct FixedString
+{
+        static constexpr inline auto smarts = SMARTS;
+};
+
+using BenchmarkSMARTS = std::tuple<
+    FixedString<"CC">,
+    FixedString<"CO">
+>;
+
+
+TEMPLATE_LIST_TEST_CASE("Benchmark", "", BenchmarkSMARTS)
+{
+    auto SMARTS = TestType::smarts;
+
+    BENCHMARK(Util::toString(SMARTS)) {
+        return 1;
+        //std::cout << Util::toString(SMARTS) << std::endl;
+    };
+
+}
 
 TEST_CASE("Debug")
 {
-    auto mol = Molecule::mockAcetateAnion(); // CC(=O)[O-]
 
-    auto smarts1 = Smarts<"CCC">{};
-    auto smarts2 = Smarts<"CCCCC">{};
 
-    auto filterPolicy = FilterPolicy<NumAtomBondFilter>{};
+    /*
+    for (auto i = 0; i < 10; ++i) {
+        BENCHMARK("foo") {
+            return 1;
+        };
+    }
+    */
 
-    auto filterPolicyHelper1 = FilterPolicyHelper{smarts1, filterPolicy.filters};
-    auto filterPolicyHelper2 = FilterPolicyHelper{smarts2, filterPolicy.filters};
 
-    CHECK(!filterPolicyHelper1.reject(mol));
-    CHECK(filterPolicyHelper2.reject(mol));
 
-    auto filters1 = filterPolicyHelper1.filters;
 
 
 

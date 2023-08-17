@@ -41,6 +41,7 @@ using MatchCases = std::tuple<
 template<typename Mol, typename Case>
 void test_match()
 {
+    CASE_INFO("match");
     auto mol = Case::template mol<Mol>();
     CHECK(ctse::match<Case::smarts>(mol) == Case::expected);
 }
@@ -94,6 +95,7 @@ using MatchAtomCases = std::tuple<
 template<typename Mol, typename Case>
 void test_match_atom()
 {
+    INDEX_CASE_INFO("match_atom");
     auto mol = Case::template mol<Mol>();
     auto atom = get_atom(mol, Case::index);
     CHECK(ctse::match_atom<Case::smarts>(mol, atom) == Case::expected);
@@ -150,6 +152,7 @@ using MatchBondCases = std::tuple<
 template<typename Mol, typename Case>
 void test_match_bond()
 {
+    INDEX_CASE_INFO("match_bond");
     auto mol = Case::template mol<Mol>();
     auto bond = get_bond(mol, Case::index);
     CHECK(ctse::match_bond<Case::smarts>(mol, bond) == Case::expected);

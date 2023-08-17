@@ -11,6 +11,12 @@ using namespace Kitimar::CTSmarts;
 using Molecule::MockAcetateAnion;
 using Molecule::MockButane;
 
+template<typename Case>
+void test_maps_impl(const auto &maps)
+{
+    CHECK_THAT(toVectorMaps(maps), Catch::Matchers::UnorderedRangeEquals(Case::expected.maps()));
+}
+
 //
 // maps_unique(mol)
 //
@@ -49,7 +55,8 @@ using MapsUniqueCases = std::tuple<
 template<typename Mol, typename Case>
 void test_maps_unique()
 {
-    auto mol = Case::template mol<Mol>();    
+    CASE_INFO("maps_unique");
+    auto mol = Case::template mol<Mol>();
     CHECK_THAT(toVectorMaps(ctse::maps<Case::smarts>(mol)),
                Catch::Matchers::UnorderedRangeEquals(Case::expected.maps()));
     CHECK_THAT(toVectorMaps(ctse::maps<Case::smarts>(mol, ctse::Unique)),
@@ -104,6 +111,7 @@ using MapsAllCases = std::tuple<
 template<typename Mol, typename Case>
 void test_maps_all()
 {
+    CASE_INFO("maps_all");
     auto mol = Case::template mol<Mol>();
     CHECK_THAT(toVectorMaps(ctse::maps<Case::smarts>(mol, ctse::All)),
                Catch::Matchers::UnorderedRangeEquals(Case::expected.maps()));
@@ -150,6 +158,7 @@ using MapsAtomUniqueCases = std::tuple<
 template<typename Mol, typename Case>
 void test_maps_atom_unique()
 {
+    INDEX_CASE_INFO("maps_atom_unique");
     auto mol = Case::template mol<Mol>();
     auto atom = get_atom(mol, Case::index);
 
@@ -209,6 +218,7 @@ using MapsAtomAllCases = std::tuple<
 template<typename Mol, typename Case>
 void test_maps_atom_all()
 {
+    INDEX_CASE_INFO("maps_atom_all");
     auto mol = Case::template mol<Mol>();
     auto atom = get_atom(mol, Case::index);
 
@@ -260,6 +270,7 @@ using MapsBondUniqueCases = std::tuple<
 template<typename Mol, typename Case>
 void test_maps_bond_unique()
 {
+    INDEX_CASE_INFO("maps_bond_unique");
     auto mol = Case::template mol<Mol>();
     auto bond = get_bond(mol, Case::index);
 
@@ -315,6 +326,7 @@ using MapsBondAllCases = std::tuple<
 template<typename Mol, typename Case>
 void test_maps_bond_all()
 {
+    INDEX_CASE_INFO("maps_bond_all");
     auto mol = Case::template mol<Mol>();
     auto bond = get_bond(mol, Case::index);
 

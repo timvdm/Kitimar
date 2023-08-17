@@ -31,7 +31,7 @@ int main(int argc, char **argv)
                    get_charge(mol, atom),
                    get_degree(mol, atom),
                    get_implicit_hydrogens(mol, atom),
-                   is_cyclic_atom(mol, atom),
+                   is_ring_atom(mol, atom),
                    is_aromatic_atom(mol, atom));
     }
     // Bond
@@ -41,7 +41,7 @@ int main(int argc, char **argv)
                    get_index(mol, get_source(mol, bond)),
                    get_index(mol, get_target(mol, bond)),
                    get_order(mol, bond),
-                   is_cyclic_bond(mol, bond),
+                   is_ring_bond(mol, bond),
                    is_aromatic_bond(mol, bond));
     }
     fmt::println("    return mol;");

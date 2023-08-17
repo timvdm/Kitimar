@@ -102,7 +102,7 @@ namespace Kitimar::CTSmarts {
     template<int N>
     constexpr bool matchAtomExpr(const auto &mol, const auto &atom, Connectivity<N>)
     {
-        return get_connectivity(mol, atom) == N;
+        return get_degree(mol, atom) + get_implicit_hydrogens(mol, atom) == N;
     }
 
     template<int N>
@@ -119,12 +119,12 @@ namespace Kitimar::CTSmarts {
 
     constexpr bool matchAtomExpr(const auto &mol, const auto &atom, Cyclic)
     {
-        return is_cyclic_atom(mol, atom);
+        return is_ring_atom(mol, atom);
     }
 
     constexpr bool matchAtomExpr(const auto &mol, const auto &atom, Acyclic)
     {
-        return !is_cyclic_atom(mol, atom);
+        return !is_ring_atom(mol, atom);
     }
 
     template<int N>
@@ -142,7 +142,7 @@ namespace Kitimar::CTSmarts {
     template<int N>
     constexpr bool matchAtomExpr(const auto &mol, const auto &atom, RingConnectivity<N>)
     {
-        return get_ring_connectivity(mol, atom) == N;
+        return get_ring_degree(mol, atom) == N;
     }
 
     template<int N>
@@ -184,7 +184,7 @@ namespace Kitimar::CTSmarts {
 
     constexpr bool matchBondExpr(const auto &mol, const auto &bond, RingBond)
     {
-        return is_cyclic_bond(mol, bond);
+        return is_ring_bond(mol, bond);
     }
 
 } // namespace ctsmarts

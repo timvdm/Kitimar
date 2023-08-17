@@ -1,5 +1,4 @@
 #include "TestCTSmarts.hpp"
-#include <Kitimar/Util/Util.hpp>
 
 #include <catch2/matchers/catch_matchers_range_equals.hpp>
 
@@ -9,6 +8,15 @@ using namespace Kitimar;
 using namespace Kitimar::CTSmarts;
 
 using Molecule::MockAcetateAnion;
+
+template<typename Case>
+void test_map_impl(const auto &tuple)
+{
+    auto [found, map] = tuple;
+    CHECK(found == Case::expected.found);
+    if (found)
+        CHECK_THAT(map, Catch::Matchers::RangeEquals(Case::expected.map));
+}
 
 //
 // map(mol)
@@ -56,11 +64,9 @@ using MapCases = std::tuple<
 template<typename Mol, typename Case>
 void test_map()
 {
+    CASE_INFO("map");
     auto mol = Case::template mol<Mol>();
-    auto [found, map] = ctse::map<Case::smarts>(mol);
-    CHECK(found == Case::expected.found);
-    if (found)
-        CHECK_THAT(map, Catch::Matchers::RangeEquals(Case::expected.map));
+    test_map_impl<Case>(ctse::map<Case::smarts>(mol));
 }
 
 TEMPLATE_LIST_TEST_CASE("map", "", MapCases)
@@ -109,21 +115,14 @@ using MapAtomCases = std::tuple<
 template<typename Mol, typename Case>
 void test_map_atom()
 {
-    INFO("map_atom< \"" << Util::toString(Case::smarts) << "\" >( \"" << Case::smiles << "\" , " << Case::index << " )");
+    INDEX_CASE_INFO("map_atom");
     auto mol = Case::template mol<Mol>();
     auto atom = get_atom(mol, Case::index);
 
-    auto [found, map] = ctse::map_atom<Case::smarts>(mol, atom);
-    CHECK(found == Case::expected.found);
-    if (found)
-        CHECK_THAT(map, Catch::Matchers::RangeEquals(Case::expected.map));
+    test_map_impl<Case>(ctse::map_atom<Case::smarts>(mol, atom));
 
-    if constexpr (!Molecule::MoleculeTraits<Mol>::SameAtomBondType) {
-        auto [found, map] = ctse::map<Case::smarts>(mol, atom);
-        CHECK(found == Case::expected.found);
-        if (found)
-            CHECK_THAT(map, Catch::Matchers::RangeEquals(Case::expected.map));
-    }
+    if constexpr (!Molecule::MoleculeTraits<Mol>::SameAtomBondType)
+        test_map_impl<Case>(ctse::map<Case::smarts>(mol, atom));
 }
 
 TEMPLATE_LIST_TEST_CASE("map_atom", "", MapAtomCases)
@@ -179,21 +178,14 @@ using MapBondCases = std::tuple<
 template<typename Mol, typename Case>
 void test_map_bond()
 {
-    INFO("map_bond< \"" << Util::toString(Case::smarts) << "\" >( \"" << Case::smiles << "\" , " << Case::index << " )");
+    INDEX_CASE_INFO("map_bond");
     auto mol = Case::template mol<Mol>();
     auto bond = get_bond(mol, Case::index);
 
-    auto [found, map] = ctse::map_bond<Case::smarts>(mol, bond);
-    CHECK(found == Case::expected.found);
-    if (found)
-        CHECK_THAT(map, Catch::Matchers::RangeEquals(Case::expected.map));
+    test_map_impl<Case>(ctse::map_bond<Case::smarts>(mol, bond));
 
-    if constexpr (!Molecule::MoleculeTraits<Mol>::SameAtomBondType) {
-        auto [found, map] = ctse::map<Case::smarts>(mol, bond);
-        CHECK(found == Case::expected.found);
-        if (found)
-            CHECK_THAT(map, Catch::Matchers::RangeEquals(Case::expected.map));
-    }
+    if constexpr (!Molecule::MoleculeTraits<Mol>::SameAtomBondType)
+        test_map_impl<Case>(ctse::map<Case::smarts>(mol, bond));
 }
 
 TEMPLATE_LIST_TEST_CASE("map_bond", "", MapBondCases)

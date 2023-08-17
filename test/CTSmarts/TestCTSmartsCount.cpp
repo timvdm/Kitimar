@@ -38,6 +38,7 @@ using CountUniqueCases = std::tuple<
 template<typename Mol, typename Case>
 void test_count_unique()
 {
+    CASE_INFO("count_unique");
     auto mol = Case::template mol<Mol>();
     CHECK(ctse::count<Case::smarts>(mol) == Case::expected);
     CHECK(ctse::count<Case::smarts>(mol, ctse::Unique) == Case::expected);
@@ -83,6 +84,7 @@ using CountAllCases = std::tuple<
 template<typename Mol, typename Case>
 void test_count_all()
 {
+    CASE_INFO("count_all");
     auto mol = Case::template mol<Mol>();
     CHECK(ctse::count<Case::smarts>(mol, ctse::All) == Case::expected);
     CHECK(ctse::count_all<Case::smarts>(mol) == Case::expected);
@@ -126,6 +128,7 @@ using CountAtomUniqueCases = std::tuple<
 template<typename Mol, typename Case>
 void test_count_atom_unique()
 {
+    INDEX_CASE_INFO("count_atom_unique");
     auto mol = Case::template mol<Mol>();
     auto atom = get_atom(mol, Case::index);
     CHECK(ctse::count_atom<Case::smarts>(mol, atom) == Case::expected);
@@ -175,6 +178,7 @@ using CountAtomAllCases = std::tuple<
 template<typename Mol, typename Case>
 void test_count_atom_all()
 {
+    INDEX_CASE_INFO("count_atom_all");
     auto mol = Case::template mol<Mol>();
     auto atom = get_atom(mol, Case::index);
     CHECK(ctse::count_atom<Case::smarts>(mol, atom, ctse::All) == Case::expected);
@@ -220,6 +224,7 @@ using CountBondUniqueCases = std::tuple<
 template<typename Mol, typename Case>
 void test_count_bond_unique()
 {
+    INDEX_CASE_INFO("count_bond_unique");
     auto mol = Case::template mol<Mol>();
     auto bond = get_bond(mol, Case::index);
     CHECK(ctse::count_bond<Case::smarts>(mol, bond) == Case::expected);
@@ -267,6 +272,7 @@ using CountBondAllCases = std::tuple<
 template<typename Mol, typename Case>
 void test_count_bond_all()
 {
+    INDEX_CASE_INFO("count_bond_all");
     auto mol = Case::template mol<Mol>();
     auto bond = get_bond(mol, Case::index);
     CHECK(ctse::count_bond<Case::smarts>(mol, bond, ctse::All) == Case::expected);

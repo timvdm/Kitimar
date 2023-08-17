@@ -1,9 +1,17 @@
 #pragma once
 
+#include <Kitimar/Util/Util.hpp>
+
 #include <Kitimar/CTSmarts/CTSmarts.hpp>
 #include <Kitimar/Molecule/MockMolecules.hpp>
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/catch_template_test_macros.hpp>
+
+#define CASE_INFO(name) \
+    INFO(name << "< \"" << Util::toString(Case::smarts) << "\" >( \"" << Case::smiles << "\" )")
+
+#define INDEX_CASE_INFO(name) \
+    INFO(name << "< \"" << Util::toString(Case::smarts) << "\" >( \"" << Case::smiles << "\" , " << Case::index << " )")
 
 template<template<typename> class MolFactory, ctll::fixed_string SMARTS>
 struct TestCase
@@ -49,7 +57,7 @@ struct TestMap
     static constexpr inline std::array<uint32_t, sizeof...(Index)> map = {Index...};
 };
 
-template<int ...Index>
+template<uint32_t ...Index>
 using Map = TestMap<Index...>;
 
 using EmptyMap = TestMap<>;
@@ -59,6 +67,18 @@ static auto toVectorMaps(const auto &arrays)
     std::vector<std::vector<uint32_t>> vectors;
     for (const auto &array : arrays)
         vectors.push_back({std::begin(array), std::end(array)});
+    return vectors;
+}
+
+static auto toVectorMaps(const auto &arrays, auto &mol)
+{
+    std::vector<std::vector<uint32_t>> vectors;
+    for (const auto &array : arrays) {
+        auto map = array | std::views::transform([&mol] (const auto &atom) {
+            return get_index(mol, atom);
+        });
+        vectors.push_back({std::begin(map), std::end(map)});
+    }
     return vectors;
 }
 

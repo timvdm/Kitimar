@@ -13,7 +13,7 @@ namespace Kitimar::Molecule {
 
 
     template<typename Mol>
-    concept IsAtomList = requires (Mol &mol)
+    concept AtomList = requires (Mol &mol)
     {
         { num_atoms(mol) } -> std::convertible_to<std::size_t>;
         { get_atom(mol, 0) };
@@ -23,7 +23,7 @@ namespace Kitimar::Molecule {
     };
 
     template<typename Mol>
-    concept IsBondList = requires (Mol &mol)
+    concept BondList = requires (Mol &mol)
     {
         { num_bonds(mol) } -> std::convertible_to<std::size_t>;
         { get_bond(mol, 0) };
@@ -35,8 +35,8 @@ namespace Kitimar::Molecule {
     };
 
     template<typename Mol>
-    concept MoleculeGraph = IsAtomList<Mol> &&
-                            IsBondList<Mol>;
+    concept MoleculeGraph = AtomList<Mol> &&
+                            BondList<Mol>;
 
     template<typename Mol>
     concept IncidentBondList = requires (Mol &mol)
@@ -70,6 +70,13 @@ namespace Kitimar::Molecule {
         { get_charge(mol, get_atom(mol, 0)) } -> std::signed_integral;
     };
 
+    // bond order sum (including implicit hydrogens)
+    template<typename Mol>
+    concept ValenceLayer = requires (Mol &mol)
+    {
+        { get_valence(mol, get_atom(mol, 0)) } -> std::integral;
+    };
+
     template<typename Mol>
     concept BondOrderLayer = requires (Mol &mol)
     {
@@ -80,12 +87,29 @@ namespace Kitimar::Molecule {
     concept ImplicitHydrogensLayer = requires (Mol &mol)
     {
         { get_implicit_hydrogens(mol, get_atom(mol, 0)) } -> std::integral;
+        { get_total_hydrogens(mol, get_atom(mol, 0)) } -> std::integral;
     };
 
     template<typename Mol>
     concept MobileHydrogensLayer = requires (Mol &mol)
     {
         { get_mobile_hydrogens(mol, get_atom(mol, 0)) } -> std::integral;
+    };
+
+    template<typename Mol>
+    concept RingLayer = requires (Mol &mol)
+    {
+        { is_ring_atom(mol, get_atom(mol, 0)) } -> std::same_as<bool>;
+        { is_ring_bond(mol, get_bond(mol, 0)) } -> std::same_as<bool>;
+    };
+
+    template<typename Mol>
+    concept RingSetLayer = requires (Mol &mol)
+    {
+        { is_in_ring_size(mol, get_atom(mol, 0), 6) } -> std::same_as<bool>;
+        { get_ring_count(mol, get_atom(mol, 0), 6) } -> std::integral;
+        { get_ring_degree(mol, get_atom(mol, 0), 6) } -> std::integral;
+
     };
 
     template<typename Mol>
@@ -102,7 +126,11 @@ namespace Kitimar::Molecule {
                        IncidentBondList<Mol> &&
                        AdjacentAtomList<Mol> &&
                        ElementLayer<Mol> &&
-                       IsotopeLayer<Mol>;
+                       IsotopeLayer<Mol> &&
+                       ChargeLayer<Mol> &&
+                       BondOrderLayer<Mol> &&
+                       //ImplicitHydrogensLayer<Mol> &&
+                       AromaticLayer<Mol>;
 
 
     template<Molecule Mol>

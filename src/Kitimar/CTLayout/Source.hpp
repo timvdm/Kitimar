@@ -134,10 +134,12 @@ namespace Kitimar::CTLayout {
                 assert(ifs);
                 auto size = std::filesystem::file_size(filename);
                 m_data = std::make_shared<std::vector<std::byte>>(size);
-                std::transform(std::istreambuf_iterator<char>(ifs),
-                               std::istreambuf_iterator<char>(),
-                               m_data->begin(),
-                               [] (auto c) { return static_cast<std::byte>(c); });                
+                if (size) {
+                    std::transform(std::istreambuf_iterator<char>(ifs),
+                                   std::istreambuf_iterator<char>(),
+                                   m_data->begin(),
+                                   [] (auto c) { return static_cast<std::byte>(c); });
+                }
             }
 
             InMemorySource(const std::shared_ptr<std::vector<std::byte>> &data, std::size_t offset = 0) : m_data{data}, m_offset{offset}

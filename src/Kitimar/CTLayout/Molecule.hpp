@@ -338,7 +338,7 @@ namespace Kitimar::CTLayout {
             return get_bond_property(mol, bond, OrderValue{}, OrderList{});
     }
 
-    constexpr auto is_cyclic_bond(const auto &mol, auto bond) noexcept
+    constexpr auto is_ring_bond(const auto &mol, auto bond) noexcept
     {
         assert(bond < num_bonds(mol));
         if constexpr (requires { mol.isCyclicBond(0); })
@@ -479,7 +479,7 @@ namespace Kitimar::CTLayout {
                     bondWriter.get(SourceValue{}).write(static_cast<SourceValue::Type>(get_index(mol, get_source(mol, bond))));
                     bondWriter.get(TargetValue{}).write(static_cast<TargetValue::Type>(get_index(mol, get_target(mol, bond))));
                     bondWriter.get(OrderValue{}).write(static_cast<OrderValue::Type>(get_order(mol, bond)));
-                    bondWriter.get(CyclicBondValue{}).write(static_cast<CyclicBondValue::Type>(is_cyclic_bond(mol, bond)));
+                    bondWriter.get(CyclicBondValue{}).write(static_cast<CyclicBondValue::Type>(is_ring_bond(mol, bond)));
                     bondWriter.get(AromaticBondValue{}).write(static_cast<AromaticBondValue::Type>(is_aromatic_bond(mol, bond)));
                 }
             } else if constexpr (contains(Layout{}, SourceList{})) {
@@ -502,7 +502,7 @@ namespace Kitimar::CTLayout {
                     auto orderWriter = orderList.at(index);
                     orderWriter.write(static_cast<OrderValue::Type>(get_order(mol, bond)));
                     auto cyclicWriter = cyclicList.at(index);
-                    cyclicWriter.write(static_cast<CyclicBondValue::Type>(is_cyclic_bond(mol, bond)));
+                    cyclicWriter.write(static_cast<CyclicBondValue::Type>(is_ring_bond(mol, bond)));
                     auto aromaticWriter = aromaticList.at(index);
                     aromaticWriter.write(static_cast<AromaticBondValue::Type>(is_aromatic_bond(mol, bond)));
                 }
@@ -537,7 +537,7 @@ namespace Kitimar::CTLayout {
                     for (auto bond : get_bonds(mol)) {
                         auto type = BondType{
                             static_cast<uint8_t>(get_order(mol, bond)),
-                            is_cyclic_bond(mol, bond),
+                            is_ring_bond(mol, bond),
                             is_aromatic_bond(mol, bond)
                         };
 
@@ -610,7 +610,7 @@ namespace Kitimar::CTLayout {
                 auto index = get_index(mol, bond);
                 auto bondType = BondType{
                     static_cast<uint8_t>(get_order(mol, bond)),
-                    static_cast<bool>(is_cyclic_bond(mol, bond)),
+                    static_cast<bool>(is_ring_bond(mol, bond)),
                     static_cast<bool>(is_aromatic_bond(mol, bond)),
 
                 };
