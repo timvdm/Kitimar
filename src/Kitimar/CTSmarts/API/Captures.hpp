@@ -16,10 +16,10 @@ namespace Kitimar::CTSmarts {
     {
         static_assert(M != MapType::Single, "Use CTSmarts::capture<\"SMARTS\">(mol) to check for a single match.");
         auto smarts = Smarts<SMARTS>{};
-        static constexpr auto cap = captureMapping(smarts);
+        static constexpr auto captureSet = captureMapping(smarts);
         //using Maps = IsomorphismMaps<decltype(get_index(mol, get_atom(mol, 0))), smarts.numAtoms>;
-        using IndexMap = std::array<decltype(get_index(mol, get_atom(mol, 0))), cap.size() ? cap.size() : smarts.numAtoms>;
-        using AtomMap = std::array<decltype(get_atom(mol, 0)), cap.size() ? cap.size() : smarts.numAtoms>;
+        using IndexMap = std::array<decltype(get_index(mol, get_atom(mol, 0))), captureSet.size() ? captureSet.size() : smarts.numAtoms>;
+        using AtomMap = std::array<decltype(get_atom(mol, 0)), captureSet.size() ? captureSet.size() : smarts.numAtoms>;
         using AtomMaps = std::vector<AtomMap>;
 
 
@@ -29,18 +29,18 @@ namespace Kitimar::CTSmarts {
             maps.reserve(num_atoms(mol));
             for (auto atom : get_atoms(mol))
                 if (impl::singleAtomMatch(smarts, mol, atom))
-                    maps.push_back(impl::captureAtoms(mol, smarts, true, IndexMap{get_index(mol, atom)}, cap));
+                    maps.push_back(impl::toCapture(mol, smarts, captureSet, true, IndexMap{get_index(mol, atom)}));
             return maps;
         } else if constexpr (smarts.isSingleBond) {
             // Optimize single bond SMARTS
             AtomMaps maps;
             maps.reserve(num_bonds(mol));
-            if constexpr (cap.size() == smarts.numAtoms) {
+            if constexpr (captureSet.size() == smarts.numAtoms) {
                 for (auto bond : get_bonds(mol))
-                    impl::singleBondCaptures(smarts, mol, bond, cap, maps, M == MapType::Unique);
+                    impl::singleBondCaptures(smarts, mol, bond, captureSet, maps, M == MapType::Unique);
             } else {
                 for (auto bond : get_bonds(mol))
-                    impl::singleBondCaptures(smarts, mol, bond, cap, maps, false);
+                    impl::singleBondCaptures(smarts, mol, bond, captureSet, maps, false);
 
                 // Remove duplicates
                 if constexpr (M == MapType::Unique) {
@@ -52,24 +52,20 @@ namespace Kitimar::CTSmarts {
             }
             return maps;
         } else {
-            if constexpr (cap.size() == smarts.numAtoms) {
+            if constexpr (captureSet.size() == smarts.numAtoms) {
                 auto iso = Isomorphism<Mol, decltype(smarts), M>{};
                 if constexpr (__cpp_lib_ranges >= 202110L)
                     return iso.all(mol) | std::views::transform([&] (const auto &map) {
-                        return impl::captureAtoms(mol, smarts, true, map, cap);
+                        return impl::toCapture(mol, smarts, true, map, captureSet);
                     });
                 else
                     // missing std::ranges::owning_view
-                    return impl::copyCapture(mol, iso, cap, iso.all(mol));
+                    return impl::toCaptures(mol, iso, captureSet, iso.all(mol));
             } else {
                 auto iso = Isomorphism<Mol, decltype(smarts), MapType::All>{};
-                auto r = iso.all(mol) | std::views::transform([&] (const auto &map) {
-                    return impl::captureAtoms(mol, smarts, true, map, cap);
-                });
-                AtomMaps maps = {r.begin(), r.end()};
+                AtomMaps maps = impl::toCaptures(mol, iso, captureSet, iso.all(mol));
 
                 // Remove duplicates
-
                 if constexpr (M == MapType::Unique) {
                     auto proj = [&mol] (const auto &atoms) { return impl::captureHash(mol, atoms); };
                     std::ranges::sort(maps, {}, proj);
@@ -77,21 +73,8 @@ namespace Kitimar::CTSmarts {
                     maps.erase(first, last);
                 }
 
-
                 return maps;
-
             }
-
-            /*
-            auto iso = Isomorphism<Mol, decltype(smarts), M>{};
-            if constexpr (__cpp_lib_ranges >= 202110L)
-                return iso.all(mol) | std::views::transform([&] (const auto &map) {
-                    return impl::captureAtoms(mol, smarts, true, map, cap);
-                });
-            else
-                // missing std::ranges::owning_view
-                return impl::copyCapture(mol, iso, cap, iso.all(mol));
-            */
         }
     }
 
@@ -124,14 +107,14 @@ namespace Kitimar::CTSmarts {
         static_assert(M != MapType::Single && !smarts.isSingleAtom,
                     "Use CTSmarts::capture_atom<\"SMARTS\">(mol, atom) to check for a single match.");
         auto iso = Isomorphism<Mol, decltype(smarts), M, NoOptimizationPolicy>{}; // FIXME: NoOptimizationPolicy
-        static constexpr auto cap = captureMapping(smarts);
+        static constexpr auto captureSet = captureMapping(smarts);
         if constexpr (__cpp_lib_ranges >= 202110L)
             return iso.allAtom(mol, atom) | std::views::transform([&] (const auto &map) {
-                return impl::captureAtoms(mol, smarts, true, map, cap);
+                return impl::toCapture(mol, smarts, captureSet, true, map);
             });
         else
             // missing std::ranges::owning_view
-            return impl::copyCapture(mol, iso, cap, iso.allAtom(mol, atom));
+            return impl::toCaptures(mol, iso, captureSet, iso.allAtom(mol, atom));
     }
 
     // ctse::captures_atom_unique<"SMARTS">(mol, atom) -> std::vector<std::array<Atom, N>>
@@ -163,14 +146,14 @@ namespace Kitimar::CTSmarts {
         static_assert(M != MapType::Single && !smarts.isSingleAtom,
                     "Use CTSmarts::capture_bond<\"SMARTS\">(mol, bond) to check for a single match.");
         auto iso = Isomorphism<Mol, decltype(smarts), M, NoOptimizationPolicy>{}; // FIXME: NoOptimizationPolicy
-        static constexpr auto cap = captureMapping(smarts);
+        static constexpr auto captureSet = captureMapping(smarts);
         if constexpr (__cpp_lib_ranges >= 202110L)
             return iso.allBond(mol, bond) | std::views::transform([&] (const auto &map) {
-                return impl::captureAtoms(mol, smarts, true, map, cap);
+                return impl::toCapture(mol, smarts, captureSet, true, map);
             });
         else
             // missing std::ranges::owning_view
-            return impl::copyCapture(mol, iso, cap, iso.allBond(mol, bond));
+            return impl::toCaptures(mol, iso, captureSet, iso.allBond(mol, bond));
     }
 
     // ctse::captures_bond_unique<"SMARTS">(mol, bond) -> std::vector<std::array<Atom, N>>

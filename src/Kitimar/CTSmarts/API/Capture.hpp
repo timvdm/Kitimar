@@ -31,9 +31,9 @@ namespace Kitimar::CTSmarts {
             return impl::singleBondCapture(smarts, mol, null_bond(mol), 0);
         } else {
             auto iso = Isomorphism<Mol, decltype(smarts), MapType::Single>{};
-            constexpr auto cap = captureMapping(smarts);
+            constexpr auto captureSet = captureMapping(smarts);
             auto [found, map] = iso.single(mol);
-            return impl::captureMatchAtoms(mol, smarts, found, map, cap);
+            return impl::captureMatchAtoms(mol, smarts, captureSet, found, map);
         }
     }
 
@@ -49,9 +49,9 @@ namespace Kitimar::CTSmarts {
         auto smarts = Smarts<SMARTS>{};
         static_assert(!smarts.isSingleAtom, "Use CTSmarts::match_atom<\"SMARTS\">(mol, atom) to check for a single match.");
         auto iso = Isomorphism<Mol, decltype(smarts), MapType::Single, NoOptimizationPolicy>{}; // FIXME: NoOptimizationPolicy
-        constexpr auto cap = captureMapping(smarts);
+        constexpr auto captureSet = captureMapping(smarts);
         auto [found, map] = iso.singleAtom(mol, atom);
-        return impl::captureMatchAtoms(mol, smarts, found, map, cap);
+        return impl::captureMatchAtoms(mol, smarts, captureSet, found, map);
     }
 
     //
@@ -66,9 +66,9 @@ namespace Kitimar::CTSmarts {
         auto smarts = Smarts<SMARTS>{};
         static_assert(!smarts.isSingleAtom, "Use CTSmarts::match_atom<\"SMARTS\">(mol, atom) to check for a single match.");
         auto iso = Isomorphism<Mol, decltype(smarts), MapType::Single, NoOptimizationPolicy>{}; // FIXME: NoOptimizationPolicy
-        constexpr auto cap = captureMapping(smarts);
+        constexpr auto captureSet = captureMapping(smarts);
         auto [found, map] = iso.singleBond(mol, atom);
-        return impl::captureMatchAtoms(mol, smarts, found, map, cap);
+        return impl::captureMatchAtoms(mol, smarts, captureSet, found, map);
     }
 
     //

@@ -10,9 +10,13 @@ namespace Kitimar::CTSmarts {
 
     namespace impl {
 
-        template<typename Smarts, auto NumCaptures>
-        auto captureAtoms(Molecule::Molecule auto &mol, Smarts, bool found, const auto &map,
-                          const std::array<int, NumCaptures> &cap)
+        /**
+         * @brief Convert atom index map to atom map using capture set.
+         */
+        template<auto NumCaptures>
+        auto toCapture(Molecule::Molecule auto &mol, auto smarts,
+                       const std::array<int, NumCaptures> &captureSet,
+                       bool found, const auto &map)
         {
             using Atom = decltype(get_atom(mol, 0));
             if constexpr (NumCaptures) {
@@ -21,35 +25,33 @@ namespace Kitimar::CTSmarts {
                     atoms.fill(null_atom(mol));
                 else
                     for (auto i = 0; i < NumCaptures; ++i)
-                        atoms[i] = get_atom(mol, map[cap[i]]);
+                        atoms[i] = get_atom(mol, map[captureSet[i]]);
                 return atoms;
             } else {
-                std::array<Atom, Smarts::numAtoms> atoms = {};
+                std::array<Atom, smarts.numAtoms> atoms = {};
                 if (!found)
                     atoms.fill(null_atom(mol));
                 else
-                    for (auto i = 0; i < Smarts::numAtoms; ++i)
+                    for (auto i = 0; i < smarts.numAtoms; ++i)
                         atoms[i] = get_atom(mol, map[i]); // FIXME: null atoms...
                 return atoms;
             }
         }
 
-        auto captureMatchAtoms(Molecule::Molecule auto &mol, auto smarts, bool found, const auto &map, const auto &cap)
-        {
-            return std::tuple_cat(std::make_tuple(found), captureAtoms(mol, smarts, found, map, cap));
-        }
-
         template<auto N>
-        auto copyCapture(Molecule::Molecule auto &mol, const auto &iso, const std::array<int, N> &cap, const auto &caps) noexcept
+        auto toCaptures(Molecule::Molecule auto &mol, const auto &iso, const std::array<int, N> &captureSet, const auto &maps) noexcept
         {
             using Atom = decltype(get_atom(mol, 0));
             static constexpr auto M = N ? N : iso.smarts.numAtoms;
-            std::vector<std::array<Atom, M>> v;
-            auto r = caps | std::views::transform([&] (const auto &map) {
-                return captureAtoms(mol, iso.smarts, true, map, cap);
+            auto r = maps | std::views::transform([&] (const auto &map) {
+                return toCapture(mol, iso.smarts, captureSet, true, map);
             });
-            std::ranges::copy(r, std::back_inserter(v));
-            return v;
+            return std::vector<std::array<Atom, M>>{r.begin(), r.end()};
+        }
+
+        auto captureMatchAtoms(Molecule::Molecule auto &mol, auto smarts, const auto &captureSet, bool found, const auto &map)
+        {
+            return std::tuple_cat(std::make_tuple(found), toCapture(mol, smarts, captureSet, found, map));
         }
 
         constexpr std::size_t captureHash(auto &mol, const auto &capture)
@@ -175,7 +177,7 @@ namespace Kitimar::CTSmarts {
         }
 
         template<typename AtomMap>
-        constexpr void singleBondCaptures(auto smarts, auto &mol, const auto &bond, const auto &cap, std::vector<AtomMap> &maps, bool unique)
+        constexpr void singleBondCaptures(auto smarts, auto &mol, const auto &bond, const auto &captureSet, std::vector<AtomMap> &maps, bool unique)
         {
             using IndexMap = std::array<decltype(get_index(mol, get_atom(mol, 0))), 2>;
             auto source = get_source(mol, bond);
@@ -186,7 +188,7 @@ namespace Kitimar::CTSmarts {
             if (singleBondMatchHelper(smarts, mol, bond, source, target)) {
                 auto map = IndexMap{get_index(mol, get_source(mol, bond)),
                                     get_index(mol, get_target(mol, bond))};
-                maps.push_back(impl::captureAtoms(mol, smarts, true, map, cap));
+                maps.push_back(impl::toCapture(mol, smarts, captureSet, true, map));
                 if (unique)
                     return;
             }
@@ -194,7 +196,7 @@ namespace Kitimar::CTSmarts {
             if (singleBondMatchHelper(smarts, mol, bond, target, source)) {
                 auto map = IndexMap{get_index(mol, get_target(mol, bond)),
                                     get_index(mol, get_source(mol, bond))};
-                maps.push_back(impl::captureAtoms(mol, smarts, true, map, cap));
+                maps.push_back(impl::toCapture(mol, smarts, captureSet, true, map));
             }
         }
 
