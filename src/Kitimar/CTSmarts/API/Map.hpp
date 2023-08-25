@@ -11,7 +11,7 @@ namespace Kitimar::CTSmarts {
 
     // ctse::map<"SMARTS">(mol) -> std::tuple<bool, std::array<int, N>>
 
-    template<ctll::fixed_string SMARTS, Molecule::Molecule Mol>
+    template<ctll::fixed_string SMARTS, typename Config = DefaultConfig, Molecule::Molecule Mol>
         constexpr auto map(Mol &mol)
     {
         auto smarts = Smarts<SMARTS>{};
@@ -22,7 +22,7 @@ namespace Kitimar::CTSmarts {
                 if (impl::singleAtomMatch(smarts, mol, atom))
                     return std::make_tuple(true, Map{get_index(mol, atom)});
             return std::make_tuple(false, Map{});
-        } else if constexpr (smarts.isSingleBond) {
+        } else if constexpr (Config::specialize && smarts.isSingleBond) {
             // Optimize single bond SMARTS
             for (auto bond : get_bonds(mol)) {
                 auto m = impl::singleBondMap<Map>(smarts, mol, bond);
@@ -31,7 +31,7 @@ namespace Kitimar::CTSmarts {
             }
             return std::make_tuple(false, Map{});
         } else {
-            auto iso = Isomorphism<Mol, decltype(smarts), MapType::Single>{};
+            auto iso = Isomorphism<Mol, decltype(smarts), SearchType::Single, Config>{};
             return iso.single(mol);
         }
     }
@@ -42,12 +42,12 @@ namespace Kitimar::CTSmarts {
 
     // ctse::map_atom<"SMARTS">(mol, atom) -> std::tuple<bool, std::array<int, N>>
 
-    template<ctll::fixed_string SMARTS, Molecule::Molecule Mol>
+    template<ctll::fixed_string SMARTS, typename Config = DefaultConfig, Molecule::Molecule Mol>
     constexpr auto map_atom(Mol &mol, const auto &atom)
     {
         auto smarts = Smarts<SMARTS>{};
         static_assert(!smarts.isSingleAtom, "Use CTSmarts::match_atom<\"SMARTS\">(mol, atom) to check for a single match.");
-        auto iso = Isomorphism<Mol, decltype(smarts), MapType::Single, NoOptimizationPolicy>{}; // FIXME: NoOptimizationPolicy
+        auto iso = Isomorphism<Mol, decltype(smarts), SearchType::Single, NoOptimizeConfig>{}; // FIXME: NoOptimizeConfig
         return iso.singleAtom(mol, atom);
     }
 
@@ -57,12 +57,12 @@ namespace Kitimar::CTSmarts {
 
     // ctse::map_bond<"SMARTS">(mol, bond) -> std::tuple<bool, std::array<int, N>>
 
-    template<ctll::fixed_string SMARTS, Molecule::Molecule Mol>
+    template<ctll::fixed_string SMARTS, typename Config = DefaultConfig, Molecule::Molecule Mol>
     constexpr auto map_bond(Mol &mol, const auto &bond)
     {
         auto smarts = Smarts<SMARTS>{};
-        static_assert(!smarts.isSingleAtom, "Use CTSmarts::match_bond<\"SMARTS\">(mol, bond) to check for a single match.");
-        auto iso = Isomorphism<Mol, decltype(smarts), MapType::Single, NoOptimizationPolicy>{}; // FIXME: NoOptimizationPolicy
+        static_assert(smarts.numBonds, "There should at least be one bond in the SMARTS expression.");
+        auto iso = Isomorphism<Mol, decltype(smarts), SearchType::Single, NoOptimizeConfig>{}; // FIXME: NoOptimizeConfig
         return iso.singleBond(mol, bond);
     }
 
@@ -72,20 +72,10 @@ namespace Kitimar::CTSmarts {
 
     // ctse::map<"SMARTS">(mol, atom) -> std::tuple<bool, std::array<int, N>>
 
-    template<ctll::fixed_string SMARTS, Molecule::Molecule Mol>
-    requires (!Molecule::MoleculeTraits<Mol>::SameAtomBondType)
-    constexpr auto map(Mol &mol, typename Molecule::MoleculeTraits<Mol>::Atom atom)
-    {
-        return map_atom<SMARTS>(mol, atom);
-    }
+    CTSMARTS_API_OVERLOAD_ATOM(map)
 
     // ctse::map<"SMARTS">(mol, bond) -> std::tuple<bool, std::array<int, N>>
 
-    template<ctll::fixed_string SMARTS, Molecule::Molecule Mol>
-    requires (!Molecule::MoleculeTraits<Mol>::SameAtomBondType)
-    constexpr auto map(Mol &mol, typename Molecule::MoleculeTraits<Mol>::Bond bond)
-    {
-        return map_bond<SMARTS>(mol, bond);
-    }
+    CTSMARTS_API_OVERLOAD_BOND(map)
 
 } // mamespace Kitimar::CTSmarts

@@ -75,7 +75,7 @@ namespace Kitimar {
     {
         public:
             RDKitPickleMolSource(const std::string_view &filename) : m_ifs{filename.data(), std::ios_base::binary}
-            {                
+            {
                 m_atEnd = m_ifs.eof();
                 if (!m_atEnd) {
                     m_mol.reset(new RDKit::ROMol);
@@ -149,10 +149,11 @@ namespace RDKit {
 
     inline auto get_atoms(const RDKit::ROMol &mol)
     {
-        return std::views::iota(static_cast<decltype(mol.getNumAtoms())>(0), mol.getNumAtoms()) |
-                std::views::transform([&mol] (auto idx) {
-                    return mol.getAtomWithIdx(idx);
-                });
+        const auto &g = mol.getTopology();
+        auto [begin, end] = boost::vertices(g);
+        return std::ranges::subrange(begin, end) | std::views::transform([&g] (const auto &v) -> const RDKit::Atom* {
+            return g[v];
+        });
     }
 
     inline auto get_atom(const RDKit::ROMol &mol, auto index)
@@ -172,7 +173,7 @@ namespace RDKit {
         return atom->getDegree();
     }
 
-    inline RDKit::Atom* null_atom(const RDKit::ROMol &mol)
+    inline const RDKit::Atom* null_atom(const RDKit::ROMol &mol)
     {
         return nullptr;
     }
@@ -186,10 +187,11 @@ namespace RDKit {
 
     inline auto get_bonds(const RDKit::ROMol &mol)
     {
-        return std::views::iota(static_cast<decltype(mol.getNumBonds())>(0), mol.getNumBonds()) |
-                std::views::transform([&mol] (auto idx) {
-                    return mol.getBondWithIdx(idx);
-                });
+        const auto &g = mol.getTopology();
+        auto [begin, end] = boost::edges(g);
+        return std::ranges::subrange(begin, end) | std::views::transform([&g] (const auto &e) -> const RDKit::Bond* {
+            return g[e];
+        });
     }
 
     inline auto get_bond(const RDKit::ROMol &mol, auto index)
@@ -216,7 +218,7 @@ namespace RDKit {
         return bond->getEndAtom();
     }
 
-    inline RDKit::Bond* null_bond(const RDKit::ROMol &mol)
+    inline const RDKit::Bond* null_bond(const RDKit::ROMol &mol)
     {
         return nullptr;
     }
@@ -226,10 +228,10 @@ namespace RDKit {
 
     inline auto get_bonds(const RDKit::ROMol &mol, const RDKit::Atom *atom)
     {
-        return boost::make_iterator_range(mol.getAtomBonds(atom)) |
-                std::views::transform([&mol] (auto idx) {
-                    return mol[idx];
-                });
+        auto [begin, end] = mol.getAtomBonds(atom);
+        return std::ranges::subrange(begin, end) | std::views::transform([&mol] (const auto &e) -> const RDKit::Bond* {
+            return mol[e];
+        });
     }
 
     // AdjacentAtomList
@@ -238,8 +240,9 @@ namespace RDKit {
     inline auto get_nbrs(const RDKit::ROMol &mol, const RDKit::Atom *atom)
     {
         assert(atom);
-        return get_bonds(mol, atom) |
-                std::views::transform([atom] (const RDKit::Bond *bond) { return bond->getOtherAtom(atom); });
+        return get_bonds(mol, atom) | std::views::transform([atom] (const RDKit::Bond *bond) -> const RDKit::Atom* {
+            return bond->getOtherAtom(atom);
+        });
     }
 
     // ElementLayer
@@ -286,6 +289,11 @@ namespace RDKit {
     inline auto get_implicit_hydrogens(const RDKit::ROMol &mol, const RDKit::Atom *atom)
     {
         return atom->getImplicitValence();
+    }
+
+    inline auto get_total_hydrogens(const RDKit::ROMol &mol, const RDKit::Atom *atom)
+    {
+        return atom->getTotalNumHs();
     }
 
     // AromaticLayer

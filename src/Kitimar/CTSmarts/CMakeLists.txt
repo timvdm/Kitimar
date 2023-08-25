@@ -4,6 +4,8 @@ set(CTSmarts_HDRS
     CTSmarts.hpp
     Smarts.hpp
     MatchExpr.hpp
+    Mapping.hpp
+    Config.hpp
     Isomorphism.hpp
     AST.hpp
     Util/Util.hpp
@@ -28,6 +30,7 @@ set(CTSmarts_HDRS
     Optimizer/OptimizeExpression.hpp
     Optimizer/AtomFrequency.hpp
     Optimizer/OptimizeIncidentList.hpp
+    Optimizer/Optimizer.hpp
     API/Util.hpp
     API/Match.hpp
     API/Count.hpp
@@ -35,6 +38,7 @@ set(CTSmarts_HDRS
     API/Maps.hpp
     API/Capture.hpp
     API/Captures.hpp
+    API/Find.hpp
 )
 
 # Library

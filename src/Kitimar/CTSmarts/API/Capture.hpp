@@ -11,7 +11,7 @@ namespace Kitimar::CTSmarts {
 
     // ctse::capture<"SMARTS">(mol) -> std::tuple<bool, Atom...>
 
-    template <ctll::fixed_string SMARTS, Molecule::Molecule Mol>
+    template <ctll::fixed_string SMARTS, typename Config = DefaultConfig, Molecule::Molecule Mol>
     auto capture(Mol &mol)
     {
         auto smarts = Smarts<SMARTS>{};
@@ -21,7 +21,7 @@ namespace Kitimar::CTSmarts {
                 if (impl::singleAtomMatch(smarts, mol, atom))
                     return std::make_tuple(true, atom);
             return std::make_tuple(false, null_atom(mol));
-        } else if constexpr (smarts.isSingleBond) {
+        } else if constexpr (Config::specialize && smarts.isSingleBond) {
             // Optimize single bond SMARTS
             for (auto bond : get_bonds(mol)) {
                 auto matchType = impl::singleBondMatch(smarts, mol, bond);
@@ -30,7 +30,7 @@ namespace Kitimar::CTSmarts {
             }
             return impl::singleBondCapture(smarts, mol, null_bond(mol), 0);
         } else {
-            auto iso = Isomorphism<Mol, decltype(smarts), MapType::Single>{};
+            auto iso = Isomorphism<Mol, decltype(smarts), SearchType::Single, Config>{};
             constexpr auto captureSet = captureMapping(smarts);
             auto [found, map] = iso.single(mol);
             return impl::captureMatchAtoms(mol, smarts, captureSet, found, map);
@@ -43,12 +43,12 @@ namespace Kitimar::CTSmarts {
 
     // ctse::capture_atom<"SMARTS">(mol, atom) -> std::tuple<bool, Atom...>
 
-    template <ctll::fixed_string SMARTS, Molecule::Molecule Mol>
+    template <ctll::fixed_string SMARTS, typename Config = DefaultConfig, Molecule::Molecule Mol>
     auto capture_atom(Mol &mol, const auto &atom)
     {
         auto smarts = Smarts<SMARTS>{};
         static_assert(!smarts.isSingleAtom, "Use CTSmarts::match_atom<\"SMARTS\">(mol, atom) to check for a single match.");
-        auto iso = Isomorphism<Mol, decltype(smarts), MapType::Single, NoOptimizationPolicy>{}; // FIXME: NoOptimizationPolicy
+        auto iso = Isomorphism<Mol, decltype(smarts), SearchType::Single, NoOptimizeConfig>{}; // FIXME: NoOptimizeConfig
         constexpr auto captureSet = captureMapping(smarts);
         auto [found, map] = iso.singleAtom(mol, atom);
         return impl::captureMatchAtoms(mol, smarts, captureSet, found, map);
@@ -60,12 +60,12 @@ namespace Kitimar::CTSmarts {
 
     // ctse::capture_bond<"SMARTS">(mol, bond) -> std::tuple<bool, Atom...>
 
-    template <ctll::fixed_string SMARTS, Molecule::Molecule Mol>
+    template <ctll::fixed_string SMARTS, typename Config = DefaultConfig, Molecule::Molecule Mol>
     auto capture_bond(Mol &mol, const auto &atom)
     {
         auto smarts = Smarts<SMARTS>{};
         static_assert(!smarts.isSingleAtom, "Use CTSmarts::match_atom<\"SMARTS\">(mol, atom) to check for a single match.");
-        auto iso = Isomorphism<Mol, decltype(smarts), MapType::Single, NoOptimizationPolicy>{}; // FIXME: NoOptimizationPolicy
+        auto iso = Isomorphism<Mol, decltype(smarts), SearchType::Single, NoOptimizeConfig>{}; // FIXME: NoOptimizeConfig
         constexpr auto captureSet = captureMapping(smarts);
         auto [found, map] = iso.singleBond(mol, atom);
         return impl::captureMatchAtoms(mol, smarts, captureSet, found, map);
@@ -77,38 +77,11 @@ namespace Kitimar::CTSmarts {
 
     // ctse::capture<"SMARTS">(mol, atom) -> std::tuple<bool, Atom...>
 
-    template<ctll::fixed_string SMARTS, Molecule::Molecule Mol>
-    requires (!Molecule::MoleculeTraits<Mol>::SameAtomBondType)
-    constexpr auto capture(Mol &mol, typename Molecule::MoleculeTraits<Mol>::Atom atom)
-    {
-        return capture_atom<SMARTS>(mol, atom);
-    }
+    CTSMARTS_API_OVERLOAD_ATOM(capture)
 
     // ctse::capture<"SMARTS">(mol, bond) -> std::tuple<bool, Atom...>
 
-    template<ctll::fixed_string SMARTS, Molecule::Molecule Mol>
-    requires (!Molecule::MoleculeTraits<Mol>::SameAtomBondType)
-    constexpr auto capture(Mol &mol, typename Molecule::MoleculeTraits<Mol>::Bond bond)
-    {
-        return capture_bond<SMARTS>(mol, bond);
-    }
+    CTSMARTS_API_OVERLOAD_BOND(capture)
 
-
-
-
-
-
-
-    // Find
-
-    // ctse::find_atom<"SMARTS">(mol) -> std::optional<Atom> (null atom if there is no match)
-
-    template <ctll::fixed_string SMARTS, Molecule::Molecule Mol>
-    auto find_atom(Mol &mol)
-    {
-        auto caps = capture<SMARTS>(mol);
-        static_assert(std::tuple_size<decltype(caps)>{} >= 2); // FIXME: better validation 2 or # SMARTS atoms
-        return std::get<1>(caps);
-    }
 
 } // mamespace Kitimar::CTSmarts

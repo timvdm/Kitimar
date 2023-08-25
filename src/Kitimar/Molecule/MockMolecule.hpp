@@ -17,6 +17,7 @@ namespace Kitimar::Molecule {
         int8_t charge;
         uint8_t degree;
         uint8_t implicitHydrogens;
+        uint8_t explicitHydrogens;
         bool cyclic;
         bool aromatic;
     };
@@ -29,8 +30,6 @@ namespace Kitimar::Molecule {
         bool cyclic;
         bool aromatic;
     };
-
-
 
     // MockIndexMolecule
 
@@ -84,11 +83,11 @@ namespace Kitimar::Molecule {
     template<MockMolecule Mol>
     inline auto addMockAtom(Mol &mol, uint32_t index,
                             uint8_t element, uint8_t isotope, int8_t charge,
-                            uint8_t degree, uint8_t implicitHydrogens,
+                            uint8_t degree, uint8_t implicitHydrogens, uint8_t explicitHydrogens,
                             bool cyclic, bool aromatic)
     {
         if constexpr (std::is_same_v<Mol, MockIndexMolecule> || std::is_same_v<Mol, MockProxyMolecule>)
-            mol.atoms.emplace_back(MockSmallAtom{element, isotope, charge, degree, implicitHydrogens, cyclic, aromatic});
+            mol.atoms.emplace_back(MockSmallAtom{element, isotope, charge, degree, implicitHydrogens, explicitHydrogens, cyclic, aromatic});
     }
 
     template<MockMolecule Mol>
@@ -209,6 +208,13 @@ namespace Kitimar::Molecule {
     {
         assert(get_index(mol, atom) < num_atoms(mol));
         return mol.atoms[get_index(mol, atom)].implicitHydrogens;
+    }
+
+    template<MockMolecule Mol>
+    inline auto get_total_hydrogens(const Mol &mol, typename Mol::Atom atom) noexcept
+    {
+        assert(get_index(mol, atom) < num_atoms(mol));
+        return mol.atoms[get_index(mol, atom)].explicitHydrogens + mol.atoms[get_index(mol, atom)].implicitHydrogens;
     }
 
     template<MockMolecule Mol>

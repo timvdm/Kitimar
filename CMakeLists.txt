@@ -134,6 +134,7 @@ add_subdirectory(single-header)
 if(BUILD_TESTING)    
     enable_testing()
     add_subdirectory(test)
+    add_subdirectory(benchmark)
 endif()
 
 # Validation

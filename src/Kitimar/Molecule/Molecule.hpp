@@ -142,7 +142,7 @@ namespace Kitimar::Molecule {
     };
 
 
-    constexpr auto get_nbr(const auto &mol, auto bond, auto atom) noexcept -> decltype(get_atom(mol, 0))
+    constexpr auto get_nbr(const auto &mol, const auto &bond, const auto &atom) noexcept -> decltype(get_atom(mol, 0))
     {
         auto source = get_source(mol, bond);
         return source != atom ? source : get_target(mol, bond);

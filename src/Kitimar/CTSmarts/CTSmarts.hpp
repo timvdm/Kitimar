@@ -6,6 +6,7 @@
 #include "API/Maps.hpp"
 #include "API/Capture.hpp"
 #include "API/Captures.hpp"
+#include "API/Find.hpp"
 
 namespace Kitimar::CTSmarts {
 

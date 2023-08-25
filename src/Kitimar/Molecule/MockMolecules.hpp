@@ -20,10 +20,10 @@ namespace Kitimar::Molecule {
     auto mockAcetateAnion()
     {
         Mol mol;
-        addMockAtom(mol, 0, 6, 0, 0, 1, 3, false, false);
-        addMockAtom(mol, 1, 6, 0, 0, 3, 0, false, false);
-        addMockAtom(mol, 2, 8, 0, 0, 1, 0, false, false);
-        addMockAtom(mol, 3, 8, 0, -1, 1, 0, false, false);
+        addMockAtom(mol, 0, 6, 0, 0, 1, 3, 0, false, false);
+        addMockAtom(mol, 1, 6, 0, 0, 3, 0, 0, false, false);
+        addMockAtom(mol, 2, 8, 0, 0, 1, 0, 0, false, false);
+        addMockAtom(mol, 3, 8, 0, -1, 1, 0, 0, false, false);
         addMockBond(mol, 0, 0, 1, 1, false, false);
         addMockBond(mol, 1, 1, 2, 2, false, false);
         addMockBond(mol, 2, 1, 3, 1, false, false);
@@ -38,10 +38,10 @@ namespace Kitimar::Molecule {
     auto mockButane()
     {
         Mol mol;
-        addMockAtom(mol, 0, 6, 0, 0, 1, 3, false, false);
-        addMockAtom(mol, 1, 6, 0, 0, 2, 2, false, false);
-        addMockAtom(mol, 2, 6, 0, 0, 2, 2, false, false);
-        addMockAtom(mol, 3, 6, 0, 0, 1, 3, false, false);
+        addMockAtom(mol, 0, 6, 0, 0, 1, 3, 0, false, false);
+        addMockAtom(mol, 1, 6, 0, 0, 2, 2, 0, false, false);
+        addMockAtom(mol, 2, 6, 0, 0, 2, 2, 0, false, false);
+        addMockAtom(mol, 3, 6, 0, 0, 1, 3, 0, false, false);
         addMockBond(mol, 0, 0, 1, 1, false, false);
         addMockBond(mol, 1, 1, 2, 1, false, false);
         addMockBond(mol, 2, 2, 3, 1, false, false);

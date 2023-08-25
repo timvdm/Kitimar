@@ -12,6 +12,8 @@
 
 #include "TestData.hpp"
 
+#include "Benchmarks.hpp"
+
 using namespace Kitimar;
 
 template<ctll::fixed_string SMARTS>
@@ -37,40 +39,74 @@ using AnyChainsBenchmarks = std::tuple<
 
 
 
-TEMPLATE_LIST_TEST_CASE("benchmark_match_single_molecule", "[!benchmark]", AnyChainsBenchmarks)
-{
-    auto SMARTS = TestType::smarts;
 
+
+
+
+
+TEST_CASE("optimized_match_atom")
+{    
+    auto mol = Kitimar::readSmilesOpenBabel("N1(C(=O)[C@H]2N(C(=O)CNC(=O)[C@@H](NC(=O)[C@@H](N)CCCN=C(N)N)CO)CCC2)[C@H](C(=O)NCC(=O)N[C@H](C(=O)N[C@H](C(=O)NCC(=O)N[C@H](C(=O)N[C@H](C(=O)N[C@H](C(=O)N[C@H](C(=O)N[C@H](C(=O)N([C@H](C(=O)N[C@H](C(=O)N[C@H](C(=O)N[C@H](C(=O)NCC(=O)N[C@H](C(=O)N[C@H](C(=O)N[C@H](C(=O)N[C@H](C(=O)NCC(=O)N[C@H](C(=O)O)[C@H](CC)C)C)C)Cc2nc[nH]c2)CC(=O)N)CO)C)CCC(=O)N)CC(C)C)C)CC(C)C)CCCN=C(N)N)CCC(=O)N)CC(C)C)CCCN=C(N)N)CCC(=O)N)CC(C)C)CCC1");
+    auto atom = get_atom(mol, 0);
+
+    BENCHMARK("single atom cpp")  { return match_atom_single_atom_cpp(mol, atom); };
+    BENCHMARK("single atom ctse") { return match_atom_single_atom_ctse(mol, atom); };
+
+    BENCHMARK("single bond cpp")  { return match_atom_single_bond_cpp(mol, atom); };
+    BENCHMARK("single bond ctse") { return match_atom_single_bond_ctse(mol, atom); };
+
+    BENCHMARK("chain 3 cpp")  { return match_atom_chain_3_cpp(mol, atom); };
+    BENCHMARK("chain 3 ctse") { return match_atom_chain_3_ctse(mol, atom); };
+
+    BENCHMARK("chain 4 cpp")  { return match_atom_chain_4_cpp(mol, atom); };
+    BENCHMARK("chain 4 ctse") { return match_atom_chain_4_ctse(mol, atom); };
+}
+
+
+TEST_CASE("optimized_match")
+{
     auto mol = Kitimar::readSmilesOpenBabel("N1(C(=O)[C@H]2N(C(=O)CNC(=O)[C@@H](NC(=O)[C@@H](N)CCCN=C(N)N)CO)CCC2)[C@H](C(=O)NCC(=O)N[C@H](C(=O)N[C@H](C(=O)NCC(=O)N[C@H](C(=O)N[C@H](C(=O)N[C@H](C(=O)N[C@H](C(=O)N[C@H](C(=O)N([C@H](C(=O)N[C@H](C(=O)N[C@H](C(=O)N[C@H](C(=O)NCC(=O)N[C@H](C(=O)N[C@H](C(=O)N[C@H](C(=O)N[C@H](C(=O)NCC(=O)N[C@H](C(=O)O)[C@H](CC)C)C)C)Cc2nc[nH]c2)CC(=O)N)CO)C)CCC(=O)N)CC(C)C)C)CC(C)C)CCCN=C(N)N)CCC(=O)N)CC(C)C)CCCN=C(N)N)CCC(=O)N)CC(C)C)CCC1");
 
-    BENCHMARK(Kitimar::Util::toString(SMARTS)) {
-        return ctse::match<TestType::smarts>(mol);
-    };
+    BENCHMARK("single atom cpp")  { return match_single_atom_cpp(mol); };
+    BENCHMARK("single atom ctse") { return match_single_atom_ctse(mol); };
 
+    BENCHMARK("single bond cpp")  { return match_single_bond_cpp(mol); };
+    BENCHMARK("single bond ctse") { return match_single_bond_ctse(mol); };
 
+    BENCHMARK("chain 3 cpp")  { return match_chain_3_cpp(mol); };
+    BENCHMARK("chain 3 ctse") { return match_chain_3_ctse(mol); };
+
+    BENCHMARK("chain n 3 cpp")  { return match_chain_n_cpp<3>(mol); };
+    BENCHMARK("chain n 4 cpp")  { return match_chain_n_cpp<4>(mol); };
+    BENCHMARK("chain n 5 cpp")  { return match_chain_n_cpp<5>(mol); };
+    BENCHMARK("chain n 6 cpp")  { return match_chain_n_cpp<6>(mol); };
+    BENCHMARK("chain n 7 cpp")  { return match_chain_n_cpp<7>(mol); };
 }
 
 
-TEMPLATE_LIST_TEST_CASE("benchmark_match_chembl32_100K", "[!benchmark]", AnyChainsBenchmarks)
+TEST_CASE("match_any_chain")
 {
-    auto SMARTS = TestType::smarts;
+    auto mol = Kitimar::readSmilesOpenBabel("N1(C(=O)[C@H]2N(C(=O)CNC(=O)[C@@H](NC(=O)[C@@H](N)CCCN=C(N)N)CO)CCC2)[C@H](C(=O)NCC(=O)N[C@H](C(=O)N[C@H](C(=O)NCC(=O)N[C@H](C(=O)N[C@H](C(=O)N[C@H](C(=O)N[C@H](C(=O)N[C@H](C(=O)N([C@H](C(=O)N[C@H](C(=O)N[C@H](C(=O)N[C@H](C(=O)NCC(=O)N[C@H](C(=O)N[C@H](C(=O)N[C@H](C(=O)N[C@H](C(=O)NCC(=O)N[C@H](C(=O)O)[C@H](CC)C)C)C)Cc2nc[nH]c2)CC(=O)N)CO)C)CCC(=O)N)CC(C)C)C)CC(C)C)CCCN=C(N)N)CCC(=O)N)CC(C)C)CCCN=C(N)N)CCC(=O)N)CC(C)C)CCC1");
 
-    OpenBabelSmilesMolSource source{chembl_smi_filename("10K")};
-
-    BENCHMARK(Kitimar::Util::toString(SMARTS)) {
-        auto n = 0;
-        for (auto mol : source.molecules())
-            if (ctse::match<TestType::smarts>(mol))
-                ++n;
-        return n;
-    };
-
-
+    BENCHMARK("chain 5")  { return ctse::match<"*****">(mol); };
+    BENCHMARK("chain 6")  { return ctse::match<"******">(mol); };
+    BENCHMARK("chain 7")  { return ctse::match<"*******">(mol); };
+    BENCHMARK("chain 8")  { return ctse::match<"********">(mol); };
+    BENCHMARK("chain 9")  { return ctse::match<"*********">(mol); };
+    BENCHMARK("chain 10")  { return ctse::match<"**********">(mol); };
 }
 
+TEST_CASE("maps_all_any_chain")
+{
+    auto mol = Kitimar::readSmilesOpenBabel("N1(C(=O)[C@H]2N(C(=O)CNC(=O)[C@@H](NC(=O)[C@@H](N)CCCN=C(N)N)CO)CCC2)[C@H](C(=O)NCC(=O)N[C@H](C(=O)N[C@H](C(=O)NCC(=O)N[C@H](C(=O)N[C@H](C(=O)N[C@H](C(=O)N[C@H](C(=O)N[C@H](C(=O)N([C@H](C(=O)N[C@H](C(=O)N[C@H](C(=O)N[C@H](C(=O)NCC(=O)N[C@H](C(=O)N[C@H](C(=O)N[C@H](C(=O)N[C@H](C(=O)NCC(=O)N[C@H](C(=O)O)[C@H](CC)C)C)C)Cc2nc[nH]c2)CC(=O)N)CO)C)CCC(=O)N)CC(C)C)C)CC(C)C)CCCN=C(N)N)CCC(=O)N)CC(C)C)CCCN=C(N)N)CCC(=O)N)CC(C)C)CCC1");
 
-
-
+    BENCHMARK("chain 5")  { return ctse::maps_all<"*****">(mol); };
+    BENCHMARK("chain 6")  { return ctse::maps_all<"******">(mol); };
+    BENCHMARK("chain 7")  { return ctse::maps_all<"*******">(mol); };
+    BENCHMARK("chain 8")  { return ctse::maps_all<"********">(mol); };
+    BENCHMARK("chain 9")  { return ctse::maps_all<"*********">(mol); };
+    BENCHMARK("chain 10")  { return ctse::maps_all<"**********">(mol); };
+}
 
 
 

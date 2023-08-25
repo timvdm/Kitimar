@@ -8,6 +8,7 @@ Kitimar_add_test(CTSmartsMap)
 Kitimar_add_test(CTSmartsMaps)
 Kitimar_add_test(CTSmartsCapture)
 Kitimar_add_test(CTSmartsCaptures)
+Kitimar_add_test(CTSmartsFind)
 
 
 Kitimar_add_test(CTSmartsOld)

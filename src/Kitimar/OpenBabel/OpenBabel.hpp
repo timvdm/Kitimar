@@ -142,7 +142,7 @@ namespace OpenBabel {
         return atom->GetExplicitDegree();
     }
 
-    inline auto null_atom(const OpenBabel::OBMol &mol)
+    inline OpenBabel::OBAtom* null_atom(const OpenBabel::OBMol &mol)
     {
         return nullptr;
     }
@@ -183,7 +183,7 @@ namespace OpenBabel {
         return bond->GetEndAtom();
     }
 
-    inline auto null_bond(const OpenBabel::OBMol &mol)
+    inline OpenBabel::OBBond* null_bond(const OpenBabel::OBMol &mol)
     {
         return nullptr;
     }

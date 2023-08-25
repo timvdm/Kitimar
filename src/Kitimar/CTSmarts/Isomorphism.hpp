@@ -2,6 +2,7 @@
 
 #include "Smarts.hpp"
 #include "MatchExpr.hpp"
+#include "Config.hpp"
 
 #include "Filter/NumAtomBondFilter.hpp"
 #include "Filter/ElementFilter.hpp"
@@ -20,30 +21,8 @@
 
 #define ISOMORPHISM_DEBUG 0
 
-#ifdef KITIMAR_WITH_IOSTREAM
-#include <iostream>
 
-template<std::integral I, auto N>
-std::ostream& operator<<(std::ostream &os, const std::array<I, N> &map)
-{
-    os << "[";
-    for (auto i = 0; i < map.size(); ++i)
-        os << " " << map[i];
-    os << " ]";
-    return os;
-}
 
-template<std::integral I>
-std::ostream& operator<<(std::ostream &os, const std::vector<I> &v)
-{
-    os << "[ ";
-    for (auto i : v)
-        os << i << " ";
-    os << "]";
-    return os;
-}
-
-#endif // KITIMAR_WITH_IOSTREAM
 
 
 
@@ -51,105 +30,20 @@ std::ostream& operator<<(std::ostream &os, const std::vector<I> &v)
 
 namespace Kitimar::CTSmarts {
 
-    enum class MapType
+    // FIXME: rename to search type
+    enum class SearchType
     {
         Single,
         Unique,
         All
     };
 
-    template<std::integral Index, int N>
-    using IsomorphismMap = std::array<Index, N>;
+    template<SearchType T>
+    using SearchTypeTag = std::integral_constant<SearchType, T>;
 
-    template<std::integral Index, int N>
-    using IsomorphismMaps = std::vector<IsomorphismMap<Index, N>>;
-
-
-    template<MapType T>
-    using MapTypeTag = std::integral_constant<MapType, T>;
-
-    static constexpr auto Single = MapTypeTag<MapType::Single>{};
-    static constexpr auto Unique = MapTypeTag<MapType::Unique>{};
-    static constexpr auto All    = MapTypeTag<MapType::All>{};
-
-    template<typename Derived>
-    class MappedVectorPolicy
-    {
-        public:
-            constexpr void resetMapped(auto numAtoms)
-            {
-                m_mapped.clear();
-                m_mapped.resize(numAtoms);
-            }
-
-            constexpr bool isMapped(auto atomIndex) const noexcept
-            {
-                assert(atomIndex < m_mapped.size());
-                return m_mapped[atomIndex];
-            }
-
-            constexpr void addMapped(auto atomIndex) noexcept
-            {
-                assert(atomIndex < m_mapped.size());
-                assert(!m_mapped[atomIndex]);
-                m_mapped[atomIndex] = true;
-            }
-
-            constexpr void removeMapped(auto atomIndex) noexcept
-            {
-                assert(atomIndex < m_mapped.size());
-                assert(m_mapped[atomIndex]);
-                m_mapped[atomIndex] = false;
-            }
-
-
-        private:
-            std::vector<uint8_t> m_mapped;
-    };
-
-    template<typename Derived>
-    class MappedLookupPolicy
-    {
-        public:
-            bool isMapped(auto atomIndex) const noexcept
-            {
-                const auto &map = static_cast<const Derived*>(this)->map();
-                return std::ranges::find(map, atomIndex) != map.end();
-            }
-
-            constexpr void resetMapped(auto numAtoms) const noexcept {}
-            constexpr void addMapped(auto atomIndex) const noexcept {}
-            constexpr void removeMapped(auto atomIndex) const noexcept {}
-    };
-
-
-    template<typename SmartsT>
-    struct NoOptimizationPolicy
-    {
-        static constexpr inline auto smarts = SmartsT{};
-        static constexpr inline auto edgeList = EdgeList{smarts};
-        static constexpr inline auto vertexDegree = VertexDegree{smarts, edgeList};
-        static constexpr inline auto incidentList = IncidentList{smarts, edgeList, vertexDegree};
-        static constexpr inline auto dfsEdges = DfsEdgeList{smarts, incidentList};
-        static constexpr inline auto cycleMembership = CycleMembership{smarts, incidentList};
-        static constexpr inline auto dfsBonds = DfsBondList{smarts, dfsEdges, cycleMembership}.data;
-    };
-
-    // FIXME: optimize atom expressions...
-    template<typename SmartsT>
-    struct FullOptimizationPolicy
-    {
-        static constexpr inline auto smarts = SmartsT{};
-        static constexpr inline auto edgeList = EdgeList{smarts};
-        static constexpr inline auto vertexDegree = VertexDegree{smarts, edgeList};
-        static constexpr inline auto incidentList = IncidentList{smarts, edgeList, vertexDegree};
-        static constexpr inline auto atomFreq = AtomFrequency{smarts};
-        static constexpr inline auto optimizedIncidentList = OptimizeIncidentList{smarts, incidentList, atomFreq};
-        static constexpr inline auto sourceIndex = std::ranges::min_element(atomFreq.data) - std::begin(atomFreq.data);
-        static constexpr inline auto dfsEdges = DfsEdgeList{smarts, optimizedIncidentList, Number<sourceIndex>{}};
-        static constexpr inline auto cycleMembership = CycleMembership{smarts, optimizedIncidentList};
-        static constexpr inline auto dfsBonds = DfsBondList{smarts, dfsEdges, cycleMembership}.data;
-    };
+    static constexpr auto Single = SearchTypeTag<SearchType::Single>{};
+    static constexpr auto Unique = SearchTypeTag<SearchType::Unique>{};
+    static constexpr auto All    = SearchTypeTag<SearchType::All>{};
 
 
 
@@ -160,11 +54,8 @@ namespace Kitimar::CTSmarts {
     struct ConditionalFilterPolicy : FilterPolicy<> {};
 
 
-    template<Molecule::Molecule Mol, typename SmartsT, MapType Type,
-             template<typename> class OptimizationPolicy = FullOptimizationPolicy,
-             //template<typename> class OptimizationPolicy = NoOptimizationPolicy,
-             template<typename> class MappedPolicy = MappedVectorPolicy>
-    class Isomorphism : public MappedPolicy<Isomorphism<Mol, SmartsT, Type>>
+    template<Molecule::Molecule Mol, typename SmartsT, SearchType Type, typename Config = DefaultConfig>
+    class Isomorphism
     {
 
         public:
@@ -174,21 +65,14 @@ namespace Kitimar::CTSmarts {
 
             static constexpr inline auto invalidIndex = static_cast<Index>(-1);
             static constexpr inline auto smarts = SmartsT{};
-
-            static constexpr inline auto vertexDegree = OptimizationPolicy<SmartsT>::vertexDegree;
-            static constexpr inline auto dfsBonds = OptimizationPolicy<SmartsT>::dfsBonds;
+            static constexpr inline auto query = Config::Optimizer::create(smarts);
 
             static_assert(smarts.numBonds);
-            static_assert(ctll::size(smarts.bonds) == ctll::size(dfsBonds));
-
-            Isomorphism()
-            {
-                m_map.fill(invalidIndex);
-            }
+            static_assert(ctll::size(smarts.bonds) == ctll::size(query.bonds));
 
             constexpr const Map& map() const noexcept
             {
-                return m_map;
+                return m_map.map;
             }
 
             // match
@@ -214,19 +98,19 @@ namespace Kitimar::CTSmarts {
                 auto targetIndex = get_index(mol, target);
 
                 auto sourceCallback = [this, targetIndex] (const auto &map) {
-                    if (m_map[1] == targetIndex)
+                    if (m_map.contains(1, targetIndex))
                         setDone(true);
                 };
                 matchDfs(mol, sourceCallback, sourceIndex);
-                if (isDone() && m_map[1] == targetIndex)
+                if (isDone() && m_map.contains(1, targetIndex))
                     return true;
 
                 auto targetCallback = [this, sourceIndex] (const auto &map) {
-                    if (m_map[1] == sourceIndex)
+                    if (m_map.contains(1, sourceIndex))
                         setDone(true);
                 };
                 matchDfs(mol, targetCallback, targetIndex);
-                return isDone() && m_map[1] == sourceIndex;
+                return isDone() && m_map.contains(1, sourceIndex);
             }
 
             // count
@@ -254,12 +138,12 @@ namespace Kitimar::CTSmarts {
 
                 auto n = 0;
                 auto sourceCallback = [this, targetIndex, &n] (const auto &map) {
-                    if (m_map[1] == targetIndex)
+                    if (m_map.contains(1, targetIndex))
                         ++n;
                 };
                 matchDfs(mol, sourceCallback, sourceIndex);
                 auto targetCallback = [this, sourceIndex, &n] (const auto &map) {
-                    if (m_map[1] == sourceIndex)
+                    if (m_map.contains(1, sourceIndex))
                         ++n;
                 };
                 matchDfs(mol, targetCallback, targetIndex);
@@ -271,7 +155,7 @@ namespace Kitimar::CTSmarts {
             auto single(Mol &mol, int startAtom = -1)
             {
                 matchDfs(mol, nullptr, startAtom);
-                return std::make_tuple(isDone(), m_map);
+                return std::make_tuple(isDone(), m_map.map());
             }
 
             auto singleAtom(Mol &mol, const auto &atom)
@@ -288,20 +172,20 @@ namespace Kitimar::CTSmarts {
                 auto targetIndex = get_index(mol, target);
 
                 auto sourceCallback = [this, targetIndex] (const auto &map) {
-                    if (m_map[1] == targetIndex)
+                    if (m_map.contains(1, targetIndex))
                         setDone(true);
                 };
                 matchDfs(mol, sourceCallback, sourceIndex);
-                if (isDone() && m_map[1] == targetIndex)
-                    return std::make_tuple(true, m_map);
+                if (isDone() && m_map.contains(1, targetIndex))
+                    return std::make_tuple(true, m_map.map());
 
                 auto targetCallback = [this, sourceIndex] (const auto &map) {
-                    if (m_map[1] == sourceIndex)
+                    if (m_map.contains(1, sourceIndex))
                         setDone(true);
                 };
                 matchDfs(mol, targetCallback, targetIndex);
-                if (isDone() && m_map[1] == sourceIndex)
-                    return std::make_tuple(true, m_map);
+                if (isDone() && m_map.contains(1, sourceIndex))
+                    return std::make_tuple(true, m_map.map());
 
                 return std::make_tuple(false, Map{});
             }
@@ -333,13 +217,13 @@ namespace Kitimar::CTSmarts {
 
                 Maps maps;
                 auto sourceCallback = [this, targetIndex, &maps] (const auto &map) {
-                    if (m_map[1] == targetIndex)
-                        maps.push_back(m_map);
+                    if (m_map.contains(1, targetIndex))
+                        maps.push_back(m_map.map());
                 };
                 matchDfs(mol, sourceCallback, sourceIndex);
                 auto targetCallback = [this, sourceIndex, &maps] (const auto &map) {
-                    if (m_map[1] == sourceIndex)
-                        maps.push_back(m_map);
+                    if (m_map.contains(1, sourceIndex))
+                        maps.push_back(m_map.map());
                 };
                 matchDfs(mol, targetCallback, targetIndex);
                 return maps;
@@ -363,7 +247,7 @@ namespace Kitimar::CTSmarts {
 
             bool matchAtom(Mol &mol, const auto &atom, auto queryAtom) const noexcept
             {
-                if (get_degree(mol, atom) < vertexDegree.data[queryAtom.index])
+                if (get_degree(mol, atom) < query.degrees[queryAtom.index])
                     return false;
 
                 return matchAtomExpr(mol, atom, queryAtom.expr);
@@ -380,26 +264,20 @@ namespace Kitimar::CTSmarts {
 
 
 
-            void addAtom(auto atomIndex, int queryAtomIndex) noexcept
+            void addAtom(int queryAtomIndex, auto atomIndex) noexcept
             {
                 debug("    ", queryAtomIndex, " -> ", atomIndex);
-
-                assert(queryAtomIndex < m_map.size());
-                assert(m_map[queryAtomIndex] == invalidIndex);
-                m_map[queryAtomIndex] = atomIndex;
-
-                this->addMapped(atomIndex);
+                assert(queryAtomIndex < m_map.map().size());
+                assert(!m_map.containsQueryAtom(queryAtomIndex));
+                m_map.add(queryAtomIndex, atomIndex);
             }
 
-            void removeAtom(auto atomIndex, int queryAtomIndex) noexcept
+            void removeAtom(int queryAtomIndex, auto atomIndex) noexcept
             {
-                debug("    backtrack: ", m_map[queryAtomIndex]);
-
-                assert(queryAtomIndex < m_map.size());
-                assert(m_map[queryAtomIndex] == atomIndex);
-                m_map[queryAtomIndex] = invalidIndex;
-
-                this->removeMapped(atomIndex);
+                debug("    backtrack: ", m_map(queryAtomIndex));
+                assert(queryAtomIndex < m_map.map().size());
+                assert(m_map.containsQueryAtom(queryAtomIndex));
+                m_map.remove(queryAtomIndex, atomIndex);
             }
 
 
@@ -414,8 +292,8 @@ namespace Kitimar::CTSmarts {
             constexpr auto getQueryBondInfo(int queryBondIndex) const noexcept
             {
                 using R = std::tuple<int, int, bool, bool>;
-                return with_n<ctll::size(dfsBonds), R>(queryBondIndex, [this] (auto i) {
-                    auto queryBond = get<i>(dfsBonds);
+                return with_n<ctll::size(query.bonds), R>(queryBondIndex, [this] (auto i) {
+                    auto queryBond = get<i>(query.bonds);
                     return makeQueryBondInfo(queryBond);
                 });
             }
@@ -424,7 +302,7 @@ namespace Kitimar::CTSmarts {
             void debugPoint(int queryBondIndex)
             {
                 std::cout << "matchDfs<\"" << smarts.input() << "\">(queryBondIndex = " << queryBondIndex << "):" << std::endl;
-                std::cout << "    m_map: " << m_map << std::endl;
+                std::cout << "    m_map: " << m_map.map << std::endl;
                 /*
                 std::cout << "    m_mapped: [ ";
                 for (auto v : m_mapped)
@@ -437,8 +315,8 @@ namespace Kitimar::CTSmarts {
                     auto [querySource, queryTarget, isCyclic, isRingClosure] = getQueryBondInfo(queryBondIndex);
                     std::cout << "    query bond: " << querySource << " - " << queryTarget << std::endl;
 
-                    auto source = m_map[querySource];
-                    auto target = m_map[queryTarget];
+                    auto source = m_map.map[querySource];
+                    auto target = m_map.map[queryTarget];
 
                     std::cout << "    mol bond:   ";
                     if (source < 0)
@@ -461,8 +339,8 @@ namespace Kitimar::CTSmarts {
             #endif // KITIMAR_WITH_IOSTREAM
 
 
-            template<typename Bonds = decltype(dfsBonds)>
-            void matchDfs(Mol &mol, auto callback, int startAtom = -1, Bonds bonds = dfsBonds)
+            template<typename Bonds = decltype(query.bonds)>
+            void matchDfs(Mol &mol, auto callback, int startAtom = -1, Bonds bonds = query.bonds)
             {
                 if (isDone())
                     return;
@@ -473,7 +351,7 @@ namespace Kitimar::CTSmarts {
 
                 if constexpr (ctll::empty(bonds)) { // Found mapping?
 
-                    debug("    found map: ", m_map);
+                    debug("    found map: ", m_map.map());
                     addMapping(mol, callback);
 
                 } else {
@@ -483,9 +361,9 @@ namespace Kitimar::CTSmarts {
 
                     if constexpr (queryBond.isRingClosure) { // Ring closure?
 
-                        auto source = get_atom(mol, m_map[querySource.index]);
-                        auto target = get_atom(mol, m_map[queryTarget.index]);
-                        if (!this->isMapped(get_index(mol, target)))
+                        auto source = get_atom(mol, m_map(querySource.index));
+                        auto target = get_atom(mol, m_map(queryTarget.index));
+                        if (!m_map.containsAtom(get_index(mol, target)))
                             return;
                         auto bond = Molecule::get_bond(mol, source, target);
                         if (bond == null_bond(mol))
@@ -493,16 +371,16 @@ namespace Kitimar::CTSmarts {
                         if (matchBondExpr(mol, bond, queryBond.expr))
                             matchDfs(mol, callback, startAtom, ctll::pop_front(bonds));
 
-                    } else if (m_map[querySource.index] != invalidIndex) { // Source atom mapped?
+                    } else if (m_map.containsQueryAtom(querySource.index)) { // Source atom mapped?
 
-                        auto source = get_atom(mol, m_map[querySource.index]);
+                        auto source = get_atom(mol, m_map(querySource.index));
 
                         for (auto bond : get_bonds(mol, source)) {
 
                             auto target = Molecule::get_nbr(mol, bond, source);
                             auto targetIndex = get_index(mol, target);
 
-                            if (this->isMapped(targetIndex)) {
+                            if (m_map.containsAtom(targetIndex)) {
                                 debug("    target already mapped: ", targetIndex);
                                 continue;
                             }
@@ -520,7 +398,7 @@ namespace Kitimar::CTSmarts {
                             }
 
                             // map target atom
-                            addAtom(targetIndex, queryTarget.index);
+                            addAtom(queryTarget.index, targetIndex);
                             matchDfs(mol, callback, startAtom, ctll::pop_front(bonds));
                             // exit as soon as possible if only one match is required
                             // (single mapping stored in m_map after returning)
@@ -528,7 +406,7 @@ namespace Kitimar::CTSmarts {
                                 return;
                             // bracktrack target atom
                             if constexpr (!queryBond.isRingClosure)
-                                removeAtom(targetIndex, queryTarget.index);
+                                removeAtom(queryTarget.index, targetIndex);
 
                         }
 
@@ -539,19 +417,19 @@ namespace Kitimar::CTSmarts {
 
                         assert(!isDone());
 
-                        assert(std::ranges::count(m_map, invalidIndex) == m_map.size());
+                        assert(std::ranges::count(m_map.map(), invalidIndex) == m_map.map().size());
                         //if constexpr (std::is_same_v<MappedPolicy<void>, MappedVector<void>>)
                         //    assert(std::ranges::count(m_mapped, true) == 0);
 
-                        this->resetMapped(num_atoms(mol));
+                        m_map.reset(num_atoms(mol));
+
+                        auto queryBond = ctll::front(query.bonds);
+                        auto queryAtom = queryBond.source;
 
                         for (auto atom : get_atoms(mol)) {
                             if (startAtom != -1)
                                 atom = get_atom(mol, startAtom);
                             auto index = get_index(mol, atom);
-
-                            auto queryBond = ctll::front(dfsBonds);
-                            auto queryAtom = queryBond.source;
 
                             debug("    start atom: ",  index);
 
@@ -559,11 +437,11 @@ namespace Kitimar::CTSmarts {
                                 continue;
 
                             // map source atom, recursive dfs, backtrack
-                            addAtom(index, queryAtom.index);
-                            matchDfs(mol, callback, startAtom, dfsBonds);
+                            addAtom(queryAtom.index, index);
+                            matchDfs(mol, callback, startAtom, query.bonds);
                             if (isDone())
                                 return;
-                            removeAtom(index, queryAtom.index);
+                            removeAtom(queryAtom.index, index);
 
                             if (startAtom != -1)
                                 return;;
@@ -577,7 +455,7 @@ namespace Kitimar::CTSmarts {
             {
                 //debug("reset()");
                 setDone(false);
-                this->resetMapped(num_atoms(mol));
+                m_map.reset(num_atoms(mol));
             }
 
             constexpr auto isDone() const noexcept
@@ -593,12 +471,12 @@ namespace Kitimar::CTSmarts {
             template<typename Callback>
             constexpr auto addMapping(Molecule::Molecule auto &mol, Callback callback) noexcept
             {
-                if constexpr (Type == MapType::Single)
+                if constexpr (Type == SearchType::Single)
                     setDone(true);
-                if constexpr (Type == MapType::Unique) {
+                if constexpr (Type == SearchType::Unique) {
                     // create bit mask of atoms (to ensure uniqueness of mapping)
                     std::vector<bool> atoms(num_atoms(mol));
-                    for (auto index : m_map)
+                    for (auto index : m_map.map())
                         atoms[index] = true;
                     // add the mapping to the result if it is unique
                     auto hash = std::hash<std::vector<bool>>()(atoms);
@@ -607,12 +485,12 @@ namespace Kitimar::CTSmarts {
                     m_maps.insert(hash);
                 }
                 if constexpr (!std::is_same_v<std::nullptr_t, Callback>)
-                    callback(m_map);
+                    callback(m_map.map());
             }
 
 
-            Map m_map; // current mapping: query atom index -> queried atom index
-            std::conditional_t<Type == MapType::Unique, std::unordered_set<std::size_t>, std::monostate> m_maps;
+            Config::template Map<Index, SmartsT::numAtoms> m_map; // current mapping: query atom index -> queried atom index
+            std::conditional_t<Type == SearchType::Unique, std::unordered_set<std::size_t>, std::monostate> m_maps;
             bool m_done = false;
     };
 
@@ -674,4 +552,4 @@ namespace Kitimar::CTSmarts {
     };
     */
 
-} // namespace ctsmarts
+} // namespace Kitimar::CTSmarts

@@ -11,57 +11,6 @@ using namespace Kitimar;
 using namespace Kitimar::CTSmarts;
 
 
-TEST_CASE("CTSmarts_captureAtom")
-{
-    auto mol = Molecule::mockAcetateAnion(); // CC(=O)[O-]
-
-    auto C0 = get_atom(mol, 0);
-    auto C1 = get_atom(mol, 1);
-    auto O2 = get_atom(mol, 2);
-    auto O3 = get_atom(mol, 3);
-
-    // single atom
-    CHECK(CTSmarts::find_atom<"C">(mol) == C0);
-    CHECK(CTSmarts::find_atom<"O">(mol) == O2);
-
-    CHECK(CTSmarts::find_atom<"N">(mol) == null_atom(mol));
-
-    // single bond
-    CHECK(CTSmarts::find_atom<"CC">(mol) == C0);
-    CHECK(CTSmarts::find_atom<"C=O">(mol) == C1);
-    CHECK(CTSmarts::find_atom<"CO">(mol) == C1);
-    CHECK(CTSmarts::find_atom<"O=C">(mol) == O2);
-    CHECK(CTSmarts::find_atom<"OC">(mol) == O3);
-
-    CHECK(CTSmarts::find_atom<"[C:1]C">(mol) == C0);
-    CHECK(CTSmarts::find_atom<"[C:1]=O">(mol) == C1);
-    CHECK(CTSmarts::find_atom<"[C:1]O">(mol) == C1);
-    CHECK(CTSmarts::find_atom<"[O:1]=C">(mol) == O2);
-    CHECK(CTSmarts::find_atom<"[O:1]C">(mol) == O3);
-
-    CHECK(CTSmarts::find_atom<"C[C:1]">(mol) == C1);
-    CHECK(CTSmarts::find_atom<"C=[O:1]">(mol) == O2);
-    CHECK(CTSmarts::find_atom<"C[O:1]">(mol) == O3);
-    CHECK(CTSmarts::find_atom<"O=[C:1]">(mol) == C1);
-    CHECK(CTSmarts::find_atom<"O[C:1]">(mol) == C1);
-
-    CHECK(CTSmarts::find_atom<"C#C">(mol) == null_atom(mol));
-
-    // general case
-    CHECK(CTSmarts::find_atom<"CCO">(mol) == C0);
-    CHECK(CTSmarts::find_atom<"CO">(mol) == C1);
-    CHECK(CTSmarts::find_atom<"OCC">(mol) == O3);
-    CHECK(CTSmarts::find_atom<"O=CC">(mol) == O2);
-    CHECK(CTSmarts::find_atom<"CC(=O)O">(mol) == C0);
-    CHECK(CTSmarts::find_atom<"C(C)(=O)O">(mol) == C1);
-
-    CHECK(CTSmarts::find_atom<"[C:1]C(=O)O">(mol) == C0);
-    CHECK(CTSmarts::find_atom<"C[C:1](=O)O">(mol) == C1);
-    CHECK(CTSmarts::find_atom<"CC(=[O:1])O">(mol) == O2);
-    CHECK(CTSmarts::find_atom<"CC(=O)[O:1]">(mol) == O3);
-
-    CHECK(CTSmarts::find_atom<"CC(=O)N">(mol) == null_atom(mol));
-}
 
 template<typename T>
 struct identify_type;
@@ -469,8 +418,6 @@ TEST_CASE("RequiredAtomPrimitives")
     using O = AliphaticAtom<8>;
     using F = AliphaticAtom<9>;
 
-    auto smarts1 = Smarts<"CCO">{};
-
     test_required_atom_primitives<"C", ctll::list<C>>();
     test_required_atom_primitives<"N", ctll::list<N>>();
     test_required_atom_primitives<"O", ctll::list<O>>();
@@ -501,7 +448,6 @@ TEST_CASE("NumAtomBondFilter")
 
 TEST_CASE("ElementFilter")
 {
-
     auto mol = Molecule::mockAcetateAnion(); // CC(=O)[O-]
     auto smarts1 = Smarts<"CCO">{};
     auto smarts2 = Smarts<"CCN">{};

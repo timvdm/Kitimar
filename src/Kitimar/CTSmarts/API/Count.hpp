@@ -1,7 +1,6 @@
 #pragma once
 
-#include "Util.hpp"
-#include "../Isomorphism.hpp"
+#include "Match.hpp"
 
 namespace Kitimar::CTSmarts {
 
@@ -11,10 +10,10 @@ namespace Kitimar::CTSmarts {
 
     // ctse::count<"SMARTS">(mol, ctse::[Unique, All]) -> std::integeral
 
-    template<ctll::fixed_string SMARTS, MapType M = MapType::Unique, Molecule::Molecule Mol>
-    constexpr auto count(Mol &mol, MapTypeTag<M> mapType = {})
+    template<ctll::fixed_string SMARTS, SearchType M = SearchType::Unique, typename Config = DefaultConfig, Molecule::Molecule Mol>
+    constexpr auto count(Mol &mol, SearchTypeTag<M> = {})
     {
-        static_assert(M != MapType::Single, "Use CTSmarts::contains<\"SMARTS\">(mol) to check for a single match.");
+        static_assert(M != SearchType::Single, "Use CTSmarts::contains<\"SMARTS\">(mol) to check for a single match.");
         auto smarts = Smarts<SMARTS>{};
         if constexpr (smarts.isSingleAtom) {
             // Optimize single atom SMARTS
@@ -23,11 +22,11 @@ namespace Kitimar::CTSmarts {
                 if (impl::singleAtomMatch(smarts, mol, atom))
                     ++n;
             return n;
-        } else if constexpr (smarts.isSingleBond) {
+        } else if constexpr (Config::specialize && smarts.isSingleBond) {
             // Optimize single bond SMARTS
             auto n = 0;
             for (auto bond : get_bonds(mol)) {
-                if constexpr (M == MapType::Unique) {
+                if constexpr (M == SearchType::Unique) {
                     if (impl::singleBondMatch(smarts, mol, bond))
                         ++n;
                 } else {
@@ -36,26 +35,18 @@ namespace Kitimar::CTSmarts {
             }
             return n;
         } else {
-            auto iso = Isomorphism<Mol, decltype(smarts), M>{};
+            auto iso = Isomorphism<Mol, decltype(smarts), M, Config>{};
             return iso.count(mol);
         }
     }
 
     // ctse::count_unique<"SMARTS">(mol) -> std::integeral
 
-    template<ctll::fixed_string SMARTS>
-    constexpr auto count_unique(Molecule::Molecule auto &mol)
-    {
-        return count<SMARTS, MapType::Unique>(mol);
-    }
+    CTSMARTS_API_UNIQUE(count)
 
     // ctse::count_all<"SMARTS">(mol) -> std::integeral
 
-    template<ctll::fixed_string SMARTS>
-    constexpr auto count_all(Molecule::Molecule auto &mol)
-    {
-        return count<SMARTS, MapType::All>(mol);
-    }
+    CTSMARTS_API_ALL(count)
 
     //
     // Atom
@@ -63,31 +54,25 @@ namespace Kitimar::CTSmarts {
 
     // ctse::count_atom<"SMARTS">(mol, atom, ctse::[Unique, All]) -> std::integeral
 
-    template<ctll::fixed_string SMARTS, MapType M = MapType::Unique, Molecule::Molecule Mol>
-    constexpr auto count_atom(Mol &mol, const auto &atom, MapTypeTag<M> mapType = {})
+    template<ctll::fixed_string SMARTS, SearchType M = SearchType::Unique, typename Config = DefaultConfig, Molecule::Molecule Mol>
+    constexpr auto count_atom(Mol &mol, const auto &atom, SearchTypeTag<M> = {})
     {
         auto smarts = Smarts<SMARTS>{};
-        static_assert(M != MapType::Single && !smarts.isSingleAtom,
-                    "Use CTSmarts::match_atom<\"SMARTS\">(mol, atom) to check for a single match.");
-        auto iso = Isomorphism<Mol, decltype(smarts), M, NoOptimizationPolicy>{}; // FIXME: NoOptimizationPolicy
-        return iso.countAtom(mol, atom);
+        if constexpr (smarts.isSingleAtom)
+            return match_atom<SMARTS, Config>(mol, atom) ? 1 : 0;
+        else {
+            auto iso = Isomorphism<Mol, decltype(smarts), M, NoOptimizeConfig>{}; // FIXME: NoOptimizeConfig
+            return iso.countAtom(mol, atom);
+        }
     }
 
     // ctse::count_atom_unique<"SMARTS">(mol, atom) -> std::integeral
 
-    template<ctll::fixed_string SMARTS>
-    constexpr auto count_atom_unique(Molecule::Molecule auto &mol, const auto &atom)
-    {
-        return count_atom<SMARTS, MapType::Unique>(mol, atom);
-    }
+    CTSMARTS_API_ATOM_UNIQUE(count)
 
     // ctse::count_atom_all<"SMARTS">(mol, atom) -> std::integeral
 
-    template<ctll::fixed_string SMARTS>
-    constexpr auto count_atom_all(Molecule::Molecule auto &mol, const auto &atom)
-    {
-        return count_atom<SMARTS, MapType::All>(mol, atom);
-    }
+    CTSMARTS_API_ATOM_ALL(count)
 
     //
     // Bond
@@ -95,31 +80,32 @@ namespace Kitimar::CTSmarts {
 
     // ctse::count_bond<"SMARTS">(mol, bond, ctse::[Unique, All]) -> std::integeral
 
-    template<ctll::fixed_string SMARTS, MapType M = MapType::Unique, Molecule::Molecule Mol>
-    constexpr auto count_bond(Mol &mol, const auto &bond, MapTypeTag<M> mapType = {})
+    template<ctll::fixed_string SMARTS, SearchType M = SearchType::Unique, typename Config = DefaultConfig, Molecule::Molecule Mol>
+    constexpr auto count_bond(Mol &mol, const auto &bond, SearchTypeTag<M> = {})
     {
         auto smarts = Smarts<SMARTS>{};
-        static_assert(M != MapType::Single && !smarts.isSingleAtom && !smarts.isSingleBond,
-                "Use CTSmarts::match_bond<\"SMARTS\">(mol, bond) to check for a single match.");
-        auto iso = Isomorphism<Mol, decltype(smarts), M, NoOptimizationPolicy>{}; // FIXME: NoOptimizationPolicy
+        static_assert(smarts.numBonds, "There should at least be one bond in the SMARTS expression.");
+        if constexpr (Config::specialize && smarts.isSingleBond) {
+            // Optimize single bond SMARTS
+            if constexpr (M == SearchType::Unique) {
+                if (impl::singleBondMatch(smarts, mol, bond))
+                    return 1;
+            } else {
+                return impl::singleBondCount(smarts, mol, bond);
+            }
+            return 0;
+        }
+        auto iso = Isomorphism<Mol, decltype(smarts), M, NoOptimizeConfig>{}; // FIXME: NoOptimizeConfig
         return iso.countBond(mol, bond);
     }
 
     // ctse::count_bond_unique<"SMARTS">(mol, bond) -> std::integeral
 
-    template<ctll::fixed_string SMARTS>
-    constexpr auto count_bond_unique(Molecule::Molecule auto &mol, const auto &bond)
-    {
-        return count_bond<SMARTS, MapType::Unique>(mol, bond);
-    }
+    CTSMARTS_API_BOND_UNIQUE(count)
 
     // ctse::count_bond_all<"SMARTS">(mol, bond) -> std::integeral
 
-    template<ctll::fixed_string SMARTS>
-    constexpr auto count_bond_all(Molecule::Molecule auto &mol, const auto &bond)
-    {
-        return count_bond<SMARTS, MapType::All>(mol, bond);
-    }
+    CTSMARTS_API_BOND_ALL(count)
 
     //
     // Atom/Bond
@@ -127,56 +113,26 @@ namespace Kitimar::CTSmarts {
 
     // ctse::count<"SMARTS">(mol, atom, ctse::[Unique, All]) -> std::integeral
 
-    template<ctll::fixed_string SMARTS, MapType M = MapType::Unique, Molecule::Molecule Mol>
-    requires (!Molecule::MoleculeTraits<Mol>::SameAtomBondType)
-    constexpr auto count(Mol &mol, typename Molecule::MoleculeTraits<Mol>::Atom atom, MapTypeTag<M> mapType = {})
-    {
-        return count_atom<SMARTS>(mol, atom, mapType);
-    }
+    CTSMARTS_API_OVERLOAD_ATOM_SEARCH(count)
 
     // ctse::count<"SMARTS">(mol, bond, ctse::[Unique, All]) -> std::integeral
 
-    template<ctll::fixed_string SMARTS, MapType M = MapType::Unique, Molecule::Molecule Mol>
-    requires (!Molecule::MoleculeTraits<Mol>::SameAtomBondType)
-    constexpr auto count(Mol &mol, typename Molecule::MoleculeTraits<Mol>::Bond bond, MapTypeTag<M> mapType = {})
-    {
-        return count_bond<SMARTS>(mol, bond, mapType);
-    }
+    CTSMARTS_API_OVERLOAD_BOND_SEARCH(count)
 
     // ctse::count_unique<"SMARTS">(mol, atom) -> std::integeral
 
-    template<ctll::fixed_string SMARTS, Molecule::Molecule Mol>
-    requires (!Molecule::MoleculeTraits<Mol>::SameAtomBondType)
-    constexpr auto count_unique(Mol &mol, typename Molecule::MoleculeTraits<Mol>::Atom atom)
-    {
-        return count_atom_unique<SMARTS>(mol, atom);
-    }
+    CTSMARTS_API_OVERLOAD_ATOM_UNIQUE(count)
 
     // ctse::count_unique<"SMARTS">(mol, bond) -> std::integeral
 
-    template<ctll::fixed_string SMARTS, Molecule::Molecule Mol>
-    requires (!Molecule::MoleculeTraits<Mol>::SameAtomBondType)
-    constexpr auto count_unique(Mol &mol, typename Molecule::MoleculeTraits<Mol>::Bond bond)
-    {
-        return count_bond_unique<SMARTS>(mol, bond);
-    }
+    CTSMARTS_API_OVERLOAD_BOND_UNIQUE(count)
 
     // ctse::count_all<"SMARTS">(mol, atom) -> std::integeral
 
-    template<ctll::fixed_string SMARTS, Molecule::Molecule Mol>
-    requires (!Molecule::MoleculeTraits<Mol>::SameAtomBondType)
-    constexpr auto count_all(Mol &mol, typename Molecule::MoleculeTraits<Mol>::Atom atom)
-    {
-        return count_atom_all<SMARTS>(mol, atom);
-    }
+    CTSMARTS_API_OVERLOAD_ATOM_ALL(count)
 
     // ctse::count_all<"SMARTS">(mol, bond) -> std::integeral
 
-    template<ctll::fixed_string SMARTS, Molecule::Molecule Mol>
-    requires (!Molecule::MoleculeTraits<Mol>::SameAtomBondType)
-    constexpr auto count_all(Mol &mol, typename Molecule::MoleculeTraits<Mol>::Bond bond)
-    {
-        return count_bond_all<SMARTS>(mol, bond);
-    }
+    CTSMARTS_API_OVERLOAD_BOND_ALL(count)
 
 } // mamespace Kitimar::CTSmarts

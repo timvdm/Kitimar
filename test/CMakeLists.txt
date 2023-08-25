@@ -81,7 +81,7 @@ if(Kitimar_WITH_RDKIT)
 endif()
 
 if(Kitimar_WITH_OPENBABEL)
-    add_executable(BenchmarkCTSmarts BenchmarkCTSmarts.cpp)    
-    target_link_libraries(BenchmarkCTSmarts Kitimar::CTSmarts Kitimar::OpenBabel Catch2::Catch2WithMain TestData)
+    add_executable(BenchmarkCTSmartsOld BenchmarkCTSmarts.cpp)
+    target_link_libraries(BenchmarkCTSmartsOld Kitimar::CTSmarts Kitimar::OpenBabel Catch2::Catch2WithMain TestData)
 endif()
 
