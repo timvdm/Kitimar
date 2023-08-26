@@ -39,28 +39,39 @@ namespace Kitimar::CTSmarts {
 
     // ctse::match_atom<"SMARTS">(mol, atom) -> bool
 
+    namespace impl {
+
+        template<typename SmartsT, typename Config, Molecule::Molecule Mol>
+        constexpr bool match_atom(Mol &mol, const auto &atom)
+        {
+            auto smarts = SmartsT{};
+            if constexpr (smarts.isSingleAtom) {
+                // Optimize single atom SMARTS
+                return impl::singleAtomMatch(smarts, mol, atom);
+            } else if constexpr (Config::specialize && smarts.isSingleBond) {
+                // Optimize single bond SMARTS
+                if (!matchAtomExpr(mol, atom, get<0>(smarts.atoms).expr))
+                    return false;
+                for (auto bond : get_bonds(mol, atom)) {
+                    if (!matchBondExpr(mol, bond, get<0>(smarts.bonds).expr))
+                        continue;
+                    if (matchAtomExpr(mol, Kitimar::Molecule::get_nbr(mol, bond, atom), get<1>(smarts.atoms).expr))
+                        return true;
+                }
+                return false;
+            } else {
+                auto iso = Isomorphism<Mol, decltype(smarts), SearchType::Single, NoOptimizeConfig>{}; // FIXME: allow optimizations to be used...
+                return iso.matchAtom(mol, atom);
+            }
+        }
+
+    } // namespace impl
+
     template<ctll::fixed_string SMARTS, typename Config = DefaultConfig, Molecule::Molecule Mol>
     constexpr bool match_atom(Mol &mol, const auto &atom)
     {
-        auto smarts = Smarts<SMARTS>{};
-        if constexpr (smarts.isSingleAtom) {
-            // Optimize single atom SMARTS
-            return impl::singleAtomMatch(smarts, mol, atom);
-        } else if constexpr (Config::specialize && smarts.isSingleBond) {
-            // Optimize single bond SMARTS
-            if (!matchAtomExpr(mol, atom, get<0>(smarts.atoms).expr))
-                return false;
-            for (auto bond : get_bonds(mol, atom)) {
-                if (!matchBondExpr(mol, bond, get<0>(smarts.bonds).expr))
-                    continue;
-                if (matchAtomExpr(mol, Kitimar::Molecule::get_nbr(mol, bond, atom), get<1>(smarts.atoms).expr))
-                    return true;
-            }
-            return false;
-        } else {
-            auto iso = Isomorphism<Mol, decltype(smarts), SearchType::Single, NoOptimizeConfig>{}; // FIXME: allow optimizations to be used...
-            return iso.matchAtom(mol, atom);
-        }
+        return impl::match_atom<Smarts<SMARTS>, Config, Mol>(mol, atom);
+
     }
 
     //

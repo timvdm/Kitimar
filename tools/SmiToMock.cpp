@@ -24,13 +24,14 @@ int main(int argc, char **argv)
     fmt::println("    Mol mol;");
     // Atoms
     for (auto atom : get_atoms(mol)) {
-        fmt::println("    addMockAtom(mol, {}, {}, {}, {}, {}, {}, {}, {});",
+        fmt::println("    addMockAtom(mol, {}, {}, {}, {}, {}, {}, {}, {}, {});",
                    get_index(mol, atom),
                    get_element(mol, atom),
                    get_isotope(mol, atom),
                    get_charge(mol, atom),
                    get_degree(mol, atom),
                    get_implicit_hydrogens(mol, atom),
+                   get_total_hydrogens(mol, atom) - get_implicit_hydrogens(mol, atom),
                    is_ring_atom(mol, atom),
                    is_aromatic_atom(mol, atom));
     }

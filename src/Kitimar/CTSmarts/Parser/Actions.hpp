@@ -8,7 +8,6 @@
 
 namespace Kitimar::CTSmarts {
 
-
     template<int N, int AtomIndex, typename BondExpr>
     struct RingBondHelper
     {
@@ -75,12 +74,12 @@ namespace Kitimar::CTSmarts {
         using Classes = T6;
         using Error = T7;
 
-        static constexpr inline auto nextIndex = NextIndex{};
-        static constexpr inline auto prevIndex = PrevIndex{};
-        static constexpr inline auto atomExpr = AtomExpr{};
-        static constexpr inline auto bondExpr = BondExpr{};
-        static constexpr inline auto ringBonds = RingBonds{};
-        static constexpr inline auto classes = Classes{};
+        static constexpr inline auto nextIndex = NextIndex{}; // Number
+        static constexpr inline auto prevIndex = PrevIndex{}; // ctll::list<Number>
+        static constexpr inline auto atomExpr = AtomExpr{}; // ctll::list<T>
+        static constexpr inline auto bondExpr = BondExpr{};  // ctll::list<T>
+        static constexpr inline auto ringBonds = RingBonds{}; // ctll::list<RingBondHelper>
+        static constexpr inline auto classes = Classes{}; // ctll::list<ClassHelper>
         static constexpr inline auto error = Error{};
 
         template<typename T> static consteval auto setNextIndex(T) noexcept { return SmartsParams<T, T2, T3, T4, T5, T6, T7>{}; }
@@ -120,19 +119,23 @@ namespace Kitimar::CTSmarts {
     };
 
 
-    template <typename Atoms = ctll::list<>, typename Bonds = ctll::empty_list, typename ParamsT = SmartsParams<Number<0>, ctll::empty_list, ctll::empty_list, ctll::empty_list, ctll::empty_list, ctll::empty_list, NoErrorTag>>
+    template <typename Atoms = ctll::empty_list, typename Bonds = ctll::empty_list,
+              typename ParamsT = SmartsParams<Number<0>, ctll::empty_list, ctll::empty_list, ctll::empty_list, ctll::empty_list, ctll::empty_list, NoErrorTag>,
+              typename ParentT = ctll::_nothing>
     struct SmartsContext
     {
         using Params = ParamsT;
+        using Parent = ParentT;
 
-        static constexpr inline auto atoms = Atoms();
-        static constexpr inline auto bonds = Bonds();
-        static constexpr inline auto params = ParamsT();
+        static constexpr inline auto atoms = Atoms{};
+        static constexpr inline auto bonds = Bonds{};
+        static constexpr inline auto params = ParamsT{};
+        static constexpr inline auto parent = ParentT{};
 
         static constexpr inline auto valid = !ctll::size(params.ringBonds);
 
         constexpr SmartsContext() noexcept {}
-        constexpr SmartsContext(Atoms, Bonds, ParamsT) noexcept {}
+        constexpr SmartsContext(Atoms, Bonds, Params, Parent) noexcept {}
     };
 
 
@@ -370,14 +373,14 @@ namespace Kitimar::CTSmarts {
         static constexpr auto apply(SmartsGrammar::push_char, ctll::term<V>, Context ctx)
         {
             auto atoms = ctll::push_front(Char<V>(), ctx.atoms);
-            return SmartsContext{atoms, ctx.bonds, ctx.params};
+            return SmartsContext{atoms, ctx.bonds, ctx.params, ctx.parent};
         }
 
         // pop_char
-        template <auto V, auto C, typename ... Ts, typename Bonds, typename Params>
-        static constexpr auto apply(SmartsGrammar::pop_char, ctll::term<V> term, SmartsContext<ctll::list<Char<C>, Ts...>, Bonds, Params> ctx)
+        template <auto V, auto C, typename ... Ts, typename Bonds, typename Params, typename Parent>
+        static constexpr auto apply(SmartsGrammar::pop_char, ctll::term<V> term, SmartsContext<ctll::list<Char<C>, Ts...>, Bonds, Params, Parent> ctx)
         {
-            return SmartsContext{ctll::list<Ts...>(), ctx.bonds, ctx.params};
+            return SmartsContext{ctll::list<Ts...>(), ctx.bonds, ctx.params, ctx.parent};
         }
 
         // start_number
@@ -385,14 +388,14 @@ namespace Kitimar::CTSmarts {
         static constexpr auto apply(SmartsGrammar::start_number, ctll::term<V>, Context ctx)
         {
             auto atoms = ctll::push_front(Number<V - '0'>(), ctx.atoms);
-            return SmartsContext{atoms, ctx.bonds, ctx.params};
+            return SmartsContext{atoms, ctx.bonds, ctx.params, ctx.parent};
         }
 
         // push_number
-        template <auto V, auto N, typename ... Ts, typename Bonds, typename Params>
-        static constexpr auto apply(SmartsGrammar::push_number, ctll::term<V> term, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params> ctx)
+        template <auto V, auto N, typename ... Ts, typename Bonds, typename Params, typename Parent>
+        static constexpr auto apply(SmartsGrammar::push_number, ctll::term<V> term, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params, Parent> ctx)
         {
-            return SmartsContext{ctll::list<Number<10 * N + V - '0'>, Ts...>(), ctx.bonds, ctx.params};
+            return SmartsContext{ctll::list<Number<10 * N + V - '0'>, Ts...>(), ctx.bonds, ctx.params, ctx.parent};
         }
 
         //
@@ -501,17 +504,17 @@ namespace Kitimar::CTSmarts {
 
 
 
-        template<typename Atoms, typename Bonds, typename Params>
-        static constexpr auto makeBond(Atoms atoms, Bonds bonds, Params params)
+        template<typename Atoms, typename Bonds, typename Params, typename Parent>
+        static constexpr auto makeBond(Atoms atoms, Bonds bonds, Params params, Parent parent)
         {
             if constexpr (ctll::empty(params.prevIndex)) {
-                return SmartsContext{atoms, bonds, params.nextAtom()};
+                return SmartsContext{atoms, bonds, params.nextAtom(), parent};
             } else {
                 constexpr auto prevIndex = ctll::front(params.prevIndex).value;
                 auto expr = makeBondAST(ctll::rotate(params.bondExpr));
                 auto bond = Bond<ctll::size(bonds), prevIndex, params.nextIndex(), decltype(expr)>();
                 auto bonds2 = ctll::push_front(bond, bonds);
-                return SmartsContext{atoms, bonds2, params.nextAtom()};
+                return SmartsContext{atoms, bonds2, params.nextAtom(), parent};
             }
         }
 
@@ -522,7 +525,7 @@ namespace Kitimar::CTSmarts {
             auto expr = makeAtomAST(ctll::rotate(ctx.params.atomExpr));
             auto atom = Atom<ctll::size(ctx.atoms), decltype(expr)>{};
             auto atoms = ctll::push_front(atom, ctx.atoms);
-            return makeBond(atoms, ctx.bonds, ctx.params.setAtomExpr(ctll::empty_list())); // FIXME empty atomExpr in nextAtom
+            return makeBond(atoms, ctx.bonds, ctx.params.setAtomExpr(ctll::empty_list()), ctx.parent); // FIXME empty atomExpr in nextAtom
         }
 
         //
@@ -534,7 +537,7 @@ namespace Kitimar::CTSmarts {
         {
             auto atomExpr = pushExpr(ctx.params.atomExpr, leaf);
             auto params = ctx.params.setAtomExpr(atomExpr);
-            return SmartsContext{atoms, ctx.bonds, params};
+            return SmartsContext{atoms, ctx.bonds, params, ctx.parent};
         }
 
         // make_any_atom
@@ -564,8 +567,8 @@ namespace Kitimar::CTSmarts {
         {
             return pushAtomExpr(ctx, ctx.atoms, AliphaticAtom<termAtomicNumber(term)>());
         }
-        template <auto V, auto C, typename ...Ts, typename Bonds, typename Params>
-        static constexpr auto apply(SmartsGrammar::make_aliphatic, ctll::term<V> term, SmartsContext<ctll::list<Char<C>, Ts...>, Bonds, Params> ctx)
+        template <auto V, auto C, typename ...Ts, typename Bonds, typename Params, typename Parent>
+        static constexpr auto apply(SmartsGrammar::make_aliphatic, ctll::term<V> term, SmartsContext<ctll::list<Char<C>, Ts...>, Bonds, Params, Parent> ctx)
         {
             auto expr = AliphaticAtom<symbolAtomicNumber(Char<C>(), term)>();
             return pushAtomExpr(ctx, ctll::list<Ts...>(), expr);
@@ -577,16 +580,16 @@ namespace Kitimar::CTSmarts {
         {
             return pushAtomExpr(ctx, ctx.atoms, AromaticAtom<termAtomicNumber(term)>());
         }
-        template <auto V, auto C, typename ...Ts, typename Bonds, typename Params>
-        static constexpr auto apply(SmartsGrammar::make_aromatic, ctll::term<V> term, SmartsContext<ctll::list<Char<C>, Ts...>, Bonds, Params> ctx)
+        template <auto V, auto C, typename ...Ts, typename Bonds, typename Params, typename Parent>
+        static constexpr auto apply(SmartsGrammar::make_aromatic, ctll::term<V> term, SmartsContext<ctll::list<Char<C>, Ts...>, Bonds, Params, Parent> ctx)
         {
             auto expr = AromaticAtom<symbolAtomicNumber(Char<C>(), term)>();
             return pushAtomExpr(ctx, ctll::list<Ts...>(), expr);
         }
 
         // make_isotope
-        template <auto V, auto N, typename ...Ts, typename Bonds, typename Params>
-        static constexpr auto apply(SmartsGrammar::make_isotope, ctll::term<V> term, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params> ctx)
+        template <auto V, auto N, typename ...Ts, typename Bonds, typename Params, typename Parent>
+        static constexpr auto apply(SmartsGrammar::make_isotope, ctll::term<V> term, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params, Parent> ctx)
         {
             return pushAtomExpr(ctx, ctll::list<Ts...>(), Isotope<N>());
         }
@@ -598,8 +601,8 @@ namespace Kitimar::CTSmarts {
         {
             return pushAtomExpr(ctx, ctx.atoms, Element<1>());
         }
-        template <auto V, auto N, typename ...Ts, typename Bonds, typename Params>
-        static constexpr auto apply(SmartsGrammar::make_element, ctll::term<V> term, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params> ctx)
+        template <auto V, auto N, typename ...Ts, typename Bonds, typename Params, typename Parent>
+        static constexpr auto apply(SmartsGrammar::make_element, ctll::term<V> term, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params, Parent> ctx)
         {
             return pushAtomExpr(ctx, ctll::list<Ts...>(), Element<N>());
         }
@@ -610,8 +613,8 @@ namespace Kitimar::CTSmarts {
         {
             return pushAtomExpr(ctx, ctx.atoms, Degree<1>());
         }
-        template <auto V, auto N, typename ...Ts, typename Bonds, typename Params>
-        static constexpr auto apply(SmartsGrammar::make_degree, ctll::term<V> term, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params> ctx)
+        template <auto V, auto N, typename ...Ts, typename Bonds, typename Params, typename Parent>
+        static constexpr auto apply(SmartsGrammar::make_degree, ctll::term<V> term, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params, Parent> ctx)
         {
             return pushAtomExpr(ctx, ctll::list<Ts...>(), Degree<N>());
         }
@@ -622,8 +625,8 @@ namespace Kitimar::CTSmarts {
         {
             return pushAtomExpr(ctx, ctx.atoms, Valence<1>());
         }
-        template <auto V, auto N, typename ...Ts, typename Bonds, typename Params>
-        static constexpr auto apply(SmartsGrammar::make_valence, ctll::term<V> term, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params> ctx)
+        template <auto V, auto N, typename ...Ts, typename Bonds, typename Params, typename Parent>
+        static constexpr auto apply(SmartsGrammar::make_valence, ctll::term<V> term, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params, Parent> ctx)
         {
             return pushAtomExpr(ctx, ctll::list<Ts...>(), Valence<N>());
         }
@@ -634,8 +637,8 @@ namespace Kitimar::CTSmarts {
         {
             return pushAtomExpr(ctx, ctx.atoms, Connectivity<1>());
         }
-        template <auto V, auto N, typename ...Ts, typename Bonds, typename Params>
-        static constexpr auto apply(SmartsGrammar::make_connectivity, ctll::term<V> term, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params> ctx)
+        template <auto V, auto N, typename ...Ts, typename Bonds, typename Params, typename Parent>
+        static constexpr auto apply(SmartsGrammar::make_connectivity, ctll::term<V> term, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params, Parent> ctx)
         {
             return pushAtomExpr(ctx, ctll::list<Ts...>(), Connectivity<N>());
         }
@@ -660,8 +663,8 @@ namespace Kitimar::CTSmarts {
         {
             return pushAtomExpr(ctx, ctx.atoms, RingCount<1>());
         }
-        template <auto V, auto N, typename ...Ts, typename Bonds, typename Params>
-        static constexpr auto apply(SmartsGrammar::make_ring_count, ctll::term<V> term, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params> ctx)
+        template <auto V, auto N, typename ...Ts, typename Bonds, typename Params, typename Parent>
+        static constexpr auto apply(SmartsGrammar::make_ring_count, ctll::term<V> term, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params, Parent> ctx)
         {
             return pushAtomExpr(ctx, ctll::list<Ts...>(), RingCount<N>());
         }
@@ -672,8 +675,8 @@ namespace Kitimar::CTSmarts {
         {
             return pushAtomExpr(ctx, ctx.atoms, RingSize<1>());
         }
-        template <auto V, auto N, typename ...Ts, typename Bonds, typename Params>
-        static constexpr auto apply(SmartsGrammar::make_ring_size, ctll::term<V> term, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params> ctx)
+        template <auto V, auto N, typename ...Ts, typename Bonds, typename Params, typename Parent>
+        static constexpr auto apply(SmartsGrammar::make_ring_size, ctll::term<V> term, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params, Parent> ctx)
         {
             return pushAtomExpr(ctx, ctll::list<Ts...>(), RingSize<N>());
         }
@@ -684,18 +687,18 @@ namespace Kitimar::CTSmarts {
         {
             return pushAtomExpr(ctx, ctx.atoms, RingConnectivity<1>());
         }
-        template <auto V, auto N, typename ...Ts, typename Bonds, typename Params>
-        static constexpr auto apply(SmartsGrammar::make_ring_connectivity, ctll::term<V> term, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params> ctx)
+        template <auto V, auto N, typename ...Ts, typename Bonds, typename Params, typename Parent>
+        static constexpr auto apply(SmartsGrammar::make_ring_connectivity, ctll::term<V> term, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params, Parent> ctx)
         {
             return pushAtomExpr(ctx, ctll::list<Ts...>(), RingConnectivity<N>());
         }
 
         // make_class
-        template <auto V, auto N, typename ...Ts, typename Bonds, typename Params>
-        static constexpr auto apply(SmartsGrammar::make_class, ctll::term<V> term, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params> ctx)
+        template <auto V, auto N, typename ...Ts, typename Bonds, typename Params, typename Parent>
+        static constexpr auto apply(SmartsGrammar::make_class, ctll::term<V> term, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params, Parent> ctx)
         {
             auto cls = ctll::push_front(ClassHelper<N, ctx.params.nextIndex()>(), ctx.params.classes);
-            return SmartsContext{ctll::list<Ts...>(), ctx.bonds, ctx.params.setClasses(cls)};
+            return SmartsContext{ctll::list<Ts...>(), ctx.bonds, ctx.params.setClasses(cls), ctx.parent};
         }
 
         // make_impl_h
@@ -782,7 +785,7 @@ namespace Kitimar::CTSmarts {
         {
             constexpr auto value = V == '+' ? 1 : -1;
             auto atoms = ctll::push_front(Charge<value>{}, ctx.atoms);
-            return SmartsContext{atoms, ctx.bonds, ctx.params};
+            return SmartsContext{atoms, ctx.bonds, ctx.params, ctx.parent};
         }
 
         template <int Value, typename Context>
@@ -790,7 +793,7 @@ namespace Kitimar::CTSmarts {
         {
             auto [charge, tail] = ctll::pop_and_get_front(ctx.atoms);
             auto atoms = ctll::push_front(Charge<charge.value + Value>{}, tail);
-            return SmartsContext{atoms, ctx.bonds, ctx.params};
+            return SmartsContext{atoms, ctx.bonds, ctx.params, ctx.parent};
         }
 
         // increment_charge
@@ -836,13 +839,13 @@ namespace Kitimar::CTSmarts {
         static constexpr auto apply(SmartsGrammar::make_atom_not, ctll::term<V> term, Context ctx)
         {
             auto atomExpr = pushExpr(ctx.params.atomExpr, NotTag());
-            return SmartsContext{ctx.atoms, ctx.bonds, ctx.params.setAtomExpr(atomExpr)};
+            return SmartsContext{ctx.atoms, ctx.bonds, ctx.params.setAtomExpr(atomExpr), ctx.parent};
         }
 
         static constexpr auto makeAtomOp(auto ctx, auto op)
         {
             auto atomExpr = ctll::push_front(op, ctx.params.atomExpr);
-            return SmartsContext{ctx.atoms, ctx.bonds, ctx.params.setAtomExpr(atomExpr)};
+            return SmartsContext{ctx.atoms, ctx.bonds, ctx.params.setAtomExpr(atomExpr), ctx.parent};
         }
 
         // make_atom_and_high
@@ -871,13 +874,13 @@ namespace Kitimar::CTSmarts {
         static constexpr auto apply(SmartsGrammar::make_bond_not, ctll::term<V> term, Context ctx)
         {
             auto bondExpr = pushExpr(ctx.params.bondExpr, NotTag());
-            return SmartsContext{ctx.atoms, ctx.bonds, ctx.params.setBondExpr(bondExpr)};
+            return SmartsContext{ctx.atoms, ctx.bonds, ctx.params.setBondExpr(bondExpr), ctx.parent};
         }
 
         static constexpr auto makeBondOp(auto ctx, auto op)
         {
             auto bondExpr = ctll::push_front(op, ctx.params.bondExpr);
-            return SmartsContext{ctx.atoms, ctx.bonds, ctx.params.setBondExpr(bondExpr)};
+            return SmartsContext{ctx.atoms, ctx.bonds, ctx.params.setBondExpr(bondExpr), ctx.parent};
         }
 
         // make_bond_and_high
@@ -909,21 +912,38 @@ namespace Kitimar::CTSmarts {
         template <auto V, typename Context>
         static constexpr auto apply(SmartsGrammar::push_prev, ctll::term<V> term, Context ctx)
         {
-            return SmartsContext{ctx.atoms, ctx.bonds, ctx.params.pushPrevIndex()};
+            return SmartsContext{ctx.atoms, ctx.bonds, ctx.params.pushPrevIndex(), ctx.parent};
         }
 
         // pop_prev
         template <auto V, typename Context>
         static constexpr auto apply(SmartsGrammar::pop_prev, ctll::term<V> term, Context ctx)
         {
-            return SmartsContext{ctx.atoms, ctx.bonds, ctx.params.popPrevIndex()};
+            return SmartsContext{ctx.atoms, ctx.bonds, ctx.params.popPrevIndex(), ctx.parent};
         }
 
         // reset_prev
         template <auto V, typename Context>
         static constexpr auto apply(SmartsGrammar::reset_prev, ctll::term<V> term, Context ctx)
         {
-            return SmartsContext{ctx.atoms, ctx.bonds, ctx.params.popPrevIndex()};
+            return SmartsContext{ctx.atoms, ctx.bonds, ctx.params.popPrevIndex(), ctx.parent};
+        }
+
+        //
+        // Recursive
+        //
+
+        template <auto V, typename Context>
+        static constexpr auto apply(SmartsGrammar::push_recursive, ctll::term<V> term, Context ctx)
+        {
+            return SmartsContext{{}, {}, {}, ctx};
+        }
+
+        template <auto V, typename Context>
+        static constexpr auto apply(SmartsGrammar::pop_recursive, ctll::term<V> term, Context ctx)
+        {
+            auto expr = BasicSmarts{ctll::rotate(Context::atoms), ctll::rotate(Context::bonds)};
+            return pushAtomExpr(ctx.parent, ctx.parent.atoms, expr);
         }
 
         //
@@ -935,7 +955,7 @@ namespace Kitimar::CTSmarts {
         {
             auto bondExpr = pushExpr(ctx.params.bondExpr, leaf);
             auto params = ctx.params.setBondExpr(bondExpr);
-            return SmartsContext{atoms, ctx.bonds, params};
+            return SmartsContext{atoms, ctx.bonds, params, ctx.parent};
         }
 
         // bond_primitive
@@ -944,21 +964,17 @@ namespace Kitimar::CTSmarts {
         {
             static_assert(!ctll::empty(ctx.params.prevIndex));
             return pushBondExpr(ctx, ctx.atoms, bondPrimitive(term));
-            //auto expr = leafBondExpr<ctx.params.notSet>(ctx.params.operation, ctx.params.bondExpr, bondPrimitive(term));
-            //return SmartsContext{ctx.atoms, ctx.bonds, ctx.params.setBondExpr(expr)};
-            //return ctx;
-
         }
-        template <auto V, auto C, typename ...Ts, typename Bonds, typename Params>
-        static constexpr auto apply(SmartsGrammar::make_bond_primitive, ctll::term<V> term, SmartsContext<ctll::list<Char<C>, Ts...>, Bonds, Params> ctx)
+        template <auto V, auto C, typename ...Ts, typename Bonds, typename Params, typename Parent>
+        static constexpr auto apply(SmartsGrammar::make_bond_primitive, ctll::term<V> term, SmartsContext<ctll::list<Char<C>, Ts...>, Bonds, Params, Parent> ctx)
         {
             static_assert(!ctll::empty(ctx.params.prevIndex));
             if constexpr (V == '?') {
                 auto expr = leafBondExpr<ctx.params.operation, ctx.params.notSet>(ctx.params.bondExpr, UpOrDownBond());
-                return SmartsContext{ctx.atoms, ctx.bonds, ctx.params.setBondExpr(expr)};
+                return SmartsContext{ctx.atoms, ctx.bonds, ctx.params.setBondExpr(expr), ctx.parent};
             } else {
                 auto expr = leafBondExpr<ctx.params.operation, ctx.params.notSet>(ctx.params.bondExpr, bondPrimitive(ctll::term<C>()));
-                return SmartsContext{ctx.atoms, ctx.bonds, ctx.params.setBondExpr(expr)};
+                return SmartsContext{ctx.atoms, ctx.bonds, ctx.params.setBondExpr(expr), ctx.parent};
             }
         }
 
@@ -1004,7 +1020,7 @@ namespace Kitimar::CTSmarts {
             if constexpr (std::is_same_v<decltype(rb), ctll::_nothing>) {
                 auto rb2 = RingBondHelper<N, atomIndex, decltype(ctx.params.bondExpr)>();
                 auto ringBonds = ctll::push_front(rb2, ctx.params.ringBonds);
-                return SmartsContext{atoms, ctx.bonds, ctx.params.setRingBonds(ringBonds).setBondExpr(ctll::empty_list())};
+                return SmartsContext{atoms, ctx.bonds, ctx.params.setRingBonds(ringBonds).setBondExpr(ctll::empty_list()), ctx.parent};
             } else {
                 constexpr auto prevIndex = rb.atomIndex;
                 constexpr auto ringBond = makeRingBond<ctll::size(ctx.bonds), atomIndex, prevIndex>(makeBondAST(ctll::rotate(rb.bondExpr)), makeBondAST(ctll::rotate(ctx.params.bondExpr)));
@@ -1013,9 +1029,9 @@ namespace Kitimar::CTSmarts {
                 auto bonds = ctll::push_front(bond, ctx.bonds);
                 auto ringBonds = ctll::remove_item(rb, ctx.params.ringBonds);
                 if constexpr (std::is_same_v<NoErrorTag, decltype(error)>)
-                    return SmartsContext{atoms, bonds, ctx.params.setRingBonds(ringBonds).setBondExpr(ctll::empty_list())};
+                    return SmartsContext{atoms, bonds, ctx.params.setRingBonds(ringBonds).setBondExpr(ctll::empty_list()), ctx.parent};
                 else
-                    return SmartsContext{atoms, bonds, ctx.params.setRingBonds(ringBonds).setBondExpr(ctll::empty_list()).setError(error)};
+                    return SmartsContext{atoms, bonds, ctx.params.setRingBonds(ringBonds).setBondExpr(ctll::empty_list()).setError(error), ctx.parent};
             }
         }
 
@@ -1025,14 +1041,11 @@ namespace Kitimar::CTSmarts {
             return handleRingBond<V - '0'>(ctx, ctx.atoms);
         }
 
-        template <auto V, auto N, typename ...Ts, typename Bonds, typename Params>
-        static constexpr auto apply(SmartsGrammar::handle_ring_bond, ctll::term<V> term, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params> ctx)
+        template <auto V, auto N, typename ...Ts, typename Bonds, typename Params, typename Parent>
+        static constexpr auto apply(SmartsGrammar::handle_ring_bond, ctll::term<V> term, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params, Parent> ctx)
         {
             return handleRingBond<10 * N + V - '0'>(ctx, ctll::list<Ts...>());
         }
-
-
-
 
         //
         // Errors
@@ -1041,8 +1054,7 @@ namespace Kitimar::CTSmarts {
         template <auto V, typename Context>
         static constexpr auto apply(SmartsGrammar::error_empty_bracket, ctll::term<V> term, Context ctx)
         {
-            //return SmartsContext{ctx.atoms, ctx.bonds, ctx.params.template setError<EmptyBracketAtomTag>(EmptyBracketAtomTag())};
-            return SmartsContext{ctx.atoms, ctx.bonds, ctx.params.setError(EmptyBracketAtomTag())};
+            return SmartsContext{ctx.atoms, ctx.bonds, ctx.params.setError(EmptyBracketAtomTag()), ctx.parent};
         }
 
 

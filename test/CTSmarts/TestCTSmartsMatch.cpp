@@ -4,6 +4,8 @@ using namespace Kitimar;
 using namespace Kitimar::CTSmarts;
 
 using Molecule::MockAcetateAnion;
+using Molecule::MockSulfone;
+using Molecule::MockSulfonAmide;
 
 //
 // match(mol)
@@ -35,7 +37,18 @@ using MatchCases = std::tuple<
     ValueTestCase<MockAcetateAnion, "CC([O-])=O", true>,
     ValueTestCase<MockAcetateAnion, "O=C(C)[O-]", true>,
 
-    ValueTestCase<MockAcetateAnion, "CC(=O)N", false>
+    ValueTestCase<MockAcetateAnion, "CC(=O)N", false>,
+
+    // recursive
+    ValueTestCase<MockSulfone, "S(=O)(=O)(C)C", true>,
+    ValueTestCase<MockSulfone, "S(=O)(=O)(C)N", false>,
+    ValueTestCase<MockSulfone, "[S!$(*N)](=O)(=O)", true>,
+    ValueTestCase<MockSulfone, "[#16!$(*~[#7])](~[#8;X1H0,X2H1])~[#8;X1H0,X2H1]", true>,
+
+    ValueTestCase<MockSulfonAmide, "S(=O)(=O)(C)C", false>,
+    ValueTestCase<MockSulfonAmide, "S(=O)(=O)(C)N", true>,
+    ValueTestCase<MockSulfonAmide, "[S!$(*N)](=O)(=O)", false>,
+    ValueTestCase<MockSulfonAmide, "[#16!$(*~[#7])](~[#8;X1H0,X2H1])~[#8;X1H0,X2H1]", false>
 >;
 
 template<typename Mol, typename Case>

@@ -24,11 +24,6 @@
 
 namespace Kitimar::CTSmarts {
 
-    template <ctll::fixed_string SMARTS, bool IgnoreInvalid = false>
-    struct Smarts;
-
-
-
     constexpr auto cycleRank(auto numVertices, auto numEdges, auto numComponents)
     {
         return numEdges - numVertices + numComponents;
@@ -138,36 +133,25 @@ namespace Kitimar::CTSmarts {
 
 
 
-    //template<typename Atoms, typename Bonds>
-    template <ctll::fixed_string SMARTS, bool IgnoreInvalid>
-    struct Smarts
-    {
-        using Result = ctll::parser<SmartsGrammar, SMARTS, SmartsActions>::template output<SmartsContext<>>;
-        using Context = Result::output_type;
 
+
+
+
+    template <ctll::fixed_string SMARTS, bool IgnoreInvalid = false,
+              typename Result = ctll::parser<SmartsGrammar, SMARTS, SmartsActions>::template output<SmartsContext<>>,
+              typename Context = Result::output_type>
+    struct Smarts : BasicSmarts<decltype(ctll::rotate(Context::atoms)), decltype(ctll::rotate(Context::bonds))>
+    {
         static constexpr inline auto smarts = SMARTS;
+        static constexpr inline auto context = Context();
+        static constexpr inline auto valid = Result::is_correct;
+        static constexpr inline auto position = Result::position;
 
         static constexpr auto input()
         {
             auto str = SMARTS | std::views::transform([] (auto c) { return static_cast<char>(c); });
             return std::string(str.begin(), str.end());
         }
-
-        static constexpr inline auto context = Context();
-        static constexpr inline auto valid = Result::is_correct;
-        static constexpr inline auto position = Result::position;
-
-
-        static constexpr inline auto atoms = ctll::rotate(Context::atoms);
-        static constexpr inline auto bonds = ctll::rotate(Context::bonds);
-        static constexpr inline auto numAtoms = ctll::size(atoms);
-        static constexpr inline auto numBonds = ctll::size(bonds);
-
-        static constexpr inline auto isSingleAtom = numAtoms == 1;
-        static constexpr inline auto isSingleBond = numAtoms == 2 && numBonds == 1;
-
-
-
 
         template<typename ErrorTag>
         static constexpr auto getError(ErrorTag)

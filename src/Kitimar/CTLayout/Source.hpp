@@ -29,7 +29,8 @@ namespace Kitimar::CTLayout {
             template<typename T>
             constexpr auto read(std::size_t offset = 0) const noexcept
             {
-                return *reinterpret_cast<const T*>(m_data + offset);
+                assert(m_data);
+                return m_data ? *reinterpret_cast<const T*>(m_data + offset) : T{};
             }
 
             template<typename T>
@@ -133,13 +134,11 @@ namespace Kitimar::CTLayout {
                 std::ifstream ifs{filename.data(), std::ios_base::binary | std::ios_base::in};
                 assert(ifs);
                 auto size = std::filesystem::file_size(filename);
-                m_data = std::make_shared<std::vector<std::byte>>(size);
-                if (size) {
-                    std::transform(std::istreambuf_iterator<char>(ifs),
-                                   std::istreambuf_iterator<char>(),
-                                   m_data->begin(),
-                                   [] (auto c) { return static_cast<std::byte>(c); });
-                }
+                m_data = std::make_shared<std::vector<std::byte>>();//(size);
+                m_data->reserve(size);
+                std::istreambuf_iterator<char> it{ifs}, end;
+                for (; it != end; ++it)
+                    m_data->push_back(static_cast<std::byte>(*it));
             }
 
             InMemorySource(const std::shared_ptr<std::vector<std::byte>> &data, std::size_t offset = 0) : m_data{data}, m_offset{offset}

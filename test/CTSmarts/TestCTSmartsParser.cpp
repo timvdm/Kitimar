@@ -527,6 +527,29 @@ TEST_CASE("Operators")
     */
 }
 
+template<typename T>
+struct identify_type;
+
+template<typename Expr>
+using R1 = BasicSmarts<ctll::list<Atom<0, Expr>>>;
+
+template<typename Expr1, typename Expr2>
+using R2 = BasicSmarts<ctll::list<Atom<0, Expr1>, Atom<1, Expr2>>, ctll::list<Bond<0, 0, 1, ImplicitBond>>>;
+
+TEST_CASE("Recursive")
+{
+    using S = AliphaticAtom<16>;
+    using N = AliphaticAtom<7>;
+
+    test_atom_expr<"[S]", S >();
+    test_atom_expr<"[S$(*)]", And<S, R1<AnyAtom>> >();
+    test_atom_expr<"[S$(*N)]", And<S, R2<AnyAtom, N>> >();
+    test_atom_expr<"[S!$(*N)]", And<S, Not<R2<AnyAtom, N>>> >();
+
+
+}
+
+
 TEST_CASE("GetCentralAtom")
 {
     CHECK(getCentralAtom(Smarts<"C">{}) == -1);

@@ -153,7 +153,7 @@ namespace Kitimar::CTLayout {
     template<typename MolObj>
     constexpr auto num_bonds(const MolObj &mol) noexcept
     {
-        if constexpr (requires { mol.numAtoms(); })
+        if constexpr (requires { mol.numBonds(); })
             return mol.numBonds();
         else if constexpr (contains(typename MolObj::Type{}, BondList{}))
             return mol.get(BondList{}).length();

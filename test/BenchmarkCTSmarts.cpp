@@ -20,7 +20,7 @@ struct FixedString
     static constexpr inline auto smarts = SMARTS;
 };
 
-using AnyChainsBenchmarks = std::tuple<
+using ChainBenchmarks = std::tuple<
     FixedString<"*">,
     FixedString<"**">,
     FixedString<"***">,
@@ -37,7 +37,7 @@ using AnyChainsBenchmarks = std::tuple<
 
 
 
-TEMPLATE_LIST_TEST_CASE("benchmark_match_single_molecule", "[!benchmark]", AnyChainsBenchmarks)
+TEMPLATE_LIST_TEST_CASE("benchmark_match_single_molecule", "[!benchmark]", ChainBenchmarks)
 {
     auto SMARTS = TestType::smarts;
 
@@ -51,7 +51,7 @@ TEMPLATE_LIST_TEST_CASE("benchmark_match_single_molecule", "[!benchmark]", AnyCh
 }
 
 
-TEMPLATE_LIST_TEST_CASE("benchmark_match_chembl32_100K", "[!benchmark]", AnyChainsBenchmarks)
+TEMPLATE_LIST_TEST_CASE("benchmark_match_chembl32_100K", "[!benchmark]", ChainBenchmarks)
 {
     auto SMARTS = TestType::smarts;
 
