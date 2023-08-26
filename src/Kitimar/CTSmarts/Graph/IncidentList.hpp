@@ -14,7 +14,7 @@ namespace Kitimar::CTSmarts {
             std::ranges::fill(incident, -1);
 
             std::array<int, smarts.numAtoms> sizes = {};
-            for (auto i = 0; i < smarts.numBonds; ++i) {
+            for (auto i = 0UL; i < smarts.numBonds; ++i) {
                 auto edge = edgeList.data[i];
                 auto source = edge.source;
                 auto target = edge.target;

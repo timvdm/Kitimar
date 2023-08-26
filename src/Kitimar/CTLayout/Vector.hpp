@@ -188,14 +188,14 @@ namespace Kitimar::CTLayout {
                     if constexpr (!isFixedSize(Type{})) {
                         //fmt::println("update({})", index);
                         auto off2 = elementOffset(m_sink, length(),  index) + sizeOf(Type{}, m_sink + off);
-                        if (index + 1 < length())
+                        if (static_cast<Length>(index + 1) < length())
                             m_sink.write(static_cast<std::size_t>(off2), sizeof(Length) + (index + 1) * sizeof(std::size_t));
                         else
                             m_sink.write(static_cast<std::size_t>(off2), sizeof(Length));
 
                     }
                     if constexpr (!std::is_same_v<Finished, std::nullptr_t>)
-                        if (std::ranges::count(m_written, true) == m_written.size())
+                        if (static_cast<std::size_t>(std::ranges::count(m_written, true)) == m_written.size())
                             m_finished();
                 });
             }

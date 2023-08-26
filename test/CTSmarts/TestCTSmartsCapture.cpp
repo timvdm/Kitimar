@@ -31,7 +31,7 @@ void test_capture_impl(auto &mol, const auto &tuple)
     if (found)
         CHECK_THAT(map, Catch::Matchers::RangeEquals(Case::expected.map));
     else
-        CHECK(std::ranges::count(map, -1) == map.size());
+        CHECK(static_cast<std::size_t>(std::ranges::count(map, -1)) == map.size());
 }
 
 //

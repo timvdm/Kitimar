@@ -231,7 +231,7 @@ namespace Kitimar::CTLayout {
                 return toWriter(T{}, m_sink + off, [this] () {
                     m_written[indexOf(T{}, Members{})] = true;
                     if constexpr (!std::is_same_v<Finished, std::nullptr_t>)
-                        if (std::ranges::count(m_written, true) == m_written.size())
+                        if (static_cast<std::size_t>(std::ranges::count(m_written, true)) == m_written.size())
                             m_finished();
                 });
             }

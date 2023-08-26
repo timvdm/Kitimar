@@ -60,7 +60,7 @@ void compare(auto &mol, auto &ref)
     REQUIRE(num_atoms(mol) == num_atoms(ref));
     REQUIRE(num_bonds(mol) == num_bonds(ref));
 
-    for (auto i = 0; i < num_atoms(ref); ++i) {
+    for (auto i = 0UL; i < num_atoms(ref); ++i) {
         auto refAtom = get_atom(ref, i);
         auto atom = get_atom(mol, i);
         REQUIRE(get_index(mol, atom) == get_index(ref, refAtom));
@@ -72,7 +72,7 @@ void compare(auto &mol, auto &ref)
         REQUIRE(is_aromatic_atom(mol, atom) == is_aromatic_atom(ref, refAtom));
     }
 
-    for (auto i = 0; i < num_bonds(ref); ++i) {
+    for (auto i = 0UL; i < num_bonds(ref); ++i) {
         auto refBond = get_bond(ref, i);
         auto bond = get_bond(mol, i);
         REQUIRE(get_index(mol, bond) == get_index(ref, refBond));
@@ -82,7 +82,7 @@ void compare(auto &mol, auto &ref)
         REQUIRE(is_aromatic_bond(mol, bond) == is_aromatic_bond(ref, refBond));
     }
 
-    for (auto i = 0; i < num_atoms(ref); ++i) {
+    for (auto i = 0UL; i < num_atoms(ref); ++i) {
         auto refAtom = get_atom(ref, i);
         auto refBonds = get_bonds(ref, refAtom);
         auto refNbrs = get_nbrs(ref, refAtom);
@@ -234,7 +234,7 @@ void test_validate()
 
     REQUIRE(molSource.numMolecules() == obMolSource.numMolecules());
 
-    for (auto i = 0; i < numMolecules; ++i) {
+    for (auto i = 0UL; i < numMolecules; ++i) {
         auto obmol = obMolSource.read();
         auto mol = molSource.read();
         compare(mol, obmol);

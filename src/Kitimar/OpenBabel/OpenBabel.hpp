@@ -83,7 +83,7 @@ namespace Kitimar {
 
             auto numMolecules()
             {
-                if (m_numMolecules == -1) {
+                if (m_numMolecules == static_cast<std::size_t>(-1)) {
                     auto index = m_index;
                     auto pos = m_conv.GetInStream()->tellg();
                     reset();
@@ -127,7 +127,8 @@ namespace OpenBabel {
 
     inline auto get_atom(const OpenBabel::OBMol &mol, auto index)
     {
-        assert(index >= 0 && index < num_atoms(mol));
+        assert(index != static_cast<decltype(index)>(-1));
+        assert(static_cast<unsigned int>(index) < num_atoms(mol));
         return mol.GetAtom(index + 1);
     }
 
@@ -161,7 +162,8 @@ namespace OpenBabel {
 
     inline auto get_bond(const OpenBabel::OBMol &mol, auto index)
     {
-        assert(index >= 0 && index < num_bonds(mol));
+        assert(index != static_cast<decltype(index)>(-1));
+        assert(static_cast<unsigned int>(index) < num_bonds(mol));
         return mol.GetBond(index);
     }
 

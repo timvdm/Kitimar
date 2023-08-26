@@ -158,7 +158,8 @@ namespace RDKit {
 
     inline auto get_atom(const RDKit::ROMol &mol, auto index)
     {
-        assert(index >= 0 && index < num_atoms(mol));
+        assert(index != static_cast<decltype(index)>(-1));
+        assert(static_cast<unsigned int>(index) < num_atoms(mol));
         return mol.getAtomWithIdx(index);
     }
 
@@ -196,7 +197,8 @@ namespace RDKit {
 
     inline auto get_bond(const RDKit::ROMol &mol, auto index)
     {
-        assert(index >= 0 && index < num_bonds(mol));
+        assert(index != static_cast<decltype(index)>(-1));
+        assert(static_cast<unsigned int>(index) < num_bonds(mol));
         return mol.getBondWithIdx(index);
     }
 

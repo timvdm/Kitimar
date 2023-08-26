@@ -60,20 +60,20 @@ endif()
 target_compile_options(KitimarOptions INTERFACE
     -march=native
     -mtune=native
-    #-fconcepts-diagnostics-depth=3
 )
 
 target_compile_options(KitimarWarnings INTERFACE
     -Wno-unused-parameter
-    -Wno-sign-compare
-    -Wno-unused-but-set-variable
-    -Wno-missing-field-initializers
+    #-Wno-sign-compare
+    #-Wno-unused-but-set-variable
+    #-Wno-missing-field-initializers
 )
 
 if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     target_compile_options(KitimarOptions INTERFACE -ftemplate-depth=1024)
 else()
     target_compile_options(KitimarOptions INTERFACE -fbracket-depth=1024)
+    #-fconcepts-diagnostics-depth=5
 endif()
 
 
@@ -131,7 +131,7 @@ add_subdirectory(examples)
 add_subdirectory(single-header)
 
 # Tests
-if(BUILD_TESTING)    
+if(BUILD_TESTING)
     enable_testing()
     add_subdirectory(test)
     add_subdirectory(benchmark)

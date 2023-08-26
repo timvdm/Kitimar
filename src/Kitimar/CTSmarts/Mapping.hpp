@@ -12,7 +12,7 @@ template<std::integral I, auto N>
 std::ostream& operator<<(std::ostream &os, const std::array<I, N> &map)
 {
     os << "[";
-    for (auto i = 0; i < map.size(); ++i)
+    for (auto i = 0UL; i < map.size(); ++i)
         os << " " << map[i];
     os << " ]";
     return os;

@@ -383,7 +383,7 @@ namespace Kitimar::CTLayout {
                 for (auto atom : get_atoms(mol)) {                    
                     auto incident = incidentList.at(get_index(mol, atom));                    
                     incident.setLength(get_degree(mol, atom));
-                    int i = 0;
+                    decltype(get_degree(mol, atom)) i = 0;
                     for (auto bond : get_bonds(mol, atom)) {
                         assert(i < get_degree(mol, atom));
                         incident.at(i++).write(static_cast<IncidentIndex::Type>(get_index(mol, bond)));
@@ -557,7 +557,7 @@ namespace Kitimar::CTLayout {
         {
             auto atomTypeList = writer.get(AtomTypeList{});
             atomTypeList.setLength(atomTypes.size());
-            for (auto i = 0; i < atomTypes.size(); ++i) {
+            for (auto i = 0UL; i < atomTypes.size(); ++i) {
                 auto &atomType = atomTypes[i];
                 auto atomTypeWriter = atomTypeList.at(i);
                 atomTypeWriter.get(ElementValue{}).write(static_cast<ElementValue::Type>(atomType.element)); // FIXME : cast not needed anymore...
@@ -573,7 +573,7 @@ namespace Kitimar::CTLayout {
         {
             auto bondTypeList = writer.get(BondTypeList{});
             bondTypeList.setLength(bondTypes.size());
-            for (auto i = 0; i < bondTypes.size(); ++i) {
+            for (auto i = 0UL; i < bondTypes.size(); ++i) {
                 auto &bondType = bondTypes[i];
                 auto bondTypeWriter = bondTypeList.at(i);
                 bondTypeWriter.get(OrderValue{}).write(static_cast<OrderValue::Type>(bondType.order));
@@ -684,7 +684,7 @@ namespace Kitimar::CTLayout {
         auto writer = toWriter(Layout{}, sink);
         auto numMolecules =  source.numMolecules();
         writer.setLength(numMolecules);
-        for (auto i = 0; i < numMolecules; ++i) {
+        for (auto i = 0UL; i < numMolecules; ++i) {
             if (i && i % 1000 == 0)
                 std::cout << i << std::endl;
             auto molWriter = writer.at(i);
@@ -1131,7 +1131,7 @@ namespace Kitimar::CTLayout {
                 if constexpr (std::is_same_v<Layout, TypeMolecules>) {
                     auto atomTypes = toObject(Layout{}, m_source).get(AtomTypeList{});
                     auto numAtomTypes = atomTypes.length();
-                    for (auto i = 0; i < numAtomTypes; ++i) {
+                    for (auto i = 0UL; i < numAtomTypes; ++i) {
                         auto atomType = atomTypes.at(i);
                         m_atomTypes.push_back(AtomType{
                             static_cast<uint8_t>(atomType.get(ElementValue{}).get()),
@@ -1145,7 +1145,7 @@ namespace Kitimar::CTLayout {
 
                     auto bondTypes = toObject(Layout{}, m_source).get(BondTypeList{});
                     auto numBondTypes = bondTypes.length();
-                    for (auto i = 0; i < numBondTypes; ++i) {
+                    for (auto i = 0UL; i < numBondTypes; ++i) {
                         auto bondType = bondTypes.at(i);
                         m_bondTypes.push_back(BondType{
                             static_cast<uint8_t>(bondType.get(OrderValue{}).get()),

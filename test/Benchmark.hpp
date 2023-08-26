@@ -58,6 +58,9 @@ namespace Kitimar {
         std::string name;
         std::vector<BenchmarkGroup> groups;
 
+        BenchmarkGroups() noexcept = default;
+        BenchmarkGroups(const std::string &name_) noexcept : name(name_) {};
+
         std::string toString(std::size_t indent = 4) const
         {
             std::stringstream ss;

@@ -197,6 +197,7 @@ namespace Kitimar::CTSmarts {
                     case 'u': return 79;
                     default: break;
                 }
+                break;
             case 'B':
                 switch (V) {
                     case 'a': return 56;
@@ -206,6 +207,7 @@ namespace Kitimar::CTSmarts {
                     case 'r': return 35;
                     default: break;
                 }
+                break;
             case 'C':
                 switch (V) {
                     case 'a': return 20;
@@ -220,11 +222,13 @@ namespace Kitimar::CTSmarts {
                     case 'u': return 29;
                     default: break;
                 }
+                break;
             case 'D':
                 switch (V) {
                     case 'y': return 66;
                     default: break;
                 }
+                break;
             case 'E':
                 switch (V) {
                     case 'r': return 68;
@@ -232,6 +236,7 @@ namespace Kitimar::CTSmarts {
                     case 'u': return 63;
                     default: break;
                 }
+                break;
             case 'F':
                 switch (V) {
                     case 'e': return 26;
@@ -239,6 +244,7 @@ namespace Kitimar::CTSmarts {
                     case 'r': return 87;
                     default: break;
                 }
+                break;
             case 'G':
                 switch (V) {
                     case 'a': return 31;
@@ -246,6 +252,7 @@ namespace Kitimar::CTSmarts {
                     case 'e': return 32;
                     default: break;
                 }
+                break;
             case 'H':
                 switch (V) {
                     case 'e': return 2;
@@ -254,17 +261,20 @@ namespace Kitimar::CTSmarts {
                     case 'o': return 67;
                     default: break;
                 }
+                break;
             case 'I':
                 switch (V) {
                     case 'n': return 49;
                     case 'r': return 77;
                     default: break;
                 }
+                break;
             case 'K':
                 switch (V) {
                     case 'r': return 36;
                     default: break;
                 }
+                break;
             case 'L':
                 switch (V) {
                     case 'a': return 57;
@@ -273,6 +283,7 @@ namespace Kitimar::CTSmarts {
                     case 'u': return 71;
                     default: break;
                 }
+                break;
             case 'M':
                 switch (V) {
                     case 'd': return 101;
@@ -281,6 +292,7 @@ namespace Kitimar::CTSmarts {
                     case 'o': return 42;
                     default: break;
                 }
+                break;
             case 'N':
                 switch (V) {
                     case 'a': return 11;
@@ -292,11 +304,13 @@ namespace Kitimar::CTSmarts {
                     case 'p': return 93;
                     default: break;
                 }
+                break;
             case 'O':
                 switch (V) {
                     case 's': return 76;
                     default: break;
                 }
+                break;
             case 'P':
                 switch (V) {
                     case 'a': return 91;
@@ -309,6 +323,7 @@ namespace Kitimar::CTSmarts {
                     case 'u': return 94;
                     default: break;
                 }
+                break;
             case 'R':
                 switch (V) {
                     case 'a': return 88;
@@ -319,6 +334,7 @@ namespace Kitimar::CTSmarts {
                     case 'u': return 44;
                     default: break;
                 }
+                break;
             case 'S':
                 switch (V) {
                     case 'b': return 51;
@@ -330,6 +346,7 @@ namespace Kitimar::CTSmarts {
                     case 'r': return 38;
                     default: break;
                 }
+                break;
             case 'T':
                 switch (V) {
                     case 'a': return 73;
@@ -342,22 +359,26 @@ namespace Kitimar::CTSmarts {
                     case 'm': return 69;
                     default: break;
                 }
+                break;
             case 'X':
                 switch (V) {
                     case 'e': return 54;
                     default: break;
                 }
+                break;
             case 'Y':
                 switch (V) {
                     case 'b': return 70;
                     default: break;
                 }
+                break;
             case 'Z':
                 switch (V) {
                     case 'n': return 30;
                     case 'r': return 40;
                     default: break;
                 }
+                break;
         }
     }
 

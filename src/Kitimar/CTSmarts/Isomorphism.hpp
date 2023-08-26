@@ -267,7 +267,7 @@ namespace Kitimar::CTSmarts {
             void addAtom(int queryAtomIndex, auto atomIndex) noexcept
             {
                 debug("    ", queryAtomIndex, " -> ", atomIndex);
-                assert(queryAtomIndex < m_map.map().size());
+                assert(static_cast<std::size_t>(queryAtomIndex) < m_map.map().size());
                 assert(!m_map.containsQueryAtom(queryAtomIndex));
                 m_map.add(queryAtomIndex, atomIndex);
             }
@@ -275,7 +275,7 @@ namespace Kitimar::CTSmarts {
             void removeAtom(int queryAtomIndex, auto atomIndex) noexcept
             {
                 debug("    backtrack: ", m_map(queryAtomIndex));
-                assert(queryAtomIndex < m_map.map().size());
+                assert(static_cast<std::size_t>(queryAtomIndex) < m_map.map().size());
                 assert(m_map.containsQueryAtom(queryAtomIndex));
                 m_map.remove(queryAtomIndex, atomIndex);
             }
@@ -417,7 +417,7 @@ namespace Kitimar::CTSmarts {
 
                         assert(!isDone());
 
-                        assert(std::ranges::count(m_map.map(), invalidIndex) == m_map.map().size());
+                        assert(static_cast<std::size_t>(std::ranges::count(m_map.map(), invalidIndex)) == m_map.map().size());
                         //if constexpr (std::is_same_v<MappedPolicy<void>, MappedVector<void>>)
                         //    assert(std::ranges::count(m_mapped, true) == 0);
 

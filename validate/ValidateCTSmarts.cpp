@@ -1,6 +1,6 @@
 #include <Kitimar/OpenBabel/OpenBabel.hpp>
 #include "../test/TestData.hpp"
-#include <gtest/gtest.h>
+#include <catch2/catch_all.hpp>
 
 using namespace Kitimar;
 
@@ -45,12 +45,12 @@ void Rarey_smarts_part_23(OpenBabel::OBMol &mol);
 void Rarey_smarts_part_24(OpenBabel::OBMol &mol);
 void Rarey_smarts_part_25(OpenBabel::OBMol &mol);
 
-TEST(ValidateCTSmarts, Sqc)
+TEST_CASE("ValidateCTSmarts (Substructure Quaery Collection)")
 {
     OpenBabelSmilesMolSource source{chembl_smi_filename("100K")};
     auto i = 0;
     for (auto mol : source.molecules()) {
-        std::cout << "Molecule: " << ++i << " -- " << writeSmiles(mol) << std::endl;
+        std::cout << "Molecule: " << ++i << " -- " << writeSmiles(mol) << '\n';
         Agrafiotis_ABCD_part_1(mol);
         Hicks_and_Jochum_part_1(mol);
         RDKit_smarts_part_1(mol);

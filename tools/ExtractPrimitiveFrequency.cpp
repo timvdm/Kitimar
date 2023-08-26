@@ -109,7 +109,7 @@ class PrimitiveFequency
         std::array<double, ctll::size(atomPrimitives)> atomFrequency() const
         {
             std::array<double, ctll::size(atomPrimitives)> freq;
-            for (auto i = 0; i < freq.size(); ++i)
+            for (auto i = 0UL; i < freq.size(); ++i)
                 freq[i] = static_cast<double>(atomMatches[i]) / numAtoms;
             return freq;
         }
@@ -117,7 +117,7 @@ class PrimitiveFequency
         std::array<double, ctll::size(bondPrimitives)> bondFrequency() const
         {
             std::array<double, ctll::size(bondPrimitives)> freq;
-            for (auto i = 0; i < freq.size(); ++i)
+            for (auto i = 0UL; i < freq.size(); ++i)
                 freq[i] = static_cast<double>(bondMatches[i]) / numBonds;
             return freq;
         }
@@ -274,11 +274,8 @@ int main(int argc, char **argv)
 
     PrimitiveFequency freq;
 
-    auto p = freq.atomPrimitives;
-
     auto filename = argv[2];
     OpenBabelSmilesMolSource source{filename};
-
 
     for (const auto &mol : source.molecules())
         freq.addMolecule(const_cast<OpenBabel::OBMol&>(mol));
@@ -292,7 +289,4 @@ int main(int argc, char **argv)
         std::cerr << "Invalid output type: " << output << std::endl;
         return -1;
     }
-
-
-
 }

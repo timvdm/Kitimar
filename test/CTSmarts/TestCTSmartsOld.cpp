@@ -29,6 +29,8 @@ TEST_CASE("EdgeList")
 }
 
 
+#ifdef KITIMAR_WITH_IOSTREAM
+
 TEST_CASE("DfsSearch")
 {
     auto smarts = Smarts<"*1**12**2*">{};
@@ -37,14 +39,13 @@ TEST_CASE("DfsSearch")
     auto degrees = VertexDegree(smarts, edges);
     auto adjList = IncidentList(smarts, edges, degrees);
 
-
     auto dfsSearchEvents = DfsSearchEvents(smarts, adjList);
 
-#ifdef KITIMAR_WITH_IOSTREAM
     for (const auto &event : dfsSearchEvents.events)
         std::cout << event << std::endl;
-#endif
 }
+
+#endif // KITIMAR_WITH_IOSTREAM
 
 
 TEST_CASE("ExpressionFrequency")

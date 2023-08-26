@@ -87,7 +87,7 @@ def generate_main(part_names):
         f.write('    OpenBabelSmilesMolSource source{chembl_smi_filename("100K")};\n')
         f.write('    auto i = 0;\n')
         f.write('    for (auto mol : source.molecules()) {\n')
-        f.write('        std::cout << "Molecule: " << ++i << " -- " << writeSmiles(mol) << std::endl;\n')
+        f.write("        std::cout << "Molecule: " << ++i << " -- " << writeSmiles(mol) << '\\n';\n")
         for part_name in part_names:
             f.write('        {}(mol);\n'.format(part_name))
         f.write('    }\n')

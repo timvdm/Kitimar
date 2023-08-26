@@ -9,7 +9,7 @@ namespace Kitimar::CTSmarts {
     {
         auto incident = IncidentListT::data;
 
-        for (auto i = 0; i < SmartsT::numAtoms; ++i) {
+        for (auto i = 0; i < static_cast<int>(SmartsT::numAtoms); ++i) {
             auto offset = i * IncidentListT::stride;
             auto end = offset + IncidentListT::degrees.data[i];
             std::ranges::sort(std::begin(incident) + offset, std::begin(incident) + end, [i] (auto index1, auto index2) {

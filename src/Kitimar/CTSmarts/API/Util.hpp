@@ -24,7 +24,7 @@ namespace Kitimar::CTSmarts {
                 if (!found)
                     atoms.fill(null_atom(mol));
                 else
-                    for (auto i = 0; i < NumCaptures; ++i)
+                    for (auto i = 0UL; i < NumCaptures; ++i)
                         atoms[i] = get_atom(mol, map[captureSet[i]]);
                 return atoms;
             } else {
@@ -32,7 +32,7 @@ namespace Kitimar::CTSmarts {
                 if (!found)
                     atoms.fill(null_atom(mol));
                 else
-                    for (auto i = 0; i < smarts.numAtoms; ++i)
+                    for (auto i = 0UL; i < smarts.numAtoms; ++i)
                         atoms[i] = get_atom(mol, map[i]); // FIXME: null atoms...
                 return atoms;
             }
