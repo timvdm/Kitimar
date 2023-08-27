@@ -18,8 +18,8 @@ part_size = 50
 def exclude_smarts(smarts):
     if '.' in smarts:
         return True, 'components'
-    if '$(' in smarts:
-        return True, 'recursive'
+    #if '$(' in smarts:
+    #    return True, 'recursive'
     for s in ['/', '\\', '@?', '@@', '@]', '@H']:
         if s in smarts:
           return True, 'stereo'
@@ -75,19 +75,19 @@ def generate_main(part_names):
     with open('ValidateCTSmarts.cpp', 'w') as f:
         f.write('#include <Kitimar/OpenBabel/OpenBabel.hpp>\n')
         f.write('#include "../test/TestData.hpp"\n')
-        f.write('#include <gtest/gtest.h>\n')
+        f.write('#include <catch2/catch_all.hpp>\n')
         f.write('\n')
         f.write('using namespace Kitimar;\n')
         f.write('\n')
         for part_name in part_names:
             f.write('void {}(OpenBabel::OBMol &mol);\n'.format(part_name))
         f.write('\n')
-        f.write('TEST(ValidateCTSmarts, Sqc)\n')
+        f.write('TEST_CASE("Substructure Quaery Collection")\n')
         f.write('{\n')
         f.write('    OpenBabelSmilesMolSource source{chembl_smi_filename("100K")};\n')
         f.write('    auto i = 0;\n')
         f.write('    for (auto mol : source.molecules()) {\n')
-        f.write("        std::cout << "Molecule: " << ++i << " -- " << writeSmiles(mol) << '\\n';\n")
+        f.write('        std::cout << "Molecule: " << ++i << " -- " << writeSmiles(mol) << \'\\n\';\n')
         for part_name in part_names:
             f.write('        {}(mol);\n'.format(part_name))
         f.write('    }\n')

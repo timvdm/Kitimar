@@ -17,7 +17,7 @@ void Rarey_smarts_part_18(OpenBabel::OBMol &mol)
     validate_contains<"[OH1]C=C">(mol);
     validate_contains<"[OH1]NC(=O)">(mol);
     validate_contains<"[OH1]NC=[O,S]">(mol);
-    //validate_contains<"[OH1][C,c,N;!$(C=O)]">(mol); // FIXME: recursive
+    validate_contains<"[OH1][C,c,N;!$(C=O)]">(mol);
     validate_contains<"[OH1][P,C,S](=O)">(mol);
     validate_contains<"[OH1]c1c[c,n]ccc1">(mol);
     validate_contains<"[OH1]c1oncc1">(mol);
@@ -30,12 +30,12 @@ void Rarey_smarts_part_18(OpenBabel::OBMol &mol)
     validate_contains<"[OX2H]">(mol);
     validate_contains<"[OX2H]P">(mol);
     validate_contains<"[OX2H][#6X3]=[#6]">(mol);
-    //validate_contains<"[OX2H][$(C=C),$(cc)]">(mol); // FIXME: recursive
+    validate_contains<"[OX2H][$(C=C),$(cc)]">(mol);
     validate_contains<"[OX2H][CX3]=[OX1]">(mol);
     validate_contains<"[OX2H][cX3]:[c]">(mol);
     validate_contains<"[OX3H2+]">(mol);
-    //validate_contains<"[P,S]-;!@[O;D2;$(O([P,S])[#6;!D1][!D1]);!$(OCO);!$(OC=*)]">(mol); // FIXME: recursive
-    //validate_contains<"[P,S]-;!@[O;D2;$(O[C,c]);!$(OCO);!$(OC=*)]">(mol); // FIXME: recursive
+    validate_contains<"[P,S]-;!@[O;D2;$(O([P,S])[#6;!D1][!D1]);!$(OCO);!$(OC=*)]">(mol);
+    validate_contains<"[P,S]-;!@[O;D2;$(O[C,c]);!$(OCO);!$(OC=*)]">(mol);
     validate_contains<"[P,S][Cl,Br,F,I]">(mol);
     validate_contains<"[R0;D2][R0;D2][R0;D2][R0;D2]">(mol);
     validate_contains<"[R0;D2]~[R0;D2]~[R0;D2]~[R0;D2]">(mol);
@@ -50,7 +50,7 @@ void Rarey_smarts_part_18(OpenBabel::OBMol &mol)
     validate_contains<"[S,C](=[O,S])[F,Br,Cl,I]">(mol);
     validate_contains<"[S-][CX3](=S)[#6]">(mol);
     validate_contains<"[S;!H0]">(mol);
-    //validate_contains<"[S;X4;$(S(=O)(=O))]-;!@[#7;X3;!D1;$([#7](S(=O)(=O))[#6;!D1][!D1]);!$([#7]C(=O))]">(mol); // FIXME: recursive
-    //validate_contains<"[S;X4;$(S(=O)(=O))]-;!@[N;X3;!$(N[N,O,S])]">(mol); // FIXME: recursive
+    validate_contains<"[S;X4;$(S(=O)(=O))]-;!@[#7;X3;!D1;$([#7](S(=O)(=O))[#6;!D1][!D1]);!$([#7]C(=O))]">(mol);
+    validate_contains<"[S;X4;$(S(=O)(=O))]-;!@[N;X3;!$(N[N,O,S])]">(mol);
     validate_contains<"[SD1H1]">(mol);
 }

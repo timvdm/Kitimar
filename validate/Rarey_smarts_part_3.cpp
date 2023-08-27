@@ -4,15 +4,15 @@ void Rarey_smarts_part_3(OpenBabel::OBMol &mol)
 {
     // SMARTS 101 - 150
     validate_contains<"C[OX2][CX3](=[OX1])[OX2]C">(mol);
-    //validate_contains<"Cc1:c(O):c:c:[$(cCl),$([cH])]:c1">(mol); // FIXME: recursive
-    //validate_contains<"Cl[CH2,CH]C(Cl)[$(N(=O)~O),$(C=O),$(C#N),$(S=O),$(C(=O)N),$(a)]">(mol); // FIXME: recursive
+    validate_contains<"Cc1:c(O):c:c:[$(cCl),$([cH])]:c1">(mol);
+    validate_contains<"Cl[CH2,CH]C(Cl)[$(N(=O)~O),$(C=O),$(C#N),$(S=O),$(C(=O)N),$(a)]">(mol);
     validate_contains<"C~C(~O)~O">(mol);
     validate_contains<"C~C~C~C">(mol);
     validate_contains<"C~C~O">(mol);
-    //validate_contains<"F[CH2,CH]C(F)[$(N(=O)~O),$(C=O),$(C#N),$(S=O),$(C(=O)N),$(a)]">(mol); // FIXME: recursive
-    //validate_contains<"I[CH2,CH]C(I)[$(N(=O)~O),$(C=O),$(C#N),$(S=O),$(C(=O)N),$(a)]">(mol); // FIXME: recursive
-    //validate_contains<"N!@[C$(C@*)]">(mol); // FIXME: recursive
-    //validate_contains<"N!@[N$(N@*)]">(mol); // FIXME: recursive
+    validate_contains<"F[CH2,CH]C(F)[$(N(=O)~O),$(C=O),$(C#N),$(S=O),$(C(=O)N),$(a)]">(mol);
+    validate_contains<"I[CH2,CH]C(I)[$(N(=O)~O),$(C=O),$(C#N),$(S=O),$(C(=O)N),$(a)]">(mol);
+    validate_contains<"N!@[C$(C@*)]">(mol);
+    validate_contains<"N!@[N$(N@*)]">(mol);
     validate_contains<"N#CC(=O)">(mol);
     validate_contains<"N#CC[OH]">(mol);
     validate_contains<"N-!@N">(mol);
@@ -45,7 +45,7 @@ void Rarey_smarts_part_3(OpenBabel::OBMol &mol)
     validate_contains<"N[CX4H2][CX3](=[OX1])[O,N]">(mol);
     validate_contains<"N~C(~O)~N">(mol);
     validate_contains<"N~C~C(~O)~O">(mol);
-    //validate_contains<"O!@[C$(C@*)]">(mol); // FIXME: recursive
+    validate_contains<"O!@[C$(C@*)]">(mol);
     validate_contains<"O-!@O">(mol);
     validate_contains<"O-!@S">(mol);
     validate_contains<"O-!@[Br]">(mol);

@@ -45,7 +45,7 @@ void Rarey_smarts_part_23(OpenBabel::OBMol &mol);
 void Rarey_smarts_part_24(OpenBabel::OBMol &mol);
 void Rarey_smarts_part_25(OpenBabel::OBMol &mol);
 
-TEST_CASE("ValidateCTSmarts (Substructure Quaery Collection)")
+TEST_CASE("Substructure Quaery Collection")
 {
     OpenBabelSmilesMolSource source{chembl_smi_filename("100K")};
     auto i = 0;

@@ -3,16 +3,16 @@
 void Rarey_smarts_part_11(OpenBabel::OBMol &mol)
 {
     // SMARTS 501 - 550
-    //validate_contains<"[#7]:[#7$(a1aaaa1)]">(mol); // FIXME: recursive
-    //validate_contains<"[#7]:[#7$(a1aaaaa1)]">(mol); // FIXME: recursive
-    //validate_contains<"[#7]:[#8$(a1aaaa1)]">(mol); // FIXME: recursive
-    //validate_contains<"[#7]:[#8$(a1aaaaa1)]">(mol); // FIXME: recursive
+    validate_contains<"[#7]:[#7$(a1aaaa1)]">(mol);
+    validate_contains<"[#7]:[#7$(a1aaaaa1)]">(mol);
+    validate_contains<"[#7]:[#8$(a1aaaa1)]">(mol);
+    validate_contains<"[#7]:[#8$(a1aaaaa1)]">(mol);
     validate_contains<"[#7]=[#6]-1-[#16]-[#6](=[#7])-[#7]=[#6]-1">(mol);
     validate_contains<"[#7]=[#6]-1-[#7](-[#1])-[#6](=[#6](-[#7]-[#1])-[#7]=[#7]-1)-[#7]-[#1]">(mol);
     validate_contains<"[#7]=[#6]-1-[#7]=[#6]-[#7]-[#16]-1">(mol);
     validate_contains<"[#7]~*(~*)~*">(mol);
     validate_contains<"[#7]~*~*~*~*~*~*~*~*~[#8]">(mol);
-    //validate_contains<"[#7]~[#6]:1:[#7]:[#7]:[#6](:[$([#7]),$([#6]-[#1]),$([#6]-[#7]-[#1])]:[$([#7]),$([#6]-[#7])]:1)-[$([#7]-[#1]),$([#8]-[#6](-[#1])-[#1])]">(mol); // FIXME: recursive
+    validate_contains<"[#7]~[#6]:1:[#7]:[#7]:[#6](:[$([#7]),$([#6]-[#1]),$([#6]-[#7]-[#1])]:[$([#7]),$([#6]-[#7])]:1)-[$([#7]-[#1]),$([#8]-[#6](-[#1])-[#1])]">(mol);
     validate_contains<"[#7]~[D3]">(mol);
     validate_contains<"[#8,#16]">(mol);
     validate_contains<"[#8](-[#1])-[#6](=[#8])-c:1:c(:c(:c(:c(:c:1-[#8]-[#1])-[#1])-c:2:c(-[#1]):c(:c(:o:2)-[#6](-[#1])=[#6](-[#6]#[#7])-c:3:n:c:c:n:3)-[#1])-[#1])-[#1]">(mol);
@@ -22,7 +22,7 @@ void Rarey_smarts_part_11(OpenBabel::OBMol &mol)
     validate_contains<"[#8](-[#1])-[#6]:1:[#6](:[#6]:[!#1]:[#6](:[#7]:1)-[#7](-[#1])-[#1])-[#6](-[#1])(-[#1])-[#6](=[#8])-[#8]">(mol);
     validate_contains<"[#8](-[#1])-c:1:n:c(:c:c:c:1)-[#8]-[#1]">(mol);
     validate_contains<"[#8](-c:1:c:c:c:c:c:1)-c:3:c:c:2:n:o:n:c:2:c:c:3">(mol);
-    //validate_contains<"[#8]-1-[#6](-[#16]-c:2:c-1:c:c:c(:c:2)-[$([#7]),$([#8])])=[$([#8]),$([#16])]">(mol); // FIXME: recursive
+    validate_contains<"[#8]-1-[#6](-[#16]-c:2:c-1:c:c:c(:c:2)-[$([#7]),$([#8])])=[$([#8]),$([#16])]">(mol);
     validate_contains<"[#8]-[#6](=[#8])-[#6](-[#1])(-[#1])-[#16;X2]-[#6](=[#7]-[#6]#[#7])-[#7](-[#1])-c:1:c:c:c:c:c:1">(mol);
     validate_contains<"[#8]=[#16](=[#8])(-[#6]:[#6])-[#7](-[#1])-[#7](-[#1])-c1nc(cs1)-[#6]:[#6]">(mol);
     validate_contains<"[#8]=[#16](=[#8])(-[#6]:[#6])-[#7](-[#1])-c1nc(cs1)-[#6]:[#6]">(mol);
@@ -52,5 +52,5 @@ void Rarey_smarts_part_11(OpenBabel::OBMol &mol)
     validate_contains<"[#9,#17,#35,#53]-[a]">(mol);
     validate_contains<"[#9,#17,#35,#53]~*(~*)~*">(mol);
     validate_contains<"[#9,#17,#35,#53]~[D3]">(mol);
-    //validate_contains<"[$(*-[NX2-]-[NX2+]#[NX1]),$(*-[NX2]=[NX2+]=[NX1-])]">(mol); // FIXME: recursive
+    validate_contains<"[$(*-[NX2-]-[NX2+]#[NX1]),$(*-[NX2]=[NX2+]=[NX1-])]">(mol);
 }

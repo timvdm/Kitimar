@@ -27,7 +27,7 @@ void Rarey_smarts_part_2(OpenBabel::OBMol &mol)
     validate_contains<"C1(=O)NS(=O)(=O)[C,c]=,:[C,c]1">(mol);
     validate_contains<"C1(=O)OCC1">(mol);
     validate_contains<"C12OCCC(O1)CC2">(mol);
-    //validate_contains<"C1=[C,N][$(S(=O)(=O)),$(C=[N,O]),$(S=O)][C,N]=C1c2ccccc2">(mol); // FIXME: recursive
+    validate_contains<"C1=[C,N][$(S(=O)(=O)),$(C=[N,O]),$(S=O)][C,N]=C1c2ccccc2">(mol);
     validate_contains<"C1C(=[O,S])[O,S][CH2,CH]1">(mol);
     validate_contains<"C1[O,N]C1">(mol);
     validate_contains<"C1[O,S,N]C1">(mol);

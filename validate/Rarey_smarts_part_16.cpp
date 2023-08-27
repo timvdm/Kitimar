@@ -30,17 +30,17 @@ void Rarey_smarts_part_16(OpenBabel::OBMol &mol)
     validate_contains<"[N&X4&+,N&X3&+0]">(mol);
     validate_contains<"[N+]#[C-]">(mol);
     validate_contains<"[N,n;+1]">(mol);
-    //validate_contains<"[N;!D1;!$(N(C=O)(C=O));$(N(C(=O))[!D1][!D1])]-;!@[C;!D4;!D1;!R;$(C(=O));$(C([N;!D1])[N;!D1][!D1])]">(mol); // FIXME: recursive
-    //validate_contains<"[N;!H0;!$([N;!H0]#C);!$([NH](C(F)(F)(F))S(=O)=O);!$([nH]1nnnc1);!$([nH]1nncn1);!$([nH]1ncnn1)]">(mol); // FIXME: recursive
-    //validate_contains<"[N;+0,+1;$(N(=O)~[O;H0;-0,-1])]">(mol); // FIXME: recursive
+    validate_contains<"[N;!D1;!$(N(C=O)(C=O));$(N(C(=O))[!D1][!D1])]-;!@[C;!D4;!D1;!R;$(C(=O));$(C([N;!D1])[N;!D1][!D1])]">(mol);
+    validate_contains<"[N;!H0;!$([N;!H0]#C);!$([NH](C(F)(F)(F))S(=O)=O);!$([nH]1nnnc1);!$([nH]1nncn1);!$([nH]1ncnn1)]">(mol);
+    validate_contains<"[N;+0,+1;$(N(=O)~[O;H0;-0,-1])]">(mol);
     validate_contains<"[N;R0]=[N;R0]C#N">(mol);
     validate_contains<"[N;R0]=[N;R0]CC=O">(mol);
     validate_contains<"[N;R0][N;R0]C(=O)">(mol);
-    //validate_contains<"[N;X4]-;!@[C;!D4;!D1;!R;!$(C(=O));$(C([N;X4;!D1])[#6;!D1][!D1])]">(mol); // FIXME: recursive
-    //validate_contains<"[N;X4]-;!@[C;D3;R;!$([C]@[N,n,S,s,O,o])]">(mol); // FIXME: recursive
-    //validate_contains<"[N;X4]-;!@[C;D3;R;$([C]@[N,n,S,s,O,o])]">(mol); // FIXME: recursive
-    //validate_contains<"[N;X4]-;!@[c;X3;R;!$([c]@[N,n,S,s,O,o])]">(mol); // FIXME: recursive
-    //validate_contains<"[N;X4]-;!@[c;X3;R;$([c]@[N,n,S,s,O,o])]">(mol); // FIXME: recursive
+    validate_contains<"[N;X4]-;!@[C;!D4;!D1;!R;!$(C(=O));$(C([N;X4;!D1])[#6;!D1][!D1])]">(mol);
+    validate_contains<"[N;X4]-;!@[C;D3;R;!$([C]@[N,n,S,s,O,o])]">(mol);
+    validate_contains<"[N;X4]-;!@[C;D3;R;$([C]@[N,n,S,s,O,o])]">(mol);
+    validate_contains<"[N;X4]-;!@[c;X3;R;!$([c]@[N,n,S,s,O,o])]">(mol);
+    validate_contains<"[N;X4]-;!@[c;X3;R;$([c]@[N,n,S,s,O,o])]">(mol);
     validate_contains<"[ND1H2]a">(mol);
     validate_contains<"[ND1H2]aaaa[ND1H2]">(mol);
     validate_contains<"[ND2H0]#[CD1H0]">(mol);

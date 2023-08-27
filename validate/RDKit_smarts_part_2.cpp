@@ -12,13 +12,13 @@ void RDKit_smarts_part_2(OpenBabel::OBMol &mol)
     validate_contains<"O=C-N!@N">(mol);
     validate_contains<"C!@N=*">(mol);
     validate_contains<"[S,P](=O)(=O)OC">(mol);
-    //validate_contains<"[$(N!@N),$([N;R0]=[N;R0])]">(mol); // FIXME: recursive
-    //validate_contains<"[$(N!@S),$(N~C(~S)-N)]">(mol); // FIXME: recursive
+    validate_contains<"[$(N!@N),$([N;R0]=[N;R0])]">(mol);
+    validate_contains<"[$(N!@S),$(N~C(~S)-N)]">(mol);
     validate_contains<"[CH2]=[CH]-[N,O,S]">(mol);
     validate_contains<"S-C#N">(mol);
     validate_contains<"S=C-[#6,N,O]">(mol);
     validate_contains<"[Cl,Br,I]-N">(mol);
-    //validate_contains<"O=CC([$(C(F)(F)F),$(C#N),$(Cl)])=C">(mol); // FIXME: recursive
+    validate_contains<"O=CC([$(C(F)(F)F),$(C#N),$(Cl)])=C">(mol);
     validate_contains<"C#C-[F,Br,I,Cl]">(mol);
     validate_contains<"C(-[O;H1])(-C#N)">(mol);
     validate_contains<"C(-O)-C-N(=O)=O">(mol);

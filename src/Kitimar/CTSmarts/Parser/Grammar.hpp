@@ -475,29 +475,29 @@ namespace Kitimar::CTSmarts {
         //template<typename P> static constexpr auto rule(chain_up_down, ctll::term<'?'>) -> ctll::push<ctll::anything, make_bond_primitive, set_and_high, reset_not, atom<P>>;
 
         template<typename P> static constexpr auto rule(chain<P>, ctll::term<'!'>) -> ctll::push<ctll::anything, make_bond_not, bond_expr<P>>;
-
         template<typename P> static constexpr auto rule(chain<P>, ctll::term<'.'>) -> ctll::push<ctll::anything, reset_prev, chain<P>>;
-        template<typename P> static constexpr auto rule(chain<P>, ctll::term<'('>) -> ctll::push<ctll::anything, push_prev, chain<P>>;
 
         //
-        // Close parenthesis
+        // Parenthesis
         //
 
-        // pop_recusrive
-        template<bool Component, typename R, typename ...Rs>
-        static constexpr auto rule(chain<Parenthesis<Component, ctll::list<R, Rs...>, 0>>, ctll::term<')'>) -> ctll::push<ctll::anything, pop_recursive, atom_expr2<Parenthesis<Component, ctll::list<Rs...>, R::value>>>;
+        // push_prev
+        template<typename P> static constexpr auto rule(chain<P>, ctll::term<'('>) -> ctll::push<ctll::anything, push_prev, chain<ParenthesisPushBranch<P>>>;
 
-        // pop_prev
-        template<bool Component, typename Recursive, int Branch>
-        static constexpr auto rule(chain<Parenthesis<Component, Recursive, Branch>>, ctll::term<')'>) -> ctll::push<ctll::anything, pop_prev, chain<Parenthesis<Component, Recursive, Branch - 1>>>;
-
-        // pop_component
-        static constexpr auto rule(chain<Parenthesis<true, ctll::empty_list, 0>>, ctll::term<')'>) -> ctll::push<ctll::anything, pop_prev, chain<Parenthesis<>>>;
-
-
-
-
-
+        template<typename P> static constexpr auto rule(chain<P>, ctll::term<')'>)
+        {
+            if constexpr (P::branch > 0)
+                // pop_prev
+                return ctll::push<ctll::anything, pop_prev, chain<ParenthesisPopBranch<P>>>{};
+            else if constexpr (!ctll::empty(P::recursive))
+                // pop_recursive
+                return ctll::push<ctll::anything, pop_recursive, atom_expr2<ParenthesisPopRecursive<P>>>{};
+            else if constexpr (P::component)
+                // pop_component
+                return ctll::push<ctll::anything, pop_prev, chain<Parenthesis<>>>{};
+            else
+                return ctll::reject{};
+        }
 
         // ring bond: DIGIT | '%' DIGIT DIGIT
         template<typename P> static constexpr auto rule(chain<P>, digit_chars) -> ctll::push<ctll::anything, handle_ring_bond, chain<P>>;

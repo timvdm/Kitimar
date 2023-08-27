@@ -533,20 +533,45 @@ struct identify_type;
 template<typename Expr>
 using R1 = BasicSmarts<ctll::list<Atom<0, Expr>>>;
 
-template<typename Expr1, typename Expr2>
-using R2 = BasicSmarts<ctll::list<Atom<0, Expr1>, Atom<1, Expr2>>, ctll::list<Bond<0, 0, 1, ImplicitBond>>>;
+template<typename Expr1, typename BondExpr, typename Expr2>
+using R2 = BasicSmarts<ctll::list<Atom<0, Expr1>, Atom<1, Expr2>>, ctll::list<Bond<0, 0, 1, BondExpr>>>;
+
+template<bool Component = false, typename Recursive = ctll::empty_list, int Branch = 0>
+using P = SmartsGrammar::Parenthesis<Component, Recursive, Branch>;
 
 TEST_CASE("Recursive")
 {
-    using S = AliphaticAtom<16>;
+    using c = AromaticAtom<6>;
+    using C = AliphaticAtom<6>;
     using N = AliphaticAtom<7>;
+    using S = AliphaticAtom<16>;
+
+    using X4 = Connectivity<4>;
+    using I = ImplicitBond;
+
 
     test_atom_expr<"[S]", S >();
     test_atom_expr<"[S$(*)]", And<S, R1<AnyAtom>> >();
-    test_atom_expr<"[S$(*N)]", And<S, R2<AnyAtom, N>> >();
-    test_atom_expr<"[S!$(*N)]", And<S, Not<R2<AnyAtom, N>>> >();
+    test_atom_expr<"[S$(*N)]", And<S, R2<AnyAtom, I, N>> >();
+    test_atom_expr<"[S!$(*N)]", And<S, Not<R2<AnyAtom, I, N>>> >();
 
 
+    test_atom_expr<"[$(CS),$(CN)]", Or<R2<C, I, S>, R2<C, I, N>> >();
+    test_atom_expr<"[$([C][S]),$([C][N])]", Or<R2<C, I, S>, R2<C, I, N>> >();
+    test_atom_expr<"[$([CX4][S]),$([C][N])]", Or<R2<And<C, X4>, I, S>, R2<C, I, N>> >();
+    test_atom_expr<"[$([CX4,c]=S),$([C][N])]", Or<R2<Or<And<C, X4>, c>, BondOrder<2>, S>, R2<C, I, N>> >();
+
+    test_atom_expr<"[$([CX4,c]=S),$([CX4,c]C(=S)[CX4,c])]",
+            Or<BasicSmarts<ctll::list<Atom<0, Or<And<AliphaticAtom<6>, Connectivity<4> >, AromaticAtom<6> > >,
+                                              Atom<1, AliphaticAtom<16> > >,
+                                   ctll::list<Bond<0, 0, 1, BondOrder<2> > > >,
+                       BasicSmarts<ctll::list<Atom<0, Or<And<AliphaticAtom<6>, Connectivity<4> >, AromaticAtom<6> > >,
+                                              Atom<1, AliphaticAtom<6> >, Atom<2, AliphaticAtom<16> >,
+                                              Atom<3, Or<And<AliphaticAtom<6>, Connectivity<4> >, AromaticAtom<6> > > >,
+                                   ctll::list<Bond<0, 0, 1, ImplicitBond>,
+                                              Bond<1, 1, 2, BondOrder<2> >,
+                                              Bond<2, 1, 3, ImplicitBond> > > >
+    >();
 }
 
 
