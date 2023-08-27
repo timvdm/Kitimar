@@ -51,7 +51,7 @@ namespace Kitimar::CTSmarts {
             return maps;
         } else {
             if constexpr (captureSet.size() == smarts.numAtoms) {
-                auto iso = Isomorphism<Mol, decltype(smarts), M, Config>{};
+                auto iso = Isomorphism<Mol, decltype(smarts), M, SeedType::Molecule, Config>{};
                 if constexpr (__cpp_lib_ranges >= 202110L)
                     return iso.all(mol) | std::views::transform([&] (const auto &map) {
                         return impl::toCapture(mol, smarts, true, map, captureSet);
@@ -60,7 +60,7 @@ namespace Kitimar::CTSmarts {
                     // missing std::ranges::owning_view
                     return impl::toCaptures(mol, iso, captureSet, iso.all(mol));
             } else {
-                auto iso = Isomorphism<Mol, decltype(smarts), SearchType::All, Config>{};
+                auto iso = Isomorphism<Mol, decltype(smarts), SearchType::All, SeedType::Molecule, Config>{};
                 AtomMaps maps = impl::toCaptures(mol, iso, captureSet, iso.all(mol));
 
                 // Remove duplicates
@@ -96,7 +96,7 @@ namespace Kitimar::CTSmarts {
         auto smarts = Smarts<SMARTS>{};
         static_assert(M != SearchType::Single && !smarts.isSingleAtom,
                     "Use CTSmarts::capture_atom<\"SMARTS\">(mol, atom) to check for a single match.");
-        auto iso = Isomorphism<Mol, decltype(smarts), M, NoOptimizeConfig>{}; // FIXME: NoOptimizeConfig
+        auto iso = Isomorphism<Mol, decltype(smarts), M, SeedType::Atom, Config>{};
         static constexpr auto captureSet = captureMapping(smarts);
         if constexpr (__cpp_lib_ranges >= 202110L)
             return iso.allAtom(mol, atom) | std::views::transform([&] (const auto &map) {
@@ -127,7 +127,7 @@ namespace Kitimar::CTSmarts {
         auto smarts = Smarts<SMARTS>{};
         static_assert(M != SearchType::Single && !smarts.isSingleAtom,
                     "Use CTSmarts::capture_bond<\"SMARTS\">(mol, bond) to check for a single match.");
-        auto iso = Isomorphism<Mol, decltype(smarts), M, NoOptimizeConfig>{}; // FIXME: NoOptimizeConfig
+        auto iso = Isomorphism<Mol, decltype(smarts), M, SeedType::Bond, Config>{};
         static constexpr auto captureSet = captureMapping(smarts);
         if constexpr (__cpp_lib_ranges >= 202110L)
             return iso.allBond(mol, bond) | std::views::transform([&] (const auto &map) {

@@ -35,7 +35,7 @@ namespace Kitimar::CTSmarts {
             }
             return n;
         } else {
-            auto iso = Isomorphism<Mol, decltype(smarts), M, Config>{};
+            auto iso = Isomorphism<Mol, decltype(smarts), M, SeedType::Molecule, Config>{};
             return iso.count(mol);
         }
     }
@@ -61,7 +61,7 @@ namespace Kitimar::CTSmarts {
         if constexpr (smarts.isSingleAtom)
             return match_atom<SMARTS, Config>(mol, atom) ? 1 : 0;
         else {
-            auto iso = Isomorphism<Mol, decltype(smarts), M, NoOptimizeConfig>{}; // FIXME: NoOptimizeConfig
+            auto iso = Isomorphism<Mol, decltype(smarts), M, SeedType::Atom, Config>{};
             return iso.countAtom(mol, atom);
         }
     }
@@ -95,7 +95,7 @@ namespace Kitimar::CTSmarts {
             }
             return 0;
         }
-        auto iso = Isomorphism<Mol, decltype(smarts), M, NoOptimizeConfig>{}; // FIXME: NoOptimizeConfig
+        auto iso = Isomorphism<Mol, decltype(smarts), M, SeedType::Bond, Config>{};
         return iso.countBond(mol, bond);
     }
 

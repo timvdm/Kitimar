@@ -13,10 +13,19 @@ namespace Kitimar::CTSmarts {
         consteval SmartsQuery(VertexDegree, DfsBondList) noexcept {};
     };
 
+    enum class SeedType {
+        Molecule, // start from any atom/bond
+        Atom, // start from first atom
+        Bond // start from first bond
+    };
+
+    template<SeedType T>
+    using SeedTypeTag = std::integral_constant<SeedType, T>;
+
     struct NoOptimizer
     {
-        template<typename SmartsT>
-        static constexpr auto create(SmartsT) noexcept
+        template<typename SmartsT, SeedType SeedT>
+        static constexpr auto create(SmartsT, SeedTypeTag<SeedT>) noexcept
         {
             constexpr auto smarts = SmartsT{};
             constexpr auto edgeList = EdgeList{smarts};
@@ -32,16 +41,16 @@ namespace Kitimar::CTSmarts {
     // FIXME: optimize atom expressions...
     struct FullOptimizer
     {
-        template<typename SmartsT>
-        static constexpr auto create(SmartsT) noexcept
+        template<typename SmartsT, SeedType SeedT>
+        static constexpr auto create(SmartsT, SeedTypeTag<SeedT>) noexcept
         {
             constexpr auto smarts = SmartsT{};
             constexpr auto edgeList = EdgeList{smarts};
             constexpr auto vertexDegree = VertexDegree{smarts, edgeList};
             constexpr auto incidentList = IncidentList{smarts, edgeList, vertexDegree};
             constexpr auto atomFreq = AtomFrequency{smarts};
-            constexpr auto optimizedIncidentList = OptimizeIncidentList{smarts, incidentList, atomFreq};
-            constexpr auto sourceIndex = std::ranges::min_element(atomFreq.data) - std::begin(atomFreq.data);
+            constexpr auto optimizedIncidentList = OptimizeIncidentList{smarts, incidentList, atomFreq, std::false_type{}};
+            constexpr auto sourceIndex = (SeedT == SeedType::Molecule) ? std::ranges::min_element(atomFreq.data) - std::begin(atomFreq.data) : 0;
             constexpr auto dfsEdges = DfsEdgeList{smarts, optimizedIncidentList, Number<sourceIndex>{}};
             constexpr auto cycleMembership = CycleMembership{smarts, optimizedIncidentList};
             constexpr auto dfsBonds = DfsBondList{smarts, dfsEdges, cycleMembership};

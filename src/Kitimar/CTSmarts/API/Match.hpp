@@ -28,7 +28,7 @@ namespace Kitimar::CTSmarts {
                     return true;
             return false;
         } else {
-            auto iso = Isomorphism<Mol, decltype(smarts), SearchType::Single, Config>{};
+            auto iso = Isomorphism<Mol, decltype(smarts), SearchType::Single, SeedType::Molecule, Config>{};
             return iso.match(mol);
         }
     }
@@ -60,7 +60,7 @@ namespace Kitimar::CTSmarts {
                 }
                 return false;
             } else {
-                auto iso = Isomorphism<Mol, decltype(smarts), SearchType::Single, NoOptimizeConfig>{}; // FIXME: allow optimizations to be used...
+                auto iso = Isomorphism<Mol, decltype(smarts), SearchType::Single, SeedType::Atom, Config>{};
                 return iso.matchAtom(mol, atom);
             }
         }
@@ -89,7 +89,7 @@ namespace Kitimar::CTSmarts {
             // Optimize single bond SMARTS
             return impl::singleBondMatch(smarts, mol, bond);
         } else {
-            auto iso = Isomorphism<Mol, decltype(smarts), SearchType::All, NoOptimizeConfig>{}; // FIXME: allow optimizations to be used...
+            auto iso = Isomorphism<Mol, decltype(smarts), SearchType::All, SeedType::Bond, Config>{};
             return iso.matchBond(mol, bond);
         }
     }

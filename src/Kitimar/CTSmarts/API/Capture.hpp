@@ -30,7 +30,7 @@ namespace Kitimar::CTSmarts {
             }
             return impl::singleBondCapture(smarts, mol, null_bond(mol), 0);
         } else {
-            auto iso = Isomorphism<Mol, decltype(smarts), SearchType::Single, Config>{};
+            auto iso = Isomorphism<Mol, decltype(smarts), SearchType::Single, SeedType::Molecule, Config>{};
             constexpr auto captureSet = captureMapping(smarts);
             auto [found, map] = iso.single(mol);
             return impl::captureMatchAtoms(mol, smarts, captureSet, found, map);
@@ -48,7 +48,7 @@ namespace Kitimar::CTSmarts {
     {
         auto smarts = Smarts<SMARTS>{};
         static_assert(!smarts.isSingleAtom, "Use CTSmarts::match_atom<\"SMARTS\">(mol, atom) to check for a single match.");
-        auto iso = Isomorphism<Mol, decltype(smarts), SearchType::Single, NoOptimizeConfig>{}; // FIXME: NoOptimizeConfig
+        auto iso = Isomorphism<Mol, decltype(smarts), SearchType::Single, SeedType::Atom, Config>{};
         constexpr auto captureSet = captureMapping(smarts);
         auto [found, map] = iso.singleAtom(mol, atom);
         return impl::captureMatchAtoms(mol, smarts, captureSet, found, map);
@@ -65,7 +65,7 @@ namespace Kitimar::CTSmarts {
     {
         auto smarts = Smarts<SMARTS>{};
         static_assert(!smarts.isSingleAtom, "Use CTSmarts::match_atom<\"SMARTS\">(mol, atom) to check for a single match.");
-        auto iso = Isomorphism<Mol, decltype(smarts), SearchType::Single, NoOptimizeConfig>{}; // FIXME: NoOptimizeConfig
+        auto iso = Isomorphism<Mol, decltype(smarts), SearchType::Single, SeedType::Bond, Config>{};
         constexpr auto captureSet = captureMapping(smarts);
         auto [found, map] = iso.singleBond(mol, atom);
         return impl::captureMatchAtoms(mol, smarts, captureSet, found, map);

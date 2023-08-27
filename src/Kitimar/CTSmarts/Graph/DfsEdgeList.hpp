@@ -14,7 +14,7 @@ namespace Kitimar::CTSmarts {
     namespace impl {
 
         template<typename SmartsT>
-        struct DfsEdgeListVisitor : DFSVisitorBse
+        struct DfsEdgeListVisitor : DFSVisitorBase
         {
             consteval DfsEdgeListVisitor() noexcept {}
             consteval DfsEdgeListVisitor(SmartsT) noexcept {}

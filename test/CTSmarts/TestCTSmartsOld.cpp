@@ -362,7 +362,7 @@ TEST_CASE("IncidentList")
 
 
     constexpr auto atomFreq = AtomFrequency{smarts};
-    constexpr auto optimizeIncidentList = OptimizeIncidentList{smarts, incidentList, atomFreq};
+    constexpr auto optimizeIncidentList = OptimizeIncidentList{smarts, incidentList, atomFreq, std::false_type{}};
 
     static_assert(optimizeIncidentList.data.size() == 4 * 3);
     static_assert(optimizeIncidentList.data[0] == 0);
@@ -373,6 +373,38 @@ TEST_CASE("IncidentList")
     static_assert(optimizeIncidentList.data[9] == 2);
 
 }
+
+
+
+TEST_CASE("OptimizeIncidentList<SeedBond>")
+{
+    auto smarts = Smarts<"C(C)S">{};
+
+    constexpr auto edgeList = EdgeList{smarts};
+    constexpr auto vertexDegree = VertexDegree{smarts, edgeList};
+    constexpr auto incidentList = IncidentList{smarts, edgeList, vertexDegree};
+    constexpr auto atomFreq = AtomFrequency{smarts};
+
+    // no seed bond
+    constexpr auto optimizeIncidentList1 = OptimizeIncidentList{smarts, incidentList, atomFreq, std::false_type{}};
+    static_assert(optimizeIncidentList1.data.size() == 3 * 2);
+    static_assert(optimizeIncidentList1.data[0] == 1);
+    static_assert(optimizeIncidentList1.data[1] == 0);
+    static_assert(optimizeIncidentList1.data[2] == 0);
+    static_assert(optimizeIncidentList1.data[4] == 1);
+
+    // no seed bond
+    constexpr auto optimizeIncidentList2 = OptimizeIncidentList{smarts, incidentList, atomFreq, std::true_type{}};
+    static_assert(optimizeIncidentList2.data.size() == 3 * 2);
+    static_assert(optimizeIncidentList2.data[0] == 0);
+    static_assert(optimizeIncidentList2.data[1] == 1);
+    static_assert(optimizeIncidentList2.data[2] == 0);
+    static_assert(optimizeIncidentList2.data[4] == 1);
+}
+
+
+
+
 
 
 TEST_CASE("Real")

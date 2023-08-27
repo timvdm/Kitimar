@@ -30,7 +30,6 @@
 
 namespace Kitimar::CTSmarts {
 
-    // FIXME: rename to search type
     enum class SearchType
     {
         Single,
@@ -54,7 +53,7 @@ namespace Kitimar::CTSmarts {
     struct ConditionalFilterPolicy : FilterPolicy<> {};
 
 
-    template<Molecule::Molecule Mol, typename SmartsT, SearchType Type, typename Config = DefaultConfig>
+    template<Molecule::Molecule Mol, typename SmartsT, SearchType SearchT, SeedType SeedT, typename Config = DefaultConfig>
     class Isomorphism
     {
 
@@ -65,7 +64,7 @@ namespace Kitimar::CTSmarts {
 
             static constexpr inline auto invalidIndex = static_cast<Index>(-1);
             static constexpr inline auto smarts = SmartsT{};
-            static constexpr inline auto query = Config::Optimizer::create(smarts);
+            static constexpr inline auto query = Config::Optimizer::create(smarts, SeedTypeTag<SeedT>{});
 
             static_assert(smarts.numBonds);
             static_assert(ctll::size(smarts.bonds) == ctll::size(query.bonds));
@@ -471,9 +470,9 @@ namespace Kitimar::CTSmarts {
             template<typename Callback>
             constexpr auto addMapping(Molecule::Molecule auto &mol, Callback callback) noexcept
             {
-                if constexpr (Type == SearchType::Single)
+                if constexpr (SearchT == SearchType::Single)
                     setDone(true);
-                if constexpr (Type == SearchType::Unique) {
+                if constexpr (SearchT == SearchType::Unique) {
                     // create bit mask of atoms (to ensure uniqueness of mapping)
                     std::vector<bool> atoms(num_atoms(mol));
                     for (auto index : m_map.map())
@@ -490,7 +489,7 @@ namespace Kitimar::CTSmarts {
 
 
             Config::template Map<Index, SmartsT::numAtoms> m_map; // current mapping: query atom index -> queried atom index
-            std::conditional_t<Type == SearchType::Unique, std::unordered_set<std::size_t>, std::monostate> m_maps;
+            std::conditional_t<SearchT == SearchType::Unique, std::unordered_set<std::size_t>, std::monostate> m_maps;
             bool m_done = false;
     };
 

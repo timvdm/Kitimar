@@ -44,7 +44,7 @@ namespace Kitimar::CTSmarts {
         //} else if constexpr (smarts.centralAtom != -1) {
 
         } else {
-            auto iso = Isomorphism<Mol, decltype(smarts), M, Config>{};
+            auto iso = Isomorphism<Mol, decltype(smarts), M, SeedType::Molecule, Config>{};
             return iso.all(mol);
         }
     }
@@ -69,7 +69,7 @@ namespace Kitimar::CTSmarts {
         auto smarts = Smarts<SMARTS>{};
         static_assert(M != SearchType::Single && !smarts.isSingleAtom,
                     "Use CTSmarts::map_atom<\"SMARTS\">(mol, atom) to check for a single match.");
-        auto iso = Isomorphism<Mol, decltype(smarts), M, NoOptimizeConfig>{}; // FIXME: NoOptimizeConfig
+        auto iso = Isomorphism<Mol, decltype(smarts), M, SeedType::Atom, Config>{};
         return iso.allAtom(mol, atom);
     }
 
@@ -93,7 +93,7 @@ namespace Kitimar::CTSmarts {
         auto smarts = Smarts<SMARTS>{};
         static_assert(M != SearchType::Single && !smarts.isSingleAtom /*&& !smarts.isSingleBond*/,
                 "Use CTSmarts::map_bond<\"SMARTS\">(mol, bond) to check for a single match.");
-        auto iso = Isomorphism<Mol, decltype(smarts), M, NoOptimizeConfig>{}; // FIXME: NoOptimizeConfig
+        auto iso = Isomorphism<Mol, decltype(smarts), M, SeedType::Bond, Config>{};
         return iso.allBond(mol, bond);
     }
 

@@ -46,7 +46,7 @@ namespace Kitimar::CTSmarts {
 
     } // namespace impl
 
-    struct DFSVisitorBse
+    struct DFSVisitorBase
     {
         constexpr void visit(int edge, int source, int target, bool isNewComponent, bool isClosure) noexcept {}
         constexpr void backtrack(int edge, int target, bool isClosure) noexcept {}

@@ -31,7 +31,7 @@ namespace Kitimar::CTSmarts {
             }
             return std::make_tuple(false, Map{});
         } else {
-            auto iso = Isomorphism<Mol, decltype(smarts), SearchType::Single, Config>{};
+            auto iso = Isomorphism<Mol, decltype(smarts), SearchType::Single, SeedType::Molecule, Config>{};
             return iso.single(mol);
         }
     }
@@ -47,7 +47,7 @@ namespace Kitimar::CTSmarts {
     {
         auto smarts = Smarts<SMARTS>{};
         static_assert(!smarts.isSingleAtom, "Use CTSmarts::match_atom<\"SMARTS\">(mol, atom) to check for a single match.");
-        auto iso = Isomorphism<Mol, decltype(smarts), SearchType::Single, NoOptimizeConfig>{}; // FIXME: NoOptimizeConfig
+        auto iso = Isomorphism<Mol, decltype(smarts), SearchType::Single, SeedType::Atom, Config>{};
         return iso.singleAtom(mol, atom);
     }
 
@@ -62,7 +62,7 @@ namespace Kitimar::CTSmarts {
     {
         auto smarts = Smarts<SMARTS>{};
         static_assert(smarts.numBonds, "There should at least be one bond in the SMARTS expression.");
-        auto iso = Isomorphism<Mol, decltype(smarts), SearchType::Single, NoOptimizeConfig>{}; // FIXME: NoOptimizeConfig
+        auto iso = Isomorphism<Mol, decltype(smarts), SearchType::Single, SeedType::Bond, Config>{};
         return iso.singleBond(mol, bond);
     }
 
