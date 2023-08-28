@@ -689,7 +689,7 @@ namespace Kitimar::CTLayout {
                 std::cout << i << std::endl;
             auto molWriter = writer.at(i);
             auto mol = source.read();
-            detail::writeMolecule<typename Layout::Type>(mol, molWriter);
+            detail::writeMolecule<typename Layout::Type>(*mol, molWriter);
         }
     }
 
@@ -719,7 +719,7 @@ namespace Kitimar::CTLayout {
                 std::cout << i << std::endl;
             auto molWriter = moleculeList.at(i);
             auto mol = source.read();
-            detail::writeMolecule<TypeMolecule>(mol, molWriter, atomTypes, bondTypes);
+            detail::writeMolecule<TypeMolecule>(*mol, molWriter, atomTypes, bondTypes);
         }
 
 

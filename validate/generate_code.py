@@ -12,7 +12,7 @@ datasets = [
     'Rarey_smarts',
 ]
 
-part_size = 50
+part_size = 5
 
 
 def exclude_smarts(smarts):
@@ -47,7 +47,8 @@ def generate_dataset_files(dataset: str, smarts: list, part: int = 0):
     with open('{}.cpp'.format(part_name), 'w') as f:
         f.write('#include "Validate.hpp"\n')
         f.write('\n')
-        f.write('void {}_part_{}(OpenBabel::OBMol &mol)\n'.format(dataset, part + 1))
+        f.write('template<Molecule::Molecule Mol>\n')
+        f.write('void {}_part_{}(Mol &mol)\n'.format(dataset, part + 1))
         f.write('{\n')
         stop = min(offset + part_size, len(smarts))
         f.write('    // SMARTS {} - {}\n'.format(offset + 1, stop))
@@ -55,8 +56,11 @@ def generate_dataset_files(dataset: str, smarts: list, part: int = 0):
             exclude, reason = exclude_smarts(smarts[i])
             comment = '//' if exclude else ''
             reason = ' // FIXME: {}'.format(reason) if exclude else ''
-            f.write('    {}validate_contains<"{}">(mol);{}\n'.format(comment, smarts[i], reason))
+            f.write('    {}validate<"{}">(mol);{}\n'.format(comment, smarts[i], reason))
         f.write('}\n')
+        f.write('\n')
+        f.write('template void {}_part_{}<OpenBabel::OBMol>(OpenBabel::OBMol &mol);\n'.format(dataset, part + 1))
+        f.write('template void {}_part_{}<RDKit::ROMol>(RDKit::ROMol &mol);\n'.format(dataset, part + 1))
 
     yield part_name
 
@@ -70,26 +74,44 @@ def generate_part_files(sqc_path):
         print('{}: {}'.format(dataset, len(smarts)))
         yield from generate_dataset_files(dataset, smarts)
 
+def generate_validate_file(part_names):
+    with open('ValidateParts.cpp', 'w') as f:
+        f.write('#include <Kitimar/Molecule/Molecule.hpp>"\n')
+        f.write('\n')
+        f.write('using namespace Kitimar;\n')
+        f.write('\n')
+        for part_name in part_names:
+            f.write('template<Molecule::Molecule Mol> void {}(Mol &mol);\n'.format(part_name))
+        f.write('\n')
+        f.write('template<Molecule::Molecule Mol>\n')
+        f.write('void validate_parts(Mol &mol)\n')
+        f.write('{\n')
+        for part_name in part_names:
+            f.write('    {}(mol);\n'.format(part_name))
+        f.write('}\n')
+        f.write('\n')
+        f.write('template void validate_parts<OpenBabel::OBMol>(OpenBabel::OBMol &mol);\n')
+        f.write('template void validate_parts<RDKit::ROMol>(RDKit::ROMol &mol);\n')
 
 def generate_main(part_names):
     with open('ValidateCTSmarts.cpp', 'w') as f:
-        f.write('#include <Kitimar/OpenBabel/OpenBabel.hpp>\n')
+        f.write('#include "Validate.hpp"\n')
         f.write('#include "../test/TestData.hpp"\n')
         f.write('#include <catch2/catch_all.hpp>\n')
         f.write('\n')
         f.write('using namespace Kitimar;\n')
         f.write('\n')
         for part_name in part_names:
-            f.write('void {}(OpenBabel::OBMol &mol);\n'.format(part_name))
+            f.write('template<Molecule::Molecule Mol> void {}(Mol &mol);\n'.format(part_name))
         f.write('\n')
-        f.write('TEST_CASE("Substructure Quaery Collection")\n')
+        f.write('TEST_CASE("Substructure Query Collection")\n')
         f.write('{\n')
-        f.write('    OpenBabelSmilesMolSource source{chembl_smi_filename("100K")};\n')
+        f.write('    auto source = Toolkit::smilesMolSource<Toolkit::rdkit>(chembl_smi_filename("100K"));\n')
         f.write('    auto i = 0;\n')
         f.write('    for (auto mol : source.molecules()) {\n')
-        f.write('        std::cout << "Molecule: " << ++i << " -- " << writeSmiles(mol) << \'\\n\';\n')
+        f.write('        std::cout << "Molecule: " << ++i << " -- " << Toolkit::writeSmiles<Toolkit::rdkit>(*mol) << \'\\n\';\n')
         for part_name in part_names:
-            f.write('        {}(mol);\n'.format(part_name))
+            f.write('        {}(*mol);\n'.format(part_name))
         f.write('    }\n')
         f.write('}\n')
 
@@ -104,7 +126,8 @@ def generate_cmake(part_names):
 
 def generate_code(sqc_path):
     part_names = list(generate_part_files(sqc_path))
-    generate_main(part_names)
+    #generate_main(part_names)
+    generate_validate_file(part_names)
     generate_cmake(part_names)
     
         

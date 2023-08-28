@@ -84,12 +84,14 @@ namespace Kitimar::CTSmarts {
 
             bool matchAtom(Mol &mol, const auto &atom)
             {
+                static_assert(SeedT == SeedType::Atom);
                 matchDfs(mol, nullptr, get_index(mol, atom));
                 return isDone();
             }
 
             bool matchBond(Mol &mol, const auto &bond)
             {
+                static_assert(SeedT == SeedType::Bond);
                 reset(mol);
                 auto source = get_source(mol, bond);
                 auto target = get_target(mol, bond);
@@ -124,11 +126,13 @@ namespace Kitimar::CTSmarts {
 
             auto countAtom(Mol &mol, const auto &atom)
             {
+                static_assert(SeedT == SeedType::Atom);
                 return count(mol, get_index(mol, atom));
             }
 
             auto countBond(Mol &mol, const auto &bond)
             {
+                static_assert(SeedT == SeedType::Bond);
                 reset(mol);
                 auto source = get_source(mol, bond);
                 auto target = get_target(mol, bond);
@@ -159,11 +163,13 @@ namespace Kitimar::CTSmarts {
 
             auto singleAtom(Mol &mol, const auto &atom)
             {
+                static_assert(SeedT == SeedType::Atom);
                 return single(mol, get_index(mol, atom));
             }
 
             auto singleBond(Mol &mol, const auto &bond)
             {
+                static_assert(SeedT == SeedType::Bond);
                 reset(mol);
                 auto source = get_source(mol, bond);
                 auto target = get_target(mol, bond);
@@ -203,11 +209,13 @@ namespace Kitimar::CTSmarts {
 
             auto allAtom(Mol &mol, const auto &atom)
             {
+                static_assert(SeedT == SeedType::Atom);
                 return all(mol, get_index(mol, atom));
             }
 
             auto allBond(Mol &mol, const auto &bond)
             {
+                static_assert(SeedT == SeedType::Bond);
                 reset(mol);
                 auto source = get_source(mol, bond);
                 auto target = get_target(mol, bond);

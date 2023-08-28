@@ -1,33 +1,20 @@
 #pragma once
 
 #include <Kitimar/Molecule/Molecule.hpp>
+#include <Kitimar/Molecule/Toolkit.hpp>
+#include <Kitimar/Util/Util.hpp>
 
 #include <openbabel/mol.h>
 #include <openbabel/atom.h>
 #include <openbabel/bond.h>
 #include <openbabel/obconversion.h>
+#include <openbabel/parsmart.h>
 
 #include <functional>
 #include <ranges>
 #include <iostream>
 
 namespace Kitimar {
-
-    inline OpenBabel::OBMol readSmilesOpenBabel(std::string_view smiles)
-    {
-        OpenBabel::OBMol mol;
-        OpenBabel::OBConversion conv;
-        conv.SetInFormat("smi");
-        conv.ReadString(&mol, smiles.data());
-        return mol;
-    }
-
-    inline std::string writeSmiles(OpenBabel::OBMol &mol)
-    {
-        OpenBabel::OBConversion conv;
-        conv.SetOutFormat("smi");
-        return conv.WriteString(&mol, true);
-    }
 
     class OpenBabelSmilesMolSource
     {
@@ -52,11 +39,11 @@ namespace Kitimar {
                 return m_conv;
             }
 
-            OpenBabel::OBMol read()
+            std::shared_ptr<OpenBabel::OBMol> read()
             {
                 if (m_atEnd)
                     return {};
-                auto mol = m_mol; // FIXME use shared_ptr
+                auto mol = std::make_shared<OpenBabel::OBMol>(m_mol);
                 m_atEnd = !m_conv.Read(&m_mol);
                 ++m_index;
                 return mol;
@@ -108,6 +95,95 @@ namespace Kitimar {
             std::size_t m_numMolecules = -1;
             bool m_atEnd = false;
     };
+
+    namespace Toolkit {
+
+        static constexpr inline auto openbabel = toolkitId("OpenBabel");
+
+        template<>
+        inline auto readSmiles<openbabel>(std::string_view smiles)
+        {
+            OpenBabel::OBMol mol;
+            OpenBabel::OBConversion conv;
+            conv.SetInFormat("smi");
+            conv.ReadString(&mol, smiles.data());
+            return mol;
+        }
+
+        template<>
+        inline auto writeSmiles<openbabel, OpenBabel::OBMol>(const OpenBabel::OBMol &mol)
+        {
+            OpenBabel::OBConversion conv;
+            conv.SetOutFormat("smi");
+            return conv.WriteString(const_cast<OpenBabel::OBMol*>(&mol), true);
+        }
+
+        template<>
+        inline auto smilesMolSource<openbabel>(std::string_view filename)
+        {
+            return OpenBabelSmilesMolSource{filename};
+        }
+
+        namespace impl {
+
+            inline auto openbabelSmartsAll(std::string_view SMARTS, const OpenBabel::OBMol &mol, bool unique)
+            {
+                OpenBabel::OBSmartsPattern smarts;
+                smarts.Init(Util::toString(SMARTS));
+                smarts.Match(const_cast<OpenBabel::OBMol&>(mol));
+                return unique ? smarts.GetUMapList() : smarts.GetMapList();
+            }
+
+        } // namespace impl
+
+        template<>
+        inline auto match<openbabel, OpenBabel::OBMol>(std::string_view SMARTS, const OpenBabel::OBMol &mol)
+        {
+            OpenBabel::OBSmartsPattern smarts;
+            smarts.Init(Util::toString(SMARTS));
+            return smarts.HasMatch(const_cast<OpenBabel::OBMol&>(mol));
+        }
+
+        template<>
+        inline auto map<openbabel, OpenBabel::OBMol>(std::string_view SMARTS, const OpenBabel::OBMol &mol)
+        {
+            OpenBabel::OBSmartsPattern smarts;
+            smarts.Init(Util::toString(SMARTS));
+            auto found = smarts.Match(const_cast<OpenBabel::OBMol&>(mol));
+            if (found) {
+                auto maps = smarts.GetMapList();
+                assert(maps.size() == 1);
+                return std::make_tuple(found, maps[0]);
+            }
+            return std::make_tuple(found, std::vector<int>{});
+        }
+
+        template<>
+        inline auto count_unique<openbabel, OpenBabel::OBMol>(std::string_view SMARTS, const OpenBabel::OBMol &mol)
+        {
+            return impl::openbabelSmartsAll(SMARTS, mol, true).size();
+        }
+
+        template<>
+        inline auto count_all<openbabel, OpenBabel::OBMol>(std::string_view SMARTS, const OpenBabel::OBMol &mol)
+        {
+            return impl::openbabelSmartsAll(SMARTS, mol, false).size();
+        }
+
+        template<>
+        inline auto maps_unique<openbabel, OpenBabel::OBMol>(std::string_view SMARTS, const OpenBabel::OBMol &mol)
+        {
+            return impl::openbabelSmartsAll(SMARTS, mol, true);
+        }
+
+        template<>
+        inline auto maps_all<openbabel, OpenBabel::OBMol>(std::string_view SMARTS, const OpenBabel::OBMol &mol)
+        {
+            return impl::openbabelSmartsAll(SMARTS, mol, false);
+        }
+
+
+    } // namespace Toolkit
 
 } // namespace Kitimar
 

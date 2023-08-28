@@ -2,6 +2,7 @@
 
 set(Molecule_HDRS
     Molecule.hpp
+    Toolkit.hpp
     MockMolecule.hpp
 )
 

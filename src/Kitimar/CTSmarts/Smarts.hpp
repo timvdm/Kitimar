@@ -172,7 +172,7 @@ namespace Kitimar::CTSmarts {
 
 
 
-        //static_assert(IgnoreInvalid || valid);
+        static_assert(IgnoreInvalid || valid);
         static_assert(IgnoreInvalid || std::is_same_v<const NoError, decltype(error)>); // FIXME
         //static_assert(IgnoreInvalid || error); // FIXME
 

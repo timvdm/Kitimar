@@ -278,7 +278,7 @@ int main(int argc, char **argv)
     OpenBabelSmilesMolSource source{filename};
 
     for (const auto &mol : source.molecules())
-        freq.addMolecule(const_cast<OpenBabel::OBMol&>(mol));
+        freq.addMolecule(const_cast<OpenBabel::OBMol&>(*mol));
 
     std::string output{argv[1]};
     if (output == "code")

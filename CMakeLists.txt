@@ -12,7 +12,8 @@ project(Kitimar
 option(Kitimar_WITH_OPENBABEL "Build with OpenBabel support" OFF)
 option(Kitimar_WITH_RDKIT "Build with RDKit support" OFF)
 option(Kitimar_WITH_COROUTINES "Build with c++20 coroutines support" OFF)
-option(Kitimar_WITH_VALIDATION "Build validation executable (WARNING: uses lots of RAM during compilation)" OFF)
+option(Kitimar_WITH_VALIDATION_BASIC "Build basic validation" OFF)
+option(Kitimar_WITH_VALIDATION_SQC "Build substructure query collection validation (WARNING: uses lots of RAM during compilation)" OFF)
 
 # Including <iostream> results in code being added to empty executables.
 # Without this, generated assembly code is easier to implement.
@@ -135,14 +136,8 @@ if(BUILD_TESTING)
     enable_testing()
     add_subdirectory(test)
     add_subdirectory(benchmark)
-endif()
-
-# Validation
-if(Kitimar_WITH_VALIDATION)
     add_subdirectory(validate)
 endif()
-
-
 
 
 include(CMakePackageConfigHelpers)

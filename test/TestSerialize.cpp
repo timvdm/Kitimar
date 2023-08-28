@@ -121,7 +121,7 @@ void compare(auto &mol, auto &ref)
 template<typename Layout>
 void test_serialize(const std::string &smiles)
 {
-    auto obmol = readSmilesOpenBabel(smiles);
+    auto obmol = Toolkit::readSmiles<Toolkit::openbabel>(smiles);
 
     std::vector<std::byte> data;
     StlVectorSink sink{data};
@@ -148,7 +148,7 @@ template<typename Layout>
 auto serializeSmilesStlVectorSink(const std::string &SMILES, const std::string &filename)
 {
     // Read SMILES
-    auto obmol = readSmilesOpenBabel(SMILES);
+    auto obmol = Toolkit::readSmiles<Toolkit::openbabel>(SMILES);
     // Serialize SMILES
     std::vector<std::byte> data;
     StlVectorSink sink{data};
@@ -163,7 +163,7 @@ template<typename Layout>
 auto serializeSmilesFileStreamSink(const std::string &SMILES, const std::string &filename)
 {
     // Read SMILES
-    auto obmol = readSmilesOpenBabel(SMILES);
+    auto obmol = Toolkit::readSmiles<Toolkit::openbabel>(SMILES);
     // Serialize SMILES
     FileStreamSink sink{filename};
     serialize<Layout>(obmol, sink);
@@ -237,7 +237,7 @@ void test_validate()
     for (auto i = 0UL; i < numMolecules; ++i) {
         auto obmol = obMolSource.read();
         auto mol = molSource.read();
-        compare(mol, obmol);
+        compare(mol, *obmol);
     }
 }
 

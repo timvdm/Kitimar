@@ -1,18 +1,15 @@
 #include "Validate.hpp"
 
-void RDMACCS_part_4(OpenBabel::OBMol &mol)
+template<Molecule::Molecule Mol>
+void RDMACCS_part_4(Mol &mol)
 {
-    // SMARTS 151 - 162
-    validate_contains<"[#6]=[#8]">(mol);
-    validate_contains<"[!#1]!@[CH2]!@[!#1]">(mol);
-    validate_contains<"[#7]~[!#1](~[!#1])~[!#1]">(mol);
-    validate_contains<"[#6]-[#8]">(mol);
-    validate_contains<"[#6]-[#7]">(mol);
-    validate_contains<"[#8]">(mol);
-    validate_contains<"[C;H3,H4]">(mol);
-    validate_contains<"[#7]">(mol);
-    validate_contains<"a">(mol);
-    validate_contains<"*~1~*~*~*~*~*~1">(mol);
-    validate_contains<"[#8]">(mol);
-    validate_contains<"[R]">(mol);
+    // SMARTS 16 - 20
+    validate<"[#6]#[#6]">(mol);
+    validate<"[#5,Al,Ga,In,Tl]">(mol);
+    validate<"*~1~*~*~*~*~*~*~1">(mol);
+    validate<"[#14]">(mol);
+    validate<"[#6]=[#6](~[!#6;!#1])~[!#6;!#1]">(mol);
 }
+
+template void RDMACCS_part_4<OpenBabel::OBMol>(OpenBabel::OBMol &mol);
+template void RDMACCS_part_4<RDKit::ROMol>(RDKit::ROMol &mol);

@@ -13,7 +13,7 @@ int main(int argc, char **argv)
 
     auto SMILES = argv[1];
     //auto SMILES = "OCC(O)CO";
-    auto mol = readSmilesOpenBabel(SMILES);
+    auto mol = Toolkit::readSmiles<Toolkit::openbabel>(SMILES);
 
 
     fmt::println("// SMILES: {}", SMILES);

@@ -222,6 +222,8 @@ namespace Kitimar::CTSmarts {
         // bracket atom: '[' atom_expression+ ']'
         template<typename P> static constexpr auto rule(atom<P>, ctll::term<'['>) -> ctll::push<ctll::anything, atom_expr<P>>;
 
+        template<typename P> static constexpr auto rule(atom<P>, ctll::neg_set<'B','C','N','O','P','S','F','I','b','c','n','o','p','s','*','a','A','['>) -> ctll::reject;
+
 
         //
         // Atom expressions (i.e. [ ... ] )

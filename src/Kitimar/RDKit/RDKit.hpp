@@ -1,22 +1,20 @@
 #pragma once
 
 #include <Kitimar/Molecule/Molecule.hpp>
+#include <Kitimar/Molecule/Toolkit.hpp>
 
 #include <GraphMol/GraphMol.h>
 #include <GraphMol/SmilesParse/SmilesParse.h>
+#include <GraphMol/SmilesParse/SmilesWrite.h>
 #include <GraphMol/FileParsers/MolSupplier.h>
 #include <GraphMol/AtomIterators.h>
 #include <GraphMol/MolOps.h>
 #include <GraphMol/MolPickler.h>
+#include <GraphMol/Substruct/SubstructMatch.h>
 
 #include <ranges>
 
 namespace Kitimar {
-
-    inline std::shared_ptr<RDKit::ROMol> readSmilesRDKit(std::string_view smiles)
-    {
-        return std::shared_ptr<RDKit::ROMol>{RDKit::SmilesToMol(smiles.data())};
-    }
 
     class RDKitSmilesMolSource
     {
@@ -134,6 +132,90 @@ namespace Kitimar {
             bool m_atEnd = false;
     };
 
+    namespace Toolkit {
+
+        static constexpr inline auto rdkit = toolkitId("RDKit");
+
+        template<>
+        inline auto readSmiles<rdkit>(std::string_view smiles)
+        {
+            return std::shared_ptr<RDKit::ROMol>{RDKit::SmilesToMol(smiles.data())};
+        }
+
+        template<>
+        inline auto writeSmiles<rdkit, RDKit::ROMol>(const RDKit::ROMol &mol)
+        {
+            return RDKit::MolToSmiles(mol);
+        }
+
+        template<>
+        inline auto smilesMolSource<rdkit>(std::string_view filename)
+        {
+            return RDKitSmilesMolSource{filename};
+        }
+
+        namespace impl {
+
+            inline auto rdkitSmartsSingle(std::string_view SMARTS, const RDKit::ROMol &mol)
+            {
+                std::unique_ptr<RDKit::RWMol> smarts{RDKit::SmartsToMol(std::string(SMARTS))};
+                assert(smarts);
+                RDKit::MatchVectType res;
+                auto found = RDKit::SubstructMatch(mol, *smarts, res);
+                return std::make_tuple(found, res);
+            }
+
+            inline auto rdkitSmartsAll(std::string_view SMARTS, const RDKit::ROMol &mol, bool unique)
+            {
+                std::unique_ptr<RDKit::RWMol> smarts{RDKit::SmartsToMol(std::string(SMARTS))};
+                assert(smarts);
+                std::vector<RDKit::MatchVectType> res;
+                RDKit::SubstructMatch(mol, *smarts, res, unique);
+                return res;
+            }
+
+        } // namespace impl
+
+        template<>
+        inline auto match<rdkit, RDKit::ROMol>(std::string_view SMARTS, const RDKit::ROMol &mol)
+        {
+            return std::get<0>(impl::rdkitSmartsSingle(SMARTS, mol));
+        }
+
+        template<>
+        inline auto map<rdkit, RDKit::ROMol>(std::string_view SMARTS, const RDKit::ROMol &mol)
+        {
+            return impl::rdkitSmartsSingle(SMARTS, mol);
+        }
+
+        template<>
+        inline auto count_unique<rdkit, RDKit::ROMol>(std::string_view SMARTS, const RDKit::ROMol &mol)
+        {
+            return impl::rdkitSmartsAll(SMARTS, mol, true).size();
+        }
+
+        template<>
+        inline auto count_all<rdkit, RDKit::ROMol>(std::string_view SMARTS, const RDKit::ROMol &mol)
+        {
+            return impl::rdkitSmartsAll(SMARTS, mol, false).size();
+        }
+
+        template<>
+        inline auto maps_unique<rdkit, RDKit::ROMol>(std::string_view SMARTS, const RDKit::ROMol &mol)
+        {
+            return impl::rdkitSmartsAll(SMARTS, mol, true);
+        }
+
+        template<>
+        inline auto maps_all<rdkit, RDKit::ROMol>(std::string_view SMARTS, const RDKit::ROMol &mol)
+        {
+            return impl::rdkitSmartsAll(SMARTS, mol, false);
+        }
+
+
+
+    } // namespace Toolkit
+
 
 } // namespace Kitimar
 
@@ -238,7 +320,6 @@ namespace RDKit {
 
     // AdjacentAtomList
 
-
     inline auto get_nbrs(const RDKit::ROMol &mol, const RDKit::Atom *atom)
     {
         assert(atom);
@@ -271,6 +352,13 @@ namespace RDKit {
         return atom->getFormalCharge();
     }
 
+    // ValenceLayer
+
+    inline auto get_valence(const RDKit::ROMol &mol, const RDKit::Atom *atom)
+    {
+        return atom->getTotalValence();
+    }
+
     // BonderOrderLayer
 
     inline auto get_order(const RDKit::ROMol &mol, const RDKit::Bond *bond)
@@ -290,12 +378,28 @@ namespace RDKit {
 
     inline auto get_implicit_hydrogens(const RDKit::ROMol &mol, const RDKit::Atom *atom)
     {
-        return atom->getImplicitValence();
+        return atom->getTotalNumHs(false);
     }
 
     inline auto get_total_hydrogens(const RDKit::ROMol &mol, const RDKit::Atom *atom)
     {
-        return atom->getTotalNumHs();
+        return atom->getTotalNumHs(true);
+    }
+
+    // RingLayer
+
+    inline auto is_ring_atom(const RDKit::ROMol &mol, const RDKit::Atom *atom)
+    {
+        if (!mol.getRingInfo()->isInitialized())
+            RDKit::MolOps::findSSSR(mol);
+        return mol.getRingInfo()->numAtomRings(atom->getIdx()) > 0;
+    }
+
+    inline auto is_ring_bond(const RDKit::ROMol &mol, const RDKit::Bond *bond)
+    {
+        if (!mol.getRingInfo()->isInitialized())
+            RDKit::MolOps::findSSSR(mol);
+        return mol.getRingInfo()->numBondRings(bond->getIdx()) > 0;
     }
 
     // AromaticLayer
@@ -310,11 +414,30 @@ namespace RDKit {
         return bond->getIsAromatic();
     }
 
-    inline auto is_ring_bond(const RDKit::ROMol &mol, const RDKit::Bond *bond)
+    // RingSetLayer
+
+    // is the atom part of a ring with the specified size
+    inline auto is_in_ring_size(const RDKit::ROMol &mol, const RDKit::Atom *atom, unsigned int ringSize)
     {
         if (!mol.getRingInfo()->isInitialized())
             RDKit::MolOps::findSSSR(mol);
-        return mol.getRingInfo()->numBondRings(bond->getIdx()) > 0;
+        return mol.getRingInfo()->minAtomRingSize(atom->getIdx()) == ringSize;
+    }
+
+    // number of rings the atom is part of (depends on used ring set!)
+    inline auto get_ring_count(const RDKit::ROMol &mol, const RDKit::Atom *atom)
+    {
+        if (!mol.getRingInfo()->isInitialized())
+            RDKit::MolOps::findSSSR(mol);
+        return mol.getRingInfo()->numAtomRings(atom->getIdx());
+    }
+
+    // number of ring bonds around the atom
+    inline auto get_ring_degree(const RDKit::ROMol &mol, const RDKit::Atom *atom)
+    {
+        if (!mol.getRingInfo()->isInitialized())
+            RDKit::MolOps::findSSSR(mol);
+        return queryAtomRingBondCount(atom);
     }
 
 }

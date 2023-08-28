@@ -1,21 +1,30 @@
 #include <Kitimar/CTSmarts/CTSmarts.hpp>
 #include <Kitimar/Util/Util.hpp>
+#include <Kitimar/RDKit/RDKit.hpp>
 #include <Kitimar/OpenBabel/OpenBabel.hpp>
-#include <openbabel/parsmart.h>
+
 #include <catch2/catch_all.hpp>
 
 using namespace Kitimar;
 
-template<ctll::fixed_string SMARTS>
-void validate_contains(OpenBabel::OBMol &mol)
+template<Toolkit::Id ToolkitId, ctll::fixed_string SMARTS>
+void toolkit_validate(auto &mol)
 {
-    auto ctMatch = CTSmarts::match<SMARTS>(mol);
-
-    OpenBabel::OBSmartsPattern obsmarts;
-    obsmarts.Init(Util::toString(SMARTS));
-    auto obMatch = obsmarts.Match(mol);
-
-    if (ctMatch != obMatch)
+    std::size_t ctseCount = ctse::count_unique<SMARTS>(mol);
+    std::size_t toolkitCount = Toolkit::count_unique<ToolkitId>(Util::toString(SMARTS), mol);
+    if (ctseCount != toolkitCount)
         std::cout << "FAIL: " << Util::toString(SMARTS) << '\n';
-    CHECK(ctMatch == obMatch);
+    CHECK(ctseCount == toolkitCount);
+}
+
+template<ctll::fixed_string SMARTS>
+void validate(OpenBabel::OBMol &mol)
+{
+    toolkit_validate<Toolkit::openbabel, SMARTS>(mol);
+}
+
+template<ctll::fixed_string SMARTS>
+void validate(RDKit::ROMol &mol)
+{
+    toolkit_validate<Toolkit::rdkit, SMARTS>(mol);
 }

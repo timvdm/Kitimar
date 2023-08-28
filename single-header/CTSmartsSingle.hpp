@@ -24,7 +24,7 @@ namespace Kitimar::CTSmarts {
                 if (!found)
                     atoms.fill(null_atom(mol));
                 else
-                    for (auto i = 0; i < NumCaptures; ++i)
+                    for (auto i = 0UL; i < NumCaptures; ++i)
                         atoms[i] = get_atom(mol, map[captureSet[i]]);
                 return atoms;
             } else {
@@ -32,7 +32,7 @@ namespace Kitimar::CTSmarts {
                 if (!found)
                     atoms.fill(null_atom(mol));
                 else
-                    for (auto i = 0; i < smarts.numAtoms; ++i)
+                    for (auto i = 0UL; i < smarts.numAtoms; ++i)
                         atoms[i] = get_atom(mol, map[i]); // FIXME: null atoms...
                 return atoms;
             }
@@ -347,7 +347,7 @@ namespace Kitimar::CTSmarts {
             std::ranges::fill(incident, -1);
 
             std::array<int, smarts.numAtoms> sizes = {};
-            for (auto i = 0; i < smarts.numBonds; ++i) {
+            for (auto i = 0UL; i < smarts.numBonds; ++i) {
                 auto edge = edgeList.data[i];
                 auto source = edge.source;
                 auto target = edge.target;
@@ -428,7 +428,7 @@ namespace Kitimar::CTSmarts {
 
     } // namespace impl
 
-    struct DFSVisitorBse
+    struct DFSVisitorBase
     {
         constexpr void visit(int edge, int source, int target, bool isNewComponent, bool isClosure) noexcept {}
         constexpr void backtrack(int edge, int target, bool isClosure) noexcept {}
@@ -648,7 +648,7 @@ namespace Kitimar::CTSmarts {
     namespace impl {
 
         template<typename SmartsT>
-        struct DfsEdgeListVisitor : DFSVisitorBse
+        struct DfsEdgeListVisitor : DFSVisitorBase
         {
             consteval DfsEdgeListVisitor() noexcept {}
             consteval DfsEdgeListVisitor(SmartsT) noexcept {}
@@ -972,7 +972,22 @@ namespace Kitimar::CTSmarts {
         static constexpr inline auto index = Index;
         static constexpr inline auto source = Source;
         static constexpr inline auto target = Target;
-        static constexpr inline auto expr = Expr();        
+        static constexpr inline auto expr = Expr();
+    };
+
+    template<typename Atoms, typename Bonds = ctll::empty_list>
+    struct BasicSmarts
+    {
+        static constexpr inline auto atoms = Atoms{};
+        static constexpr inline auto bonds = Bonds{};
+        static constexpr inline auto numAtoms = ctll::size(atoms);
+        static constexpr inline auto numBonds = ctll::size(bonds);
+
+        static constexpr inline auto isSingleAtom = numAtoms == 1;
+        static constexpr inline auto isSingleBond = numAtoms == 2 && numBonds == 1;
+
+        consteval BasicSmarts() noexcept = default;
+        consteval BasicSmarts(Atoms, Bonds) noexcept {}
     };
 
 } // namespace ctsmarts
@@ -1854,17 +1869,20 @@ namespace Kitimar::CTSmarts {
 } // namespace Kitimar::CTSmarts
 
 #include <algorithm>
+#include <type_traits>
 
 namespace Kitimar::CTSmarts {
 
-    template<typename SmartsT, typename IncidentListT, typename VertexFrequencyT>
+    template<typename SmartsT, typename IncidentListT, typename VertexFrequencyT, bool SeedBond>
     consteval auto makeOptimizeIncidentList()
     {
         auto incident = IncidentListT::data;
 
-        for (auto i = 0; i < SmartsT::numAtoms; ++i) {
+        for (auto i = 0; i < static_cast<int>(SmartsT::numAtoms); ++i) {
             auto offset = i * IncidentListT::stride;
             auto end = offset + IncidentListT::degrees.data[i];
+            if (SeedBond)
+                ++offset;
             std::ranges::sort(std::begin(incident) + offset, std::begin(incident) + end, [i] (auto index1, auto index2) {
                 auto edge1 = IncidentListT::edges.data[index1];
                 auto edge2 = IncidentListT::edges.data[index2];
@@ -1877,11 +1895,11 @@ namespace Kitimar::CTSmarts {
         return incident;
     }
 
-    template<typename SmartsT, typename IncidentListT, typename VertexFrequencyT>
+    template<typename SmartsT, typename IncidentListT, typename VertexFrequencyT, bool SeedBond>
     struct OptimizeIncidentList
     {
         // store adjacent (or incident) bond indices for each vertex
-        static constexpr inline auto data = makeOptimizeIncidentList<SmartsT, IncidentListT, VertexFrequencyT>();
+        static constexpr inline auto data = makeOptimizeIncidentList<SmartsT, IncidentListT, VertexFrequencyT, SeedBond>();
         static constexpr inline auto edges = IncidentListT::edges;
         static constexpr inline auto degrees = IncidentListT::degrees;
         static constexpr inline auto stride = IncidentListT::stride;
@@ -1892,7 +1910,7 @@ namespace Kitimar::CTSmarts {
         }
 
         consteval OptimizeIncidentList() noexcept {}
-        consteval OptimizeIncidentList(SmartsT, IncidentListT, VertexFrequencyT) noexcept {}
+        consteval OptimizeIncidentList(SmartsT, IncidentListT, VertexFrequencyT, std::integral_constant<bool, SeedBond>) noexcept {}
     };
 
 }
@@ -1904,66 +1922,93 @@ namespace Kitimar::CTSmarts {
 
     struct SmartsGrammar
     {
+        template<bool Component = false, typename Recursive = ctll::empty_list, int Branch = 0>
+        struct Parenthesis
+        {
+            static constexpr inline auto component = Component;
+            static constexpr inline auto recursive = Recursive{};
+            static constexpr inline auto branch = Branch;
+        };
+
+        template<typename P>
+        using ParenthesisPushComponent = Parenthesis<true, decltype(P::recursive), P::branch>;
+
+        template<typename P>
+        using ParenthesisPopComponent = Parenthesis<false, decltype(P::recursive), P::branch>;
+
+        template<typename P>
+        using ParenthesisPushRecursive = Parenthesis<P::component, decltype(ctll::push_front(Number<P::branch>{}, P::recursive)), 0>;
+
+        template<typename P>
+        using ParenthesisPopRecursive = Parenthesis<P::component, decltype(ctll::pop_front(P::recursive)), ctll::front(P::recursive).value>;
+
+        template<typename P>
+        using ParenthesisPushBranch = Parenthesis<P::component, decltype(P::recursive), P::branch + 1>;
+
+        template<typename P>
+        using ParenthesisPopBranch = Parenthesis<P::component, decltype(P::recursive), P::branch - 1>;
+
         //
         // Symbols
         //
 
-        struct atom {};
-        struct atom_B {};
-        struct atom_C {};
-        struct atom_expr {}; // FIXME: rename to bracket_atom
-        struct atom_expr2 {}; // FIXME: rename to atom_expr
-        struct atom_exprA {}; // atom_expr_A
-        struct atom_exprB {};
-        struct atom_exprC {};
-        struct atom_exprD {};
-        struct atom_exprE {};
-        struct atom_exprF {};
-        struct atom_exprG {};
-        struct atom_exprH {};
-        struct atom_exprI {};
-        struct atom_exprK {};
-        struct atom_exprL {};
-        struct atom_exprM {};
-        struct atom_exprN {};
-        struct atom_exprO {};
-        struct atom_exprP {};
-        struct atom_exprR {};
-        struct atom_exprS {};
-        struct atom_exprT {};
-        struct atom_exprX {};
-        struct atom_exprY {};
-        struct atom_exprZ {};
-        struct atom_expr_a {};
-        struct atom_expr_s {};
-        struct atom_expr_isotope {};
-        struct atom_expr_isotope2 {};
-        struct atom_expr_element {};
-        struct atom_expr_element2 {};
-        struct atom_expr_degree {};
-        struct atom_expr_valence {};
-        struct atom_expr_valence2 {};
-        struct atom_expr_connectivity {};
-        struct atom_expr_total_h {};
-        struct atom_expr_impl_h {};
-        struct atom_expr_ring_count {};
-        struct atom_expr_ring_size {};
-        struct atom_expr_ring_size2 {};
-        struct atom_expr_ring_connectivity {};
-        struct atom_expr_ring_connectivity2 {};
-        struct atom_expr_neg_charge {};
-        struct atom_expr_neg_charge2 {};
-        struct atom_expr_pos_charge {};
-        struct atom_expr_pos_charge2 {};
-        struct atom_expr_chiral {};
-        struct atom_expr_class {};
-        struct atom_expr_class2 {};
-        struct bond_expr {};
-        struct bond_expr2 {};
-        struct chain {};
-        struct chain_up_down {};
-        struct ring_bond {};
-        struct ring_bond2 {};
+        template<typename P> struct atom {};
+        template<typename P> struct atom_B {};
+        template<typename P> struct atom_C {};
+        template<typename P> struct atom_expr {}; // FIXME: rename to bracket_atom
+        template<typename P> struct atom_expr2 {}; // FIXME: rename to atom_expr
+        template<typename P> struct atom_exprA {}; // atom_expr_A
+        template<typename P> struct atom_exprB {};
+        template<typename P> struct atom_exprC {};
+        template<typename P> struct atom_exprD {};
+        template<typename P> struct atom_exprE {};
+        template<typename P> struct atom_exprF {};
+        template<typename P> struct atom_exprG {};
+        template<typename P> struct atom_exprH {};
+        template<typename P> struct atom_exprI {};
+        template<typename P> struct atom_exprK {};
+        template<typename P> struct atom_exprL {};
+        template<typename P> struct atom_exprM {};
+        template<typename P> struct atom_exprN {};
+        template<typename P> struct atom_exprO {};
+        template<typename P> struct atom_exprP {};
+        template<typename P> struct atom_exprR {};
+        template<typename P> struct atom_exprS {};
+        template<typename P> struct atom_exprT {};
+        template<typename P> struct atom_exprX {};
+        template<typename P> struct atom_exprY {};
+        template<typename P> struct atom_exprZ {};
+        template<typename P> struct atom_expr_a {};
+        template<typename P> struct atom_expr_s {};
+        template<typename P> struct atom_expr_isotope {};
+        template<typename P> struct atom_expr_isotope2 {};
+        template<typename P> struct atom_expr_element {};
+        template<typename P> struct atom_expr_element2 {};
+        template<typename P> struct atom_expr_degree {};
+        template<typename P> struct atom_expr_valence {};
+        template<typename P> struct atom_expr_valence2 {};
+        template<typename P> struct atom_expr_connectivity {};
+        template<typename P> struct atom_expr_total_h {};
+        template<typename P> struct atom_expr_impl_h {};
+        template<typename P> struct atom_expr_ring_count {};
+        template<typename P> struct atom_expr_ring_size {};
+        template<typename P> struct atom_expr_ring_size2 {};
+        template<typename P> struct atom_expr_ring_connectivity {};
+        template<typename P> struct atom_expr_ring_connectivity2 {};
+        template<typename P> struct atom_expr_neg_charge {};
+        template<typename P> struct atom_expr_neg_charge2 {};
+        template<typename P> struct atom_expr_pos_charge {};
+        template<typename P> struct atom_expr_pos_charge2 {};
+        template<typename P> struct atom_expr_chiral {};
+        template<typename P> struct atom_expr_class {};
+        template<typename P> struct atom_expr_class2 {};
+        template<typename P> struct atom_expr_recursive {};
+        template<typename P> struct bond_expr {};
+        template<typename P> struct bond_expr2 {};
+        template<typename P> struct chain {};
+        template<typename P> struct chain_up_down {};
+        template<typename P> struct ring_bond {};
+        template<typename P> struct ring_bond2 {};
 
         //
         // Actions
@@ -2001,12 +2046,20 @@ namespace Kitimar::CTSmarts {
         // Create bond AST elements
         struct next_atom : ctll::action {};
 
+        // Components
+        struct push_component : ctll::action {};
+        struct pop_component : ctll::action {};
+
         // Branches
         struct push_prev : ctll::action {};
         struct pop_prev : ctll::action {};
         struct reset_prev : ctll::action {};
         struct set_bond_type : ctll::action {};
         struct handle_ring_bond : ctll::action {};
+
+        // Recursive
+        struct push_recursive : ctll::action {};
+        struct pop_recursive : ctll::action {};
 
         // Operators
         /*
@@ -2037,32 +2090,32 @@ namespace Kitimar::CTSmarts {
 
         struct error_empty_bracket : ctll::action {}; // '[]'
 
-        using _start = atom;
+        using _start = atom<Parenthesis<>>;
 
         //
         // Organic atoms
         //
 
         // aliphatic atom: 'B' | 'C' | 'N' | 'O' | 'S' | 'P' | 'F' | 'Cl' | 'Br' | 'I'
-        static constexpr auto rule(atom, ctll::set<'N', 'O', 'P', 'S', 'F', 'I'>) -> ctll::push<ctll::anything, make_aliphatic, next_atom, chain>;
-        static constexpr auto rule(atom, ctll::set<'B'>) -> ctll::push<ctll::anything, push_char, atom_B>;
-        static constexpr auto rule(atom, ctll::set<'C'>) -> ctll::push<ctll::anything, push_char, atom_C>;
-        static constexpr auto rule(atom_B, ctll::term<'r'>) -> ctll::push<ctll::anything, make_aliphatic,  next_atom, chain>;
-        static constexpr auto rule(atom_B, ctll::neg_set<'r'>) -> ctll::push<pop_char, make_aliphatic,  next_atom, chain>;
-        static constexpr auto rule(atom_B, ctll::epsilon) -> ctll::push<pop_char, make_aliphatic, next_atom>;
-        static constexpr auto rule(atom_C, ctll::term<'l'>) -> ctll::push<ctll::anything, make_aliphatic,  next_atom, chain>;
-        static constexpr auto rule(atom_C, ctll::neg_set<'l'>) -> ctll::push<pop_char, make_aliphatic,  next_atom, chain>;
-        static constexpr auto rule(atom_C, ctll::epsilon) -> ctll::push<pop_char, make_aliphatic, next_atom>;
+        template<typename P> static constexpr auto rule(atom<P>, ctll::set<'N', 'O', 'P', 'S', 'F', 'I'>) -> ctll::push<ctll::anything, make_aliphatic, next_atom, chain<P>>;
+        template<typename P> static constexpr auto rule(atom<P>, ctll::set<'B'>) -> ctll::push<ctll::anything, push_char, atom_B<P>>;
+        template<typename P> static constexpr auto rule(atom<P>, ctll::set<'C'>) -> ctll::push<ctll::anything, push_char, atom_C<P>>;
+        template<typename P> static constexpr auto rule(atom_B<P>, ctll::term<'r'>) -> ctll::push<ctll::anything, make_aliphatic,  next_atom, chain<P>>;
+        template<typename P> static constexpr auto rule(atom_B<P>, ctll::neg_set<'r'>) -> ctll::push<pop_char, make_aliphatic,  next_atom, chain<P>>;
+        template<typename P> static constexpr auto rule(atom_B<P>, ctll::epsilon) -> ctll::push<pop_char, make_aliphatic, next_atom>;
+        template<typename P> static constexpr auto rule(atom_C<P>, ctll::term<'l'>) -> ctll::push<ctll::anything, make_aliphatic,  next_atom, chain<P>>;
+        template<typename P> static constexpr auto rule(atom_C<P>, ctll::neg_set<'l'>) -> ctll::push<pop_char, make_aliphatic,  next_atom, chain<P>>;
+        template<typename P> static constexpr auto rule(atom_C<P>, ctll::epsilon) -> ctll::push<pop_char, make_aliphatic, next_atom>;
         // aromatic atom: 'b' | 'c' | 'n' | 'o' | 's' | 'p'
-        static constexpr auto rule(atom, ctll::set<'b', 'c','n','o','p','s'>) -> ctll::push<ctll::anything, make_aromatic, next_atom, chain>;
+        template<typename P> static constexpr auto rule(atom<P>, ctll::set<'b', 'c','n','o','p','s'>) -> ctll::push<ctll::anything, make_aromatic, next_atom, chain<P>>;
         // any atom: '*'
-        static constexpr auto rule(atom, ctll::term<'*'>) -> ctll::push<ctll::anything, make_any_atom, next_atom, chain>;
+        template<typename P> static constexpr auto rule(atom<P>, ctll::term<'*'>) -> ctll::push<ctll::anything, make_any_atom, next_atom, chain<P>>;
         // any aromatic: 'a'
-        static constexpr auto rule(atom, ctll::term<'a'>) -> ctll::push<ctll::anything, make_any_aromatic, next_atom, chain>;
+        template<typename P> static constexpr auto rule(atom<P>, ctll::term<'a'>) -> ctll::push<ctll::anything, make_any_aromatic, next_atom, chain<P>>;
         // any aliphatic: 'A'
-        static constexpr auto rule(atom, ctll::term<'A'>) -> ctll::push<ctll::anything, make_any_aliphatic, next_atom, chain>;
+        template<typename P> static constexpr auto rule(atom<P>, ctll::term<'A'>) -> ctll::push<ctll::anything, make_any_aliphatic, next_atom, chain<P>>;
         // bracket atom: '[' atom_expression+ ']'
-        static constexpr auto rule(atom, ctll::term<'['>) -> ctll::push<ctll::anything, atom_expr>;
+        template<typename P> static constexpr auto rule(atom<P>, ctll::term<'['>) -> ctll::push<ctll::anything, atom_expr<P>>;
 
         //
         // Atom expressions (i.e. [ ... ] )
@@ -2072,254 +2125,278 @@ namespace Kitimar::CTSmarts {
         using not_digit_chars = ctll::neg_set<'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'>;
 
         // check for [], [!] or [...!]
-        static constexpr auto rule(atom_expr, ctll::set<']'>) -> ctll::push<error_empty_bracket, ctll::reject>;
-        static constexpr auto rule(atom_expr, ctll::term<'!'>) -> ctll::push<ctll::anything, make_atom_not, atom_expr>;
-        static constexpr auto rule(atom_expr, ctll::neg_set<']', '!'>) -> ctll::push<atom_expr2>;
+        template<typename P> static constexpr auto rule(atom_expr<P>, ctll::set<']'>) -> ctll::push<error_empty_bracket, ctll::reject>;
+        template<typename P> static constexpr auto rule(atom_expr<P>, ctll::term<'!'>) -> ctll::push<ctll::anything, make_atom_not, atom_expr<P>>;
+        template<typename P> static constexpr auto rule(atom_expr<P>, ctll::neg_set<']', '!'>) -> ctll::push<atom_expr2<P>>;
 
         // operations + end ]
-        static constexpr auto rule(atom_expr2, ctll::term<'!'>) -> ctll::push<ctll::anything, make_atom_not, atom_expr>;
-        static constexpr auto rule(atom_expr2, ctll::term<'&'>) -> ctll::push<ctll::anything, make_atom_and_high, atom_expr>;
-        static constexpr auto rule(atom_expr2, ctll::term<','>) -> ctll::push<ctll::anything, make_atom_or, atom_expr>;
-        static constexpr auto rule(atom_expr2, ctll::term<';'>) -> ctll::push<ctll::anything, make_atom_and_low, atom_expr>;
-        static constexpr auto rule(atom_expr2, ctll::term<']'>) -> ctll::push<ctll::anything, next_atom, chain>;
+        template<typename P> static constexpr auto rule(atom_expr2<P>, ctll::term<'!'>) -> ctll::push<ctll::anything, make_atom_not, atom_expr<P>>;
+        template<typename P> static constexpr auto rule(atom_expr2<P>, ctll::term<'&'>) -> ctll::push<ctll::anything, make_atom_and_high, atom_expr<P>>;
+        template<typename P> static constexpr auto rule(atom_expr2<P>, ctll::term<','>) -> ctll::push<ctll::anything, make_atom_or, atom_expr<P>>;
+        template<typename P> static constexpr auto rule(atom_expr2<P>, ctll::term<';'>) -> ctll::push<ctll::anything, make_atom_and_low, atom_expr<P>>;
+        template<typename P> static constexpr auto rule(atom_expr2<P>, ctll::term<']'>) -> ctll::push<ctll::anything, next_atom, chain<P>>;
 
         // isotope: NUMBER
-        static constexpr auto rule(atom_expr2, digit_chars) -> ctll::push<ctll::anything, start_number, atom_expr_isotope>;
-        static constexpr auto rule(atom_expr_isotope, digit_chars) -> ctll::push<ctll::anything, push_number, atom_expr_isotope>;
-        static constexpr auto rule(atom_expr_isotope, not_digit_chars) -> ctll::push<make_isotope, atom_expr2>;
+        template<typename P> static constexpr auto rule(atom_expr2<P>, digit_chars) -> ctll::push<ctll::anything, start_number, atom_expr_isotope<P>>;
+        template<typename P> static constexpr auto rule(atom_expr_isotope<P>, digit_chars) -> ctll::push<ctll::anything, push_number, atom_expr_isotope<P>>;
+        template<typename P> static constexpr auto rule(atom_expr_isotope<P>, not_digit_chars) -> ctll::push<make_isotope, atom_expr2<P>>;
 
         // element: '#' | '#' NUMBER
-        static constexpr auto rule(atom_expr2, ctll::term<'#'>) -> ctll::push<ctll::anything, atom_expr_element>;
-        static constexpr auto rule(atom_expr_element, digit_chars) -> ctll::push<ctll::anything, start_number, atom_expr_element2>;
-        static constexpr auto rule(atom_expr_element, not_digit_chars) -> ctll::push<make_element, atom_expr2>;
-        static constexpr auto rule(atom_expr_element2, digit_chars) -> ctll::push<ctll::anything, push_number, atom_expr_element2>;
-        static constexpr auto rule(atom_expr_element2, not_digit_chars) -> ctll::push<make_element, atom_expr2>;
+        template<typename P> static constexpr auto rule(atom_expr2<P>, ctll::term<'#'>) -> ctll::push<ctll::anything, atom_expr_element<P>>;
+        template<typename P> static constexpr auto rule(atom_expr_element<P>, digit_chars) -> ctll::push<ctll::anything, start_number, atom_expr_element2<P>>;
+        template<typename P> static constexpr auto rule(atom_expr_element<P>, not_digit_chars) -> ctll::push<make_element, atom_expr2<P>>;
+        template<typename P> static constexpr auto rule(atom_expr_element2<P>, digit_chars) -> ctll::push<ctll::anything, push_number, atom_expr_element2<P>>;
+        template<typename P> static constexpr auto rule(atom_expr_element2<P>, not_digit_chars) -> ctll::push<make_element, atom_expr2<P>>;
 
         // valence: 'v' | 'v' NUMBER
-        static constexpr auto rule(atom_expr2, ctll::term<'v'>) -> ctll::push<ctll::anything, atom_expr_valence>;
-        static constexpr auto rule(atom_expr_valence, digit_chars) -> ctll::push<ctll::anything, start_number, atom_expr_valence2>;
-        static constexpr auto rule(atom_expr_valence, not_digit_chars) -> ctll::push<make_valence, atom_expr2>;
-        static constexpr auto rule(atom_expr_valence2, digit_chars) -> ctll::push<ctll::anything, push_number, atom_expr_valence2>;
-        static constexpr auto rule(atom_expr_valence2, not_digit_chars) -> ctll::push<make_valence, atom_expr2>;
+        template<typename P> static constexpr auto rule(atom_expr2<P>, ctll::term<'v'>) -> ctll::push<ctll::anything, atom_expr_valence<P>>;
+        template<typename P> static constexpr auto rule(atom_expr_valence<P>, digit_chars) -> ctll::push<ctll::anything, start_number, atom_expr_valence2<P>>;
+        template<typename P> static constexpr auto rule(atom_expr_valence<P>, not_digit_chars) -> ctll::push<make_valence, atom_expr2<P>>;
+        template<typename P> static constexpr auto rule(atom_expr_valence2<P>, digit_chars) -> ctll::push<ctll::anything, push_number, atom_expr_valence2<P>>;
+        template<typename P> static constexpr auto rule(atom_expr_valence2<P>, not_digit_chars) -> ctll::push<make_valence, atom_expr2<P>>;
 
         // implicit hydrogens: 'h' | 'h' DIGIT
-        static constexpr auto rule(atom_expr2, ctll::term<'h'>) -> ctll::push<ctll::anything, atom_expr_impl_h>;
-        static constexpr auto rule(atom_expr_impl_h, digit_chars) -> ctll::push<ctll::anything, make_impl_h, atom_expr2>;
-        static constexpr auto rule(atom_expr_impl_h, not_digit_chars) -> ctll::push<make_impl_h, atom_expr2>;
+        template<typename P> static constexpr auto rule(atom_expr2<P>, ctll::term<'h'>) -> ctll::push<ctll::anything, atom_expr_impl_h<P>>;
+        template<typename P> static constexpr auto rule(atom_expr_impl_h<P>, digit_chars) -> ctll::push<ctll::anything, make_impl_h, atom_expr2<P>>;
+        template<typename P> static constexpr auto rule(atom_expr_impl_h<P>, not_digit_chars) -> ctll::push<make_impl_h, atom_expr2<P>>;
 
         // cyclic: 'r'
         // acyclic: 'r0'
         // ring size: 'r' NUMBER
         // FIXME: r1 & r2  = error??
-        static constexpr auto rule(atom_expr2, ctll::term<'r'>) -> ctll::push<ctll::anything, atom_expr_ring_size>;
-        static constexpr auto rule(atom_expr_ring_size, ctll::term<'0'>) -> ctll::push<ctll::anything, make_acyclic, atom_expr2>;
-        static constexpr auto rule(atom_expr_ring_size, ctll::range<'1', '9'>) -> ctll::push<ctll::anything, start_number, atom_expr_ring_size2>;
-        static constexpr auto rule(atom_expr_ring_size, not_digit_chars) -> ctll::push<make_cyclic, atom_expr2>;
-        static constexpr auto rule(atom_expr_ring_size2, digit_chars) -> ctll::push<ctll::anything, push_number, atom_expr_ring_size2>;
-        static constexpr auto rule(atom_expr_ring_size2, not_digit_chars) -> ctll::push<make_ring_size, atom_expr2>;
+        template<typename P> static constexpr auto rule(atom_expr2<P>, ctll::term<'r'>) -> ctll::push<ctll::anything, atom_expr_ring_size<P>>;
+        template<typename P> static constexpr auto rule(atom_expr_ring_size<P>, ctll::term<'0'>) -> ctll::push<ctll::anything, make_acyclic, atom_expr2<P>>;
+        template<typename P> static constexpr auto rule(atom_expr_ring_size<P>, ctll::range<'1', '9'>) -> ctll::push<ctll::anything, start_number, atom_expr_ring_size2<P>>;
+        template<typename P> static constexpr auto rule(atom_expr_ring_size<P>, not_digit_chars) -> ctll::push<make_cyclic, atom_expr2<P>>;
+        template<typename P> static constexpr auto rule(atom_expr_ring_size2<P>, digit_chars) -> ctll::push<ctll::anything, push_number, atom_expr_ring_size2<P>>;
+        template<typename P> static constexpr auto rule(atom_expr_ring_size2<P>, not_digit_chars) -> ctll::push<make_ring_size, atom_expr2<P>>;
 
         // cyclic: 'x'
         // acyclic: 'x0'
         // ring connectivity: 'x' NUMBER
         // FIXME: x1 = error?
-        static constexpr auto rule(atom_expr2, ctll::term<'x'>) -> ctll::push<ctll::anything, atom_expr_ring_connectivity>;
-        static constexpr auto rule(atom_expr_ring_connectivity, ctll::term<'0'>) -> ctll::push<ctll::anything, make_acyclic, atom_expr2>;
-        static constexpr auto rule(atom_expr_ring_connectivity, ctll::range<'1', '9'>) -> ctll::push<ctll::anything, start_number, atom_expr_ring_connectivity2>;
-        static constexpr auto rule(atom_expr_ring_connectivity, not_digit_chars) -> ctll::push<make_cyclic, atom_expr2>;
-        static constexpr auto rule(atom_expr_ring_connectivity2, digit_chars) -> ctll::push<ctll::anything, push_number, atom_expr_ring_connectivity2>;
-        static constexpr auto rule(atom_expr_ring_connectivity2, not_digit_chars) -> ctll::push<make_ring_connectivity, atom_expr2>;
+        template<typename P> static constexpr auto rule(atom_expr2<P>, ctll::term<'x'>) -> ctll::push<ctll::anything, atom_expr_ring_connectivity<P>>;
+        template<typename P> static constexpr auto rule(atom_expr_ring_connectivity<P>, ctll::term<'0'>) -> ctll::push<ctll::anything, make_acyclic, atom_expr2<P>>;
+        template<typename P> static constexpr auto rule(atom_expr_ring_connectivity<P>, ctll::range<'1', '9'>) -> ctll::push<ctll::anything, start_number, atom_expr_ring_connectivity2<P>>;
+        template<typename P> static constexpr auto rule(atom_expr_ring_connectivity<P>, not_digit_chars) -> ctll::push<make_cyclic, atom_expr2<P>>;
+        template<typename P> static constexpr auto rule(atom_expr_ring_connectivity2<P>, digit_chars) -> ctll::push<ctll::anything, push_number, atom_expr_ring_connectivity2<P>>;
+        template<typename P> static constexpr auto rule(atom_expr_ring_connectivity2<P>, not_digit_chars) -> ctll::push<make_ring_connectivity, atom_expr2<P>>;
 
         // charge: '-' | '--' | '---' | ... | '-' DIGIT
-        static constexpr auto rule(atom_expr2, ctll::term<'-'>) -> ctll::push<ctll::anything, start_charge, atom_expr_neg_charge>;
-        static constexpr auto rule(atom_expr_neg_charge, digit_chars) -> ctll::push<ctll::anything, make_charge, atom_expr2>;
-        static constexpr auto rule(atom_expr_neg_charge, ctll::term<'-'>) -> ctll::push<ctll::anything, decrement_charge, atom_expr_neg_charge2>;
-        static constexpr auto rule(atom_expr_neg_charge, ctll::neg_set<'-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'>) -> ctll::push<make_charge, atom_expr2>;
-        static constexpr auto rule(atom_expr_neg_charge2, ctll::term<'-'>) -> ctll::push<ctll::anything, decrement_charge, atom_expr_neg_charge2>;
-        static constexpr auto rule(atom_expr_neg_charge2, ctll::neg_set<'-'>) -> ctll::push<make_charge, atom_expr2>;
+        template<typename P> static constexpr auto rule(atom_expr2<P>, ctll::term<'-'>) -> ctll::push<ctll::anything, start_charge, atom_expr_neg_charge<P>>;
+        template<typename P> static constexpr auto rule(atom_expr_neg_charge<P>, digit_chars) -> ctll::push<ctll::anything, make_charge, atom_expr2<P>>;
+        template<typename P> static constexpr auto rule(atom_expr_neg_charge<P>, ctll::term<'-'>) -> ctll::push<ctll::anything, decrement_charge, atom_expr_neg_charge2<P>>;
+        template<typename P> static constexpr auto rule(atom_expr_neg_charge<P>, ctll::neg_set<'-', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'>) -> ctll::push<make_charge, atom_expr2<P>>;
+        template<typename P> static constexpr auto rule(atom_expr_neg_charge2<P>, ctll::term<'-'>) -> ctll::push<ctll::anything, decrement_charge, atom_expr_neg_charge2<P>>;
+        template<typename P> static constexpr auto rule(atom_expr_neg_charge2<P>, ctll::neg_set<'-'>) -> ctll::push<make_charge, atom_expr2<P>>;
 
         // charge: '+' | '++' | '+++' | ... | '+' DIGIT
-        static constexpr auto rule(atom_expr2, ctll::term<'+'>) -> ctll::push<ctll::anything, start_charge, atom_expr_pos_charge>;
-        static constexpr auto rule(atom_expr_pos_charge, digit_chars) -> ctll::push<ctll::anything, make_charge, atom_expr2>;
-        static constexpr auto rule(atom_expr_pos_charge, ctll::term<'+'>) -> ctll::push<ctll::anything, increment_charge, atom_expr_pos_charge2>;
-        static constexpr auto rule(atom_expr_pos_charge, ctll::neg_set<'+', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'>) -> ctll::push<make_charge, atom_expr2>;
-        static constexpr auto rule(atom_expr_pos_charge2, ctll::term<'+'>) -> ctll::push<ctll::anything, increment_charge, atom_expr_pos_charge2>;
-        static constexpr auto rule(atom_expr_pos_charge2, ctll::neg_set<'+'>) -> ctll::push<make_charge, atom_expr2>;
+        template<typename P> static constexpr auto rule(atom_expr2<P>, ctll::term<'+'>) -> ctll::push<ctll::anything, start_charge, atom_expr_pos_charge<P>>;
+        template<typename P> static constexpr auto rule(atom_expr_pos_charge<P>, digit_chars) -> ctll::push<ctll::anything, make_charge, atom_expr2<P>>;
+        template<typename P> static constexpr auto rule(atom_expr_pos_charge<P>, ctll::term<'+'>) -> ctll::push<ctll::anything, increment_charge, atom_expr_pos_charge2<P>>;
+        template<typename P> static constexpr auto rule(atom_expr_pos_charge<P>, ctll::neg_set<'+', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'>) -> ctll::push<make_charge, atom_expr2<P>>;
+        template<typename P> static constexpr auto rule(atom_expr_pos_charge2<P>, ctll::term<'+'>) -> ctll::push<ctll::anything, increment_charge, atom_expr_pos_charge2<P>>;
+        template<typename P> static constexpr auto rule(atom_expr_pos_charge2<P>, ctll::neg_set<'+'>) -> ctll::push<make_charge, atom_expr2<P>>;
 
         // atom class: ':' NUMBER
-        static constexpr auto rule(atom_expr2, ctll::term<':'>) -> ctll::push<ctll::anything, atom_expr_class>;
-        static constexpr auto rule(atom_expr_class, digit_chars) -> ctll::push<ctll::anything, start_number, atom_expr_class2>;
-        static constexpr auto rule(atom_expr_class, not_digit_chars) -> ctll::reject; //ctll::push<make_class, set_and_high, atom_expr2>;
-        static constexpr auto rule(atom_expr_class2, digit_chars) -> ctll::push<ctll::anything, push_number, atom_expr_class2>;
-        static constexpr auto rule(atom_expr_class2, not_digit_chars) -> ctll::push<make_class, atom_expr2>;
+        template<typename P> static constexpr auto rule(atom_expr2<P>, ctll::term<':'>) -> ctll::push<ctll::anything, atom_expr_class<P>>;
+        template<typename P> static constexpr auto rule(atom_expr_class<P>, digit_chars) -> ctll::push<ctll::anything, start_number, atom_expr_class2<P>>;
+        template<typename P> static constexpr auto rule(atom_expr_class<P>, not_digit_chars) -> ctll::reject; //ctll::push<make_class, set_and_high, atom_expr2>;
+        template<typename P> static constexpr auto rule(atom_expr_class2<P>, digit_chars) -> ctll::push<ctll::anything, push_number, atom_expr_class2<P>>;
+        template<typename P> static constexpr auto rule(atom_expr_class2<P>, not_digit_chars) -> ctll::push<make_class, atom_expr2<P>>;
 
         // symbol: 'U' | 'V' | 'W'
-        static constexpr auto rule(atom_expr2, ctll::set<'U', 'V', 'W'>) -> ctll::push<ctll::anything, make_aliphatic, atom_expr2>;
+        template<typename P> static constexpr auto rule(atom_expr2<P>, ctll::set<'U', 'V', 'W'>) -> ctll::push<ctll::anything, make_aliphatic, atom_expr2<P>>;
         // symbol: 'b' | 'c' | 'n' | 'o' | 'p'
-        static constexpr auto rule(atom_expr2, ctll::set<'b', 'c', 'n', 'o', 'p'>) -> ctll::push<ctll::anything, make_aromatic, atom_expr2>;
+        template<typename P> static constexpr auto rule(atom_expr2<P>, ctll::set<'b', 'c', 'n', 'o', 'p'>) -> ctll::push<ctll::anything, make_aromatic, atom_expr2<P>>;
         // any atom: '*'
-        static constexpr auto rule(atom_expr2, ctll::set<'*'>) -> ctll::push<ctll::anything, make_any_atom, atom_expr2>;
+        template<typename P> static constexpr auto rule(atom_expr2<P>, ctll::set<'*'>) -> ctll::push<ctll::anything, make_any_atom, atom_expr2<P>>;
 
-        static constexpr auto rule(atom_expr2, ctll::set<'A'>) -> ctll::push<ctll::anything, push_char, atom_exprA>;
-        static constexpr auto rule(atom_expr2, ctll::set<'B'>) -> ctll::push<ctll::anything, push_char, atom_exprB>;
-        static constexpr auto rule(atom_expr2, ctll::set<'C'>) -> ctll::push<ctll::anything, push_char, atom_exprC>;
-        static constexpr auto rule(atom_expr2, ctll::set<'D'>) -> ctll::push<ctll::anything, push_char, atom_exprD>;
-        static constexpr auto rule(atom_expr2, ctll::set<'E'>) -> ctll::push<ctll::anything, push_char, atom_exprE>;
-        static constexpr auto rule(atom_expr2, ctll::set<'F'>) -> ctll::push<ctll::anything, push_char, atom_exprF>;
-        static constexpr auto rule(atom_expr2, ctll::set<'G'>) -> ctll::push<ctll::anything, push_char, atom_exprG>;
-        static constexpr auto rule(atom_expr2, ctll::set<'H'>) -> ctll::push<ctll::anything, push_char, atom_exprH>;
-        static constexpr auto rule(atom_expr2, ctll::set<'I'>) -> ctll::push<ctll::anything, push_char, atom_exprI>;
-        static constexpr auto rule(atom_expr2, ctll::set<'K'>) -> ctll::push<ctll::anything, push_char, atom_exprK>;
-        static constexpr auto rule(atom_expr2, ctll::set<'L'>) -> ctll::push<ctll::anything, push_char, atom_exprL>;
-        static constexpr auto rule(atom_expr2, ctll::set<'M'>) -> ctll::push<ctll::anything, push_char, atom_exprM>;
-        static constexpr auto rule(atom_expr2, ctll::set<'N'>) -> ctll::push<ctll::anything, push_char, atom_exprN>;
-        static constexpr auto rule(atom_expr2, ctll::set<'O'>) -> ctll::push<ctll::anything, push_char, atom_exprO>;
-        static constexpr auto rule(atom_expr2, ctll::set<'P'>) -> ctll::push<ctll::anything, push_char, atom_exprP>;
-        static constexpr auto rule(atom_expr2, ctll::set<'R'>) -> ctll::push<ctll::anything, push_char, atom_exprR>;
-        static constexpr auto rule(atom_expr2, ctll::set<'S'>) -> ctll::push<ctll::anything, push_char, atom_exprS>;
-        static constexpr auto rule(atom_expr2, ctll::set<'T'>) -> ctll::push<ctll::anything, push_char, atom_exprT>;
-        static constexpr auto rule(atom_expr2, ctll::set<'X'>) -> ctll::push<ctll::anything, push_char, atom_exprX>;
-        static constexpr auto rule(atom_expr2, ctll::set<'Y'>) -> ctll::push<ctll::anything, push_char, atom_exprY>;
-        static constexpr auto rule(atom_expr2, ctll::set<'Z'>) -> ctll::push<ctll::anything, push_char, atom_exprZ>;
-        static constexpr auto rule(atom_expr2, ctll::set<'a'>) -> ctll::push<ctll::anything, push_char, atom_expr_a>;
-        static constexpr auto rule(atom_expr2, ctll::set<'s'>) -> ctll::push<ctll::anything, push_char, atom_expr_s>;
+        template<typename P> static constexpr auto rule(atom_expr2<P>, ctll::set<'A'>) -> ctll::push<ctll::anything, push_char, atom_exprA<P>>;
+        template<typename P> static constexpr auto rule(atom_expr2<P>, ctll::set<'B'>) -> ctll::push<ctll::anything, push_char, atom_exprB<P>>;
+        template<typename P> static constexpr auto rule(atom_expr2<P>, ctll::set<'C'>) -> ctll::push<ctll::anything, push_char, atom_exprC<P>>;
+        template<typename P> static constexpr auto rule(atom_expr2<P>, ctll::set<'D'>) -> ctll::push<ctll::anything, push_char, atom_exprD<P>>;
+        template<typename P> static constexpr auto rule(atom_expr2<P>, ctll::set<'E'>) -> ctll::push<ctll::anything, push_char, atom_exprE<P>>;
+        template<typename P> static constexpr auto rule(atom_expr2<P>, ctll::set<'F'>) -> ctll::push<ctll::anything, push_char, atom_exprF<P>>;
+        template<typename P> static constexpr auto rule(atom_expr2<P>, ctll::set<'G'>) -> ctll::push<ctll::anything, push_char, atom_exprG<P>>;
+        template<typename P> static constexpr auto rule(atom_expr2<P>, ctll::set<'H'>) -> ctll::push<ctll::anything, push_char, atom_exprH<P>>;
+        template<typename P> static constexpr auto rule(atom_expr2<P>, ctll::set<'I'>) -> ctll::push<ctll::anything, push_char, atom_exprI<P>>;
+        template<typename P> static constexpr auto rule(atom_expr2<P>, ctll::set<'K'>) -> ctll::push<ctll::anything, push_char, atom_exprK<P>>;
+        template<typename P> static constexpr auto rule(atom_expr2<P>, ctll::set<'L'>) -> ctll::push<ctll::anything, push_char, atom_exprL<P>>;
+        template<typename P> static constexpr auto rule(atom_expr2<P>, ctll::set<'M'>) -> ctll::push<ctll::anything, push_char, atom_exprM<P>>;
+        template<typename P> static constexpr auto rule(atom_expr2<P>, ctll::set<'N'>) -> ctll::push<ctll::anything, push_char, atom_exprN<P>>;
+        template<typename P> static constexpr auto rule(atom_expr2<P>, ctll::set<'O'>) -> ctll::push<ctll::anything, push_char, atom_exprO<P>>;
+        template<typename P> static constexpr auto rule(atom_expr2<P>, ctll::set<'P'>) -> ctll::push<ctll::anything, push_char, atom_exprP<P>>;
+        template<typename P> static constexpr auto rule(atom_expr2<P>, ctll::set<'R'>) -> ctll::push<ctll::anything, push_char, atom_exprR<P>>;
+        template<typename P> static constexpr auto rule(atom_expr2<P>, ctll::set<'S'>) -> ctll::push<ctll::anything, push_char, atom_exprS<P>>;
+        template<typename P> static constexpr auto rule(atom_expr2<P>, ctll::set<'T'>) -> ctll::push<ctll::anything, push_char, atom_exprT<P>>;
+        template<typename P> static constexpr auto rule(atom_expr2<P>, ctll::set<'X'>) -> ctll::push<ctll::anything, push_char, atom_exprX<P>>;
+        template<typename P> static constexpr auto rule(atom_expr2<P>, ctll::set<'Y'>) -> ctll::push<ctll::anything, push_char, atom_exprY<P>>;
+        template<typename P> static constexpr auto rule(atom_expr2<P>, ctll::set<'Z'>) -> ctll::push<ctll::anything, push_char, atom_exprZ<P>>;
+        template<typename P> static constexpr auto rule(atom_expr2<P>, ctll::set<'a'>) -> ctll::push<ctll::anything, push_char, atom_expr_a<P>>;
+        template<typename P> static constexpr auto rule(atom_expr2<P>, ctll::set<'s'>) -> ctll::push<ctll::anything, push_char, atom_expr_s<P>>;
 
-        using Symbol1 = ctll::push<pop_char, make_aliphatic, atom_expr2>;
-        using Symbol2 = ctll::push<ctll::anything, make_aliphatic, atom_expr2>;
+        template<typename P> using Symbol1 = ctll::push<pop_char, make_aliphatic, atom_expr2<P>>;
+        template<typename P> using Symbol2 = ctll::push<ctll::anything, make_aliphatic, atom_expr2<P>>;
 
         // symbol: 'Ac' | 'Ag' | 'Al' | 'Am' | 'Ar' | 'As' | 'At' | 'Au'
         // any aliphatic: 'A'
-        static constexpr auto rule(atom_exprA,     ctll::set<'c', 'g', 'l', 'm', 'r', 's', 't', 'u'>) -> Symbol2;
-        static constexpr auto rule(atom_exprA, ctll::neg_set<'c', 'g', 'l', 'm', 'r', 's', 't', 'u'>) -> ctll::push<pop_char, make_any_aliphatic, atom_expr2>;
+        template<typename P> static constexpr auto rule(atom_exprA<P>,     ctll::set<'c', 'g', 'l', 'm', 'r', 's', 't', 'u'>) -> Symbol2<P>;
+        template<typename P> static constexpr auto rule(atom_exprA<P>, ctll::neg_set<'c', 'g', 'l', 'm', 'r', 's', 't', 'u'>) -> ctll::push<pop_char, make_any_aliphatic, atom_expr2<P>>;
         // symbol: 'B' | 'Ba' | 'Be' | 'Bh' | 'Bi' | 'Bk' | 'Br'
-        static constexpr auto rule(atom_exprB,     ctll::set<'a', 'e', 'h', 'i', 'k', 'r'>) -> Symbol2;
-        static constexpr auto rule(atom_exprB, ctll::neg_set<'a', 'e', 'h', 'i', 'k', 'r'>) -> Symbol1;
+        template<typename P> static constexpr auto rule(atom_exprB<P>,     ctll::set<'a', 'e', 'h', 'i', 'k', 'r'>) -> Symbol2<P>;
+        template<typename P> static constexpr auto rule(atom_exprB<P>, ctll::neg_set<'a', 'e', 'h', 'i', 'k', 'r'>) -> Symbol1<P>;
         // C Ca Cd Ce Cf Cl Cm Co Cr Cs Cu
-        static constexpr auto rule(atom_exprC,     ctll::set<'a', 'd', 'e', 'f', 'l', 'm', 'o', 'r', 's', 'u'>) -> Symbol2;
-        static constexpr auto rule(atom_exprC, ctll::neg_set<'a', 'd', 'e', 'f', 'l', 'm', 'o', 'r', 's', 'u'>) -> Symbol1;
+        template<typename P> static constexpr auto rule(atom_exprC<P>,     ctll::set<'a', 'd', 'e', 'f', 'l', 'm', 'o', 'r', 's', 'u'>) -> Symbol2<P>;
+        template<typename P> static constexpr auto rule(atom_exprC<P>, ctll::neg_set<'a', 'd', 'e', 'f', 'l', 'm', 'o', 'r', 's', 'u'>) -> Symbol1<P>;
         // symbol: 'Db' | 'Ds' | 'Dy'
         // degree: 'D' | 'D' NUMBER
-        static constexpr auto rule(atom_exprD,   ctll::range<'0', '9'>) -> ctll::push<ctll::anything, pop_char, start_number, atom_expr_degree>;
-        static constexpr auto rule(atom_exprD,     ctll::set<'b', 's', 'y'>) -> Symbol2;
-        static constexpr auto rule(atom_exprD, ctll::neg_set<'b', 's', 'y', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'>) -> ctll::push<pop_char, make_degree, atom_expr2>;
-        static constexpr auto rule(atom_expr_degree,   ctll::range<'0', '9'>) -> ctll::push<ctll::anything, push_number, atom_expr_degree>;
-        static constexpr auto rule(atom_expr_degree, ctll::neg_set<'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'>) -> ctll::push<make_degree, atom_expr2>;
+        template<typename P> static constexpr auto rule(atom_exprD<P>,   ctll::range<'0', '9'>) -> ctll::push<ctll::anything, pop_char, start_number, atom_expr_degree<P>>;
+        template<typename P> static constexpr auto rule(atom_exprD<P>,     ctll::set<'b', 's', 'y'>) -> Symbol2<P>;
+        template<typename P> static constexpr auto rule(atom_exprD<P>, ctll::neg_set<'b', 's', 'y', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'>) -> ctll::push<pop_char, make_degree, atom_expr2<P>>;
+        template<typename P> static constexpr auto rule(atom_expr_degree<P>,   ctll::range<'0', '9'>) -> ctll::push<ctll::anything, push_number, atom_expr_degree<P>>;
+        template<typename P> static constexpr auto rule(atom_expr_degree<P>, ctll::neg_set<'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'>) -> ctll::push<make_degree, atom_expr2<P>>;
         // symbol: 'Er' | 'Es' | 'Eu'
-        static constexpr auto rule(atom_exprE,     ctll::set<'r', 's', 'u'>) -> Symbol2;
-        static constexpr auto rule(atom_exprE, ctll::neg_set<'r', 's', 'u'>) -> ctll::reject;
+        template<typename P> static constexpr auto rule(atom_exprE<P>,     ctll::set<'r', 's', 'u'>) -> Symbol2<P>;
+        template<typename P> static constexpr auto rule(atom_exprE<P>, ctll::neg_set<'r', 's', 'u'>) -> ctll::reject;
         // symbol: 'F' | 'Fe' | 'Fm' | 'Fr'
-        static constexpr auto rule(atom_exprF,     ctll::set<'e', 'm', 'r'>) -> Symbol2;
-        static constexpr auto rule(atom_exprF, ctll::neg_set<'e', 'm', 'r'>) -> Symbol1;
+        template<typename P> static constexpr auto rule(atom_exprF<P>,     ctll::set<'e', 'm', 'r'>) -> Symbol2<P>;
+        template<typename P> static constexpr auto rule(atom_exprF<P>, ctll::neg_set<'e', 'm', 'r'>) -> Symbol1<P>;
         // symbol: 'Ga' | 'Gd' | 'Ge'
-        static constexpr auto rule(atom_exprG,     ctll::set<'a', 'd', 'e'>) -> Symbol2;
-        static constexpr auto rule(atom_exprG, ctll::neg_set<'a', 'd', 'e'>) -> ctll::reject;
+        template<typename P> static constexpr auto rule(atom_exprG<P>,     ctll::set<'a', 'd', 'e'>) -> Symbol2<P>;
+        template<typename P> static constexpr auto rule(atom_exprG<P>, ctll::neg_set<'a', 'd', 'e'>) -> ctll::reject;
         // symbol: 'H' | 'He' | 'Hf' | 'Hg' | 'Ho' | 'Hs'
         // total hydrogens: 'H' | 'H' DIGIT
-        static constexpr auto rule(atom_exprH,     ctll::set<'e', 'f', 'g', 'o', 's'>) -> Symbol2;
-        static constexpr auto rule(atom_exprH,   ctll::range<'0', '9'>) -> ctll::list<ctll::anything, pop_char, make_total_h, atom_expr2>;
-        static constexpr auto rule(atom_exprH, ctll::neg_set<'e', 'f', 'g', 'o', 's', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'>) -> ctll::list<pop_char, make_total_h, atom_expr2>;
+        template<typename P> static constexpr auto rule(atom_exprH<P>,     ctll::set<'e', 'f', 'g', 'o', 's'>) -> Symbol2<P>;
+        template<typename P> static constexpr auto rule(atom_exprH<P>,   ctll::range<'0', '9'>) -> ctll::list<ctll::anything, pop_char, make_total_h, atom_expr2<P>>;
+        template<typename P> static constexpr auto rule(atom_exprH<P>, ctll::neg_set<'e', 'f', 'g', 'o', 's', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'>) -> ctll::list<pop_char, make_total_h, atom_expr2<P>>;
         // symbol: 'I' | 'In' | 'Ir'
-        static constexpr auto rule(atom_exprI,     ctll::set<'n', 'r'>) -> Symbol2;
-        static constexpr auto rule(atom_exprI, ctll::neg_set<'n', 'r'>) -> Symbol1;
+        template<typename P> static constexpr auto rule(atom_exprI<P>,     ctll::set<'n', 'r'>) -> Symbol2<P>;
+        template<typename P> static constexpr auto rule(atom_exprI<P>, ctll::neg_set<'n', 'r'>) -> Symbol1<P>;
         // symbol: 'K' | 'Kr'
-        static constexpr auto rule(atom_exprK,    ctll::term<'r'>) -> Symbol2;
-        static constexpr auto rule(atom_exprK, ctll::neg_set<'r'>) -> Symbol1;
+        template<typename P> static constexpr auto rule(atom_exprK<P>,    ctll::term<'r'>) -> Symbol2<P>;
+        template<typename P> static constexpr auto rule(atom_exprK<P>, ctll::neg_set<'r'>) -> Symbol1<P>;
         // La Li Lr Lu
-        static constexpr auto rule(atom_exprL,     ctll::set<'a', 'i', 'r', 'u'>) -> Symbol2;
-        static constexpr auto rule(atom_exprL, ctll::neg_set<'a', 'i', 'r', 'u'>) -> ctll::reject;
+        template<typename P> static constexpr auto rule(atom_exprL<P>,     ctll::set<'a', 'i', 'r', 'u'>) -> Symbol2<P>;
+        template<typename P> static constexpr auto rule(atom_exprL<P>, ctll::neg_set<'a', 'i', 'r', 'u'>) -> ctll::reject;
         // Md Mg Mn Mo Mt
-        static constexpr auto rule(atom_exprM,     ctll::set<'d', 'g', 'n', 'o', 't'>) -> Symbol2;
-        static constexpr auto rule(atom_exprM, ctll::neg_set<'d', 'g', 'n', 'o', 't'>) -> ctll::reject;
+        template<typename P> static constexpr auto rule(atom_exprM<P>,     ctll::set<'d', 'g', 'n', 'o', 't'>) -> Symbol2<P>;
+        template<typename P> static constexpr auto rule(atom_exprM<P>, ctll::neg_set<'d', 'g', 'n', 'o', 't'>) -> ctll::reject;
         // N Na Nb Nd Ne Ni No Np
-        static constexpr auto rule(atom_exprN,     ctll::set<'a', 'b', 'd', 'e', 'i', 'o', 'p'>) -> Symbol2;
-        static constexpr auto rule(atom_exprN, ctll::neg_set<'a', 'b', 'd', 'e', 'i', 'o', 'p'>) -> Symbol1;
+        template<typename P> static constexpr auto rule(atom_exprN<P>,     ctll::set<'a', 'b', 'd', 'e', 'i', 'o', 'p'>) -> Symbol2<P>;
+        template<typename P> static constexpr auto rule(atom_exprN<P>, ctll::neg_set<'a', 'b', 'd', 'e', 'i', 'o', 'p'>) -> Symbol1<P>;
         // O Os
-        static constexpr auto rule(atom_exprO,    ctll::term<'s'>) -> Symbol2;
-        static constexpr auto rule(atom_exprO, ctll::neg_set<'s'>) -> Symbol1;
+        template<typename P> static constexpr auto rule(atom_exprO<P>,    ctll::term<'s'>) -> Symbol2<P>;
+        template<typename P> static constexpr auto rule(atom_exprO<P>, ctll::neg_set<'s'>) -> Symbol1<P>;
         // P Pa Pb Pd Pm Po Pr Pt Pu
-        static constexpr auto rule(atom_exprP,     ctll::set<'a', 'b', 'd', 'm', 'o', 'r', 't', 'u'>) -> Symbol2;
-        static constexpr auto rule(atom_exprP, ctll::neg_set<'a', 'b', 'd', 'm', 'o', 'r', 't', 'u'>) -> Symbol1;
+        template<typename P> static constexpr auto rule(atom_exprP<P>,     ctll::set<'a', 'b', 'd', 'm', 'o', 'r', 't', 'u'>) -> Symbol2<P>;
+        template<typename P> static constexpr auto rule(atom_exprP<P>, ctll::neg_set<'a', 'b', 'd', 'm', 'o', 'r', 't', 'u'>) -> Symbol1<P>;
         // symbol: 'Ra' | 'Rb' | 'Re' | 'Rf' | 'Rg' | 'Rh' | 'Rn' | 'Ru'
         // cyclic: 'R'
         // acyclic: 'R0'
         // ring count: 'R' NUMBER
-        static constexpr auto rule(atom_exprR,   ctll::term<'0'>) -> ctll::push<ctll::anything, pop_char, make_acyclic, atom_expr2>;
-        static constexpr auto rule(atom_exprR,   ctll::range<'1', '9'>) -> ctll::push<ctll::anything, pop_char, start_number, atom_expr_ring_count>;
-        static constexpr auto rule(atom_exprR,     ctll::set<'a', 'b', 'e', 'f', 'g', 'h', 'n', 'u'>) -> Symbol2;
-        static constexpr auto rule(atom_exprR, ctll::neg_set<'a', 'b', 'e', 'f', 'g', 'h', 'n', 'u', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'>) -> ctll::push<pop_char, make_cyclic, atom_expr2>;
-        static constexpr auto rule(atom_expr_ring_count,   ctll::range<'0', '9'>) -> ctll::push<ctll::anything, push_number, atom_expr_ring_count>;
-        static constexpr auto rule(atom_expr_ring_count, ctll::neg_set<'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'>) -> ctll::push<make_ring_count, atom_expr2>;
+        template<typename P> static constexpr auto rule(atom_exprR<P>,   ctll::term<'0'>) -> ctll::push<ctll::anything, pop_char, make_acyclic, atom_expr2<P>>;
+        template<typename P> static constexpr auto rule(atom_exprR<P>,   ctll::range<'1', '9'>) -> ctll::push<ctll::anything, pop_char, start_number, atom_expr_ring_count<P>>;
+        template<typename P> static constexpr auto rule(atom_exprR<P>,     ctll::set<'a', 'b', 'e', 'f', 'g', 'h', 'n', 'u'>) -> Symbol2<P>;
+        template<typename P> static constexpr auto rule(atom_exprR<P>, ctll::neg_set<'a', 'b', 'e', 'f', 'g', 'h', 'n', 'u', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'>) -> ctll::push<pop_char, make_cyclic, atom_expr2<P>>;
+        template<typename P> static constexpr auto rule(atom_expr_ring_count<P>,   ctll::range<'0', '9'>) -> ctll::push<ctll::anything, push_number, atom_expr_ring_count<P>>;
+        template<typename P> static constexpr auto rule(atom_expr_ring_count<P>, ctll::neg_set<'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'>) -> ctll::push<make_ring_count, atom_expr2<P>>;
         // S Sb Sc Se Sg Si Sm Sn Sr
-        static constexpr auto rule(atom_exprS,     ctll::set<'b', 'c', 'e', 'g', 'i', 'm', 'n', 'r'>) -> Symbol2;
-        static constexpr auto rule(atom_exprS, ctll::neg_set<'b', 'c', 'e', 'g', 'i', 'm', 'n', 'r'>) -> Symbol1;
+        template<typename P> static constexpr auto rule(atom_exprS<P>,     ctll::set<'b', 'c', 'e', 'g', 'i', 'm', 'n', 'r'>) -> Symbol2<P>;
+        template<typename P> static constexpr auto rule(atom_exprS<P>, ctll::neg_set<'b', 'c', 'e', 'g', 'i', 'm', 'n', 'r'>) -> Symbol1<P>;
         // Ta Tb Tc Te Th Ti Tl Tm
-        static constexpr auto rule(atom_exprT,     ctll::set<'a', 'b', 'c', 'e', 'h', 'i', 'l', 'm'>) -> Symbol2;
-        static constexpr auto rule(atom_exprT, ctll::neg_set<'a', 'b', 'c', 'e', 'h', 'i', 'l', 'm'>) -> ctll::reject;
+        template<typename P> static constexpr auto rule(atom_exprT<P>,     ctll::set<'a', 'b', 'c', 'e', 'h', 'i', 'l', 'm'>) -> Symbol2<P>;
+        template<typename P> static constexpr auto rule(atom_exprT<P>, ctll::neg_set<'a', 'b', 'c', 'e', 'h', 'i', 'l', 'm'>) -> ctll::reject;
         // symbol: 'Xe'
         // connectivity: 'X' | 'X' NUMBER
-        static constexpr auto rule(atom_exprX, digit_chars) -> ctll::push<ctll::anything, pop_char, start_number, atom_expr_connectivity>;
-        static constexpr auto rule(atom_exprX,    ctll::term<'e'>) -> Symbol2;
-        static constexpr auto rule(atom_exprX, ctll::neg_set<'e', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'>) -> ctll::push<pop_char, make_connectivity, atom_expr2>;
-        static constexpr auto rule(atom_expr_connectivity, digit_chars) -> ctll::push<ctll::anything, push_number, atom_expr_connectivity>;
-        static constexpr auto rule(atom_expr_connectivity, not_digit_chars) -> ctll::push<make_connectivity, atom_expr2>;
+        template<typename P> static constexpr auto rule(atom_exprX<P>, digit_chars) -> ctll::push<ctll::anything, pop_char, start_number, atom_expr_connectivity<P>>;
+        template<typename P> static constexpr auto rule(atom_exprX<P>,    ctll::term<'e'>) -> Symbol2<P>;
+        template<typename P> static constexpr auto rule(atom_exprX<P>, ctll::neg_set<'e', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'>) -> ctll::push<pop_char, make_connectivity, atom_expr2<P>>;
+        template<typename P> static constexpr auto rule(atom_expr_connectivity<P>, digit_chars) -> ctll::push<ctll::anything, push_number, atom_expr_connectivity<P>>;
+        template<typename P> static constexpr auto rule(atom_expr_connectivity<P>, not_digit_chars) -> ctll::push<make_connectivity, atom_expr2<P>>;
         // symbol: 'Y' | 'Yb'
-        static constexpr auto rule(atom_exprY,    ctll::term<'b'>) -> Symbol2;
-        static constexpr auto rule(atom_exprY, ctll::neg_set<'b'>) -> Symbol1;
+        template<typename P> static constexpr auto rule(atom_exprY<P>,    ctll::term<'b'>) -> Symbol2<P>;
+        template<typename P> static constexpr auto rule(atom_exprY<P>, ctll::neg_set<'b'>) -> Symbol1<P>;
         // symbol: 'Zn' | 'Zr'
-        static constexpr auto rule(atom_exprZ,     ctll::set<'n', 'r'>) -> Symbol2;
-        static constexpr auto rule(atom_exprZ, ctll::neg_set<'n', 'r'>) -> ctll::reject;
+        template<typename P> static constexpr auto rule(atom_exprZ<P>,     ctll::set<'n', 'r'>) -> Symbol2<P>;
+        template<typename P> static constexpr auto rule(atom_exprZ<P>, ctll::neg_set<'n', 'r'>) -> ctll::reject;
 
         // 'a' | 'as'
-        static constexpr auto rule(atom_expr_a,     ctll::set<'s'>) -> ctll::push<ctll::anything, make_aromatic, atom_expr2>;
-        static constexpr auto rule(atom_expr_a, ctll::neg_set<'s'>) -> ctll::push<pop_char, make_any_aromatic, atom_expr2>;
+        template<typename P> static constexpr auto rule(atom_expr_a<P>,     ctll::set<'s'>) -> ctll::push<ctll::anything, make_aromatic, atom_expr2<P>>;
+        template<typename P> static constexpr auto rule(atom_expr_a<P>, ctll::neg_set<'s'>) -> ctll::push<pop_char, make_any_aromatic, atom_expr2<P>>;
         // 's' | 'se'
-        static constexpr auto rule(atom_expr_s,     ctll::set<'e'>) -> ctll::push<ctll::anything, make_aromatic, atom_expr2>;
-        static constexpr auto rule(atom_expr_s, ctll::neg_set<'e'>) -> ctll::push<pop_char, make_aromatic, atom_expr2>;
+        template<typename P> static constexpr auto rule(atom_expr_s<P>,     ctll::set<'e'>) -> ctll::push<ctll::anything, make_aromatic, atom_expr2<P>>;
+        template<typename P> static constexpr auto rule(atom_expr_s<P>, ctll::neg_set<'e'>) -> ctll::push<pop_char, make_aromatic, atom_expr2<P>>;
+
+        //
+        // Recursive SMARTS
+        //
+
+        template<typename P> static constexpr auto rule(atom_expr2<P>, ctll::term<'$'>) -> ctll::push<ctll::anything, atom_expr_recursive<P>>;
+        template<typename P> static constexpr auto rule(atom_expr_recursive<P>, ctll::term<'('>) -> ctll::push<ctll::anything, push_recursive, atom<ParenthesisPushRecursive<P>>>;
+        template<typename P> static constexpr auto rule(atom_expr_recursive<P>, ctll::neg_set<'('>) -> ctll::reject;
 
         //
         // Bond expressions
         //
 
-        static constexpr auto rule(bond_expr, ctll::set<'-', '=', '#', '$', ':', '~', '@'>) -> ctll::push<ctll::anything, make_bond_primitive, bond_expr>;
-        static constexpr auto rule(bond_expr, ctll::set<'/', '\\'>) -> ctll::push<ctll::anything, push_char, bond_expr2>;
+        template<typename P> static constexpr auto rule(bond_expr<P>, ctll::set<'-', '=', '#', '$', ':', '~', '@'>) -> ctll::push<ctll::anything, make_bond_primitive, bond_expr<P>>;
+        template<typename P> static constexpr auto rule(bond_expr<P>, ctll::set<'/', '\\'>) -> ctll::push<ctll::anything, push_char, bond_expr2<P>>;
 
-        static constexpr auto rule(bond_expr, ctll::term<'!'>) -> ctll::push<ctll::anything, make_bond_not, bond_expr>;
-        static constexpr auto rule(bond_expr, ctll::term<'&'>) -> ctll::push<ctll::anything, make_bond_and_high, bond_expr>;
-        static constexpr auto rule(bond_expr, ctll::term<','>) -> ctll::push<ctll::anything, make_bond_or, bond_expr>;
-        static constexpr auto rule(bond_expr, ctll::term<';'>) -> ctll::push<ctll::anything, make_bond_and_low, bond_expr>;
+        template<typename P> static constexpr auto rule(bond_expr<P>, ctll::term<'!'>) -> ctll::push<ctll::anything, make_bond_not, bond_expr<P>>;
+        template<typename P> static constexpr auto rule(bond_expr<P>, ctll::term<'&'>) -> ctll::push<ctll::anything, make_bond_and_high, bond_expr<P>>;
+        template<typename P> static constexpr auto rule(bond_expr<P>, ctll::term<','>) -> ctll::push<ctll::anything, make_bond_or, bond_expr<P>>;
+        template<typename P> static constexpr auto rule(bond_expr<P>, ctll::term<';'>) -> ctll::push<ctll::anything, make_bond_and_low, bond_expr<P>>;
 
-        static constexpr auto rule(bond_expr, ctll::neg_set<'-', '=', '#', '$', ':', '~', '@', '/', '\\', '!', '&', ',', ';'>) -> ctll::push<chain>; // FIXME: ring bonds?
+        template<typename P> static constexpr auto rule(bond_expr<P>, ctll::neg_set<'-', '=', '#', '$', ':', '~', '@', '/', '\\', '!', '&', ',', ';'>) -> ctll::push<chain<P>>; // FIXME: ring bonds?
 
-        static constexpr auto rule(bond_expr2, ctll::term<'?'>) -> ctll::push<ctll::anything, make_bond_primitive, pop_char, bond_expr>;
-        static constexpr auto rule(bond_expr2, ctll::neg_set<'?'>) -> ctll::push<make_bond_primitive, pop_char, bond_expr>;
+        template<typename P> static constexpr auto rule(bond_expr2<P>, ctll::term<'?'>) -> ctll::push<ctll::anything, make_bond_primitive, pop_char, bond_expr<P>>;
+        template<typename P> static constexpr auto rule(bond_expr2<P>, ctll::neg_set<'?'>) -> ctll::push<make_bond_primitive, pop_char, bond_expr<P>>;
 
         //
         // Chain expressions
         //
 
-        static constexpr auto rule(chain, ctll::epsilon) -> ctll::epsilon;
-        static constexpr auto rule(chain, ctll::set<'-', '=', '#', '$', ':', '~', '@', '/', '\\'>) -> ctll::push<bond_expr>;
-        //static constexpr auto rule(chain, ctll::set<'/', '\\'>) -> ctll::push<ctll::anything, make_bond_primitive, chain_up_down>;
-        //static constexpr auto rule(chain_up_down, ctll::neg_set<'?'>) -> ctll::push<chain>;
-        //static constexpr auto rule(chain_up_down, ctll::term<'?'>) -> ctll::push<ctll::anything, make_bond_primitive, set_and_high, reset_not, atom>;
+        template<typename P> static constexpr auto rule(chain<P>, ctll::epsilon) -> ctll::epsilon;
+        template<typename P> static constexpr auto rule(chain<P>, ctll::set<'-', '=', '#', '$', ':', '~', '@', '/', '\\'>) -> ctll::push<bond_expr<P>>;
+        //template<typename P> static constexpr auto rule(chain, ctll::set<'/', '\\'>) -> ctll::push<ctll::anything, make_bond_primitive, chain_up_down<P>>;
+        //template<typename P> static constexpr auto rule(chain_up_down, ctll::neg_set<'?'>) -> ctll::push<chain<P>>;
+        //template<typename P> static constexpr auto rule(chain_up_down, ctll::term<'?'>) -> ctll::push<ctll::anything, make_bond_primitive, set_and_high, reset_not, atom<P>>;
 
-        static constexpr auto rule(chain, ctll::term<'!'>) -> ctll::push<ctll::anything, make_bond_not, bond_expr>;
-        //static constexpr auto rule(chain, ctll::term<'&'>) -> ctll::push<ctll::anything, set_and_high, bond_expr>;
-        //static constexpr auto rule(chain, ctll::term<','>) -> ctll::push<ctll::anything, set_or, bond_expr>;
-        //static constexpr auto rule(chain, ctll::term<';'>) -> ctll::push<ctll::anything, set_and_low, bond_expr>;
+        template<typename P> static constexpr auto rule(chain<P>, ctll::term<'!'>) -> ctll::push<ctll::anything, make_bond_not, bond_expr<P>>;
+        template<typename P> static constexpr auto rule(chain<P>, ctll::term<'.'>) -> ctll::push<ctll::anything, reset_prev, chain<P>>;
 
-        static constexpr auto rule(chain, ctll::term<'.'>) -> ctll::push<ctll::anything, reset_prev, chain>;
-        static constexpr auto rule(chain, ctll::term<'('>) -> ctll::push<ctll::anything, push_prev, chain>;
-        static constexpr auto rule(chain, ctll::term<')'>) -> ctll::push<ctll::anything, pop_prev, chain>;
+        //
+        // Parenthesis
+        //
+
+        // push_prev
+        template<typename P> static constexpr auto rule(chain<P>, ctll::term<'('>) -> ctll::push<ctll::anything, push_prev, chain<ParenthesisPushBranch<P>>>;
+
+        template<typename P> static constexpr auto rule(chain<P>, ctll::term<')'>)
+        {
+            if constexpr (P::branch > 0)
+                // pop_prev
+                return ctll::push<ctll::anything, pop_prev, chain<ParenthesisPopBranch<P>>>{};
+            else if constexpr (!ctll::empty(P::recursive))
+                // pop_recursive
+                return ctll::push<ctll::anything, pop_recursive, atom_expr2<ParenthesisPopRecursive<P>>>{};
+            else if constexpr (P::component)
+                // pop_component
+                return ctll::push<ctll::anything, pop_prev, chain<Parenthesis<>>>{};
+            else
+                return ctll::reject{};
+        }
 
         // ring bond: DIGIT | '%' DIGIT DIGIT
-        static constexpr auto rule(chain, digit_chars) -> ctll::push<ctll::anything, handle_ring_bond, chain>;
-        static constexpr auto rule(chain, ctll::term<'%'>) -> ctll::push<ctll::anything, ring_bond>;
-        static constexpr auto rule(ring_bond, digit_chars) -> ctll::push<ctll::anything, start_number, ring_bond2>;
-        static constexpr auto rule(ring_bond2, digit_chars) -> ctll::push<ctll::anything, handle_ring_bond, chain>;
+        template<typename P> static constexpr auto rule(chain<P>, digit_chars) -> ctll::push<ctll::anything, handle_ring_bond, chain<P>>;
+        template<typename P> static constexpr auto rule(chain<P>, ctll::term<'%'>) -> ctll::push<ctll::anything, ring_bond<P>>;
+        template<typename P> static constexpr auto rule(ring_bond<P>, digit_chars) -> ctll::push<ctll::anything, start_number, ring_bond2<P>>;
+        template<typename P> static constexpr auto rule(ring_bond2<P>, digit_chars) -> ctll::push<ctll::anything, handle_ring_bond, chain<P>>;
 
         // FIXME: add ops  etc
         using not_chain_chars = ctll::neg_set<'-', '=', '#', '$', ':', '~', '@', '/', '\\', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'>;
-        static constexpr auto rule(chain, not_chain_chars) -> ctll::push<atom>;
+        template<typename P> static constexpr auto rule(chain<P>, not_chain_chars) -> ctll::push<atom<P>>;
 
         // chain ::= branched_atom | chain branched_atom | chain bond branched_atom | chain dot branched_atom
 
@@ -2511,12 +2588,12 @@ namespace Kitimar::CTSmarts {
         using Classes = T6;
         using Error = T7;
 
-        static constexpr inline auto nextIndex = NextIndex{};
-        static constexpr inline auto prevIndex = PrevIndex{};
-        static constexpr inline auto atomExpr = AtomExpr{};
-        static constexpr inline auto bondExpr = BondExpr{};
-        static constexpr inline auto ringBonds = RingBonds{};
-        static constexpr inline auto classes = Classes{};
+        static constexpr inline auto nextIndex = NextIndex{}; // Number
+        static constexpr inline auto prevIndex = PrevIndex{}; // ctll::list<Number>
+        static constexpr inline auto atomExpr = AtomExpr{}; // ctll::list<T>
+        static constexpr inline auto bondExpr = BondExpr{};  // ctll::list<T>
+        static constexpr inline auto ringBonds = RingBonds{}; // ctll::list<RingBondHelper>
+        static constexpr inline auto classes = Classes{}; // ctll::list<ClassHelper>
         static constexpr inline auto error = Error{};
 
         template<typename T> static consteval auto setNextIndex(T) noexcept { return SmartsParams<T, T2, T3, T4, T5, T6, T7>{}; }
@@ -2555,19 +2632,23 @@ namespace Kitimar::CTSmarts {
 
     };
 
-    template <typename Atoms = ctll::list<>, typename Bonds = ctll::empty_list, typename ParamsT = SmartsParams<Number<0>, ctll::empty_list, ctll::empty_list, ctll::empty_list, ctll::empty_list, ctll::empty_list, NoErrorTag>>
+    template <typename Atoms = ctll::empty_list, typename Bonds = ctll::empty_list,
+              typename ParamsT = SmartsParams<Number<0>, ctll::empty_list, ctll::empty_list, ctll::empty_list, ctll::empty_list, ctll::empty_list, NoErrorTag>,
+              typename ParentT = ctll::_nothing>
     struct SmartsContext
     {
         using Params = ParamsT;
+        using Parent = ParentT;
 
-        static constexpr inline auto atoms = Atoms();
-        static constexpr inline auto bonds = Bonds();
-        static constexpr inline auto params = ParamsT();
+        static constexpr inline auto atoms = Atoms{};
+        static constexpr inline auto bonds = Bonds{};
+        static constexpr inline auto params = ParamsT{};
+        static constexpr inline auto parent = ParentT{};
 
         static constexpr inline auto valid = !ctll::size(params.ringBonds);
 
         constexpr SmartsContext() noexcept {}
-        constexpr SmartsContext(Atoms, Bonds, ParamsT) noexcept {}
+        constexpr SmartsContext(Atoms, Bonds, Params, Parent) noexcept {}
     };
 
     template<auto V>
@@ -2627,6 +2708,7 @@ namespace Kitimar::CTSmarts {
                     case 'u': return 79;
                     default: break;
                 }
+                break;
             case 'B':
                 switch (V) {
                     case 'a': return 56;
@@ -2636,6 +2718,7 @@ namespace Kitimar::CTSmarts {
                     case 'r': return 35;
                     default: break;
                 }
+                break;
             case 'C':
                 switch (V) {
                     case 'a': return 20;
@@ -2650,11 +2733,13 @@ namespace Kitimar::CTSmarts {
                     case 'u': return 29;
                     default: break;
                 }
+                break;
             case 'D':
                 switch (V) {
                     case 'y': return 66;
                     default: break;
                 }
+                break;
             case 'E':
                 switch (V) {
                     case 'r': return 68;
@@ -2662,6 +2747,7 @@ namespace Kitimar::CTSmarts {
                     case 'u': return 63;
                     default: break;
                 }
+                break;
             case 'F':
                 switch (V) {
                     case 'e': return 26;
@@ -2669,6 +2755,7 @@ namespace Kitimar::CTSmarts {
                     case 'r': return 87;
                     default: break;
                 }
+                break;
             case 'G':
                 switch (V) {
                     case 'a': return 31;
@@ -2676,6 +2763,7 @@ namespace Kitimar::CTSmarts {
                     case 'e': return 32;
                     default: break;
                 }
+                break;
             case 'H':
                 switch (V) {
                     case 'e': return 2;
@@ -2684,17 +2772,20 @@ namespace Kitimar::CTSmarts {
                     case 'o': return 67;
                     default: break;
                 }
+                break;
             case 'I':
                 switch (V) {
                     case 'n': return 49;
                     case 'r': return 77;
                     default: break;
                 }
+                break;
             case 'K':
                 switch (V) {
                     case 'r': return 36;
                     default: break;
                 }
+                break;
             case 'L':
                 switch (V) {
                     case 'a': return 57;
@@ -2703,6 +2794,7 @@ namespace Kitimar::CTSmarts {
                     case 'u': return 71;
                     default: break;
                 }
+                break;
             case 'M':
                 switch (V) {
                     case 'd': return 101;
@@ -2711,6 +2803,7 @@ namespace Kitimar::CTSmarts {
                     case 'o': return 42;
                     default: break;
                 }
+                break;
             case 'N':
                 switch (V) {
                     case 'a': return 11;
@@ -2722,11 +2815,13 @@ namespace Kitimar::CTSmarts {
                     case 'p': return 93;
                     default: break;
                 }
+                break;
             case 'O':
                 switch (V) {
                     case 's': return 76;
                     default: break;
                 }
+                break;
             case 'P':
                 switch (V) {
                     case 'a': return 91;
@@ -2739,6 +2834,7 @@ namespace Kitimar::CTSmarts {
                     case 'u': return 94;
                     default: break;
                 }
+                break;
             case 'R':
                 switch (V) {
                     case 'a': return 88;
@@ -2749,6 +2845,7 @@ namespace Kitimar::CTSmarts {
                     case 'u': return 44;
                     default: break;
                 }
+                break;
             case 'S':
                 switch (V) {
                     case 'b': return 51;
@@ -2760,6 +2857,7 @@ namespace Kitimar::CTSmarts {
                     case 'r': return 38;
                     default: break;
                 }
+                break;
             case 'T':
                 switch (V) {
                     case 'a': return 73;
@@ -2772,22 +2870,26 @@ namespace Kitimar::CTSmarts {
                     case 'm': return 69;
                     default: break;
                 }
+                break;
             case 'X':
                 switch (V) {
                     case 'e': return 54;
                     default: break;
                 }
+                break;
             case 'Y':
                 switch (V) {
                     case 'b': return 70;
                     default: break;
                 }
+                break;
             case 'Z':
                 switch (V) {
                     case 'n': return 30;
                     case 'r': return 40;
                     default: break;
                 }
+                break;
         }
     }
 
@@ -2803,14 +2905,14 @@ namespace Kitimar::CTSmarts {
         static constexpr auto apply(SmartsGrammar::push_char, ctll::term<V>, Context ctx)
         {
             auto atoms = ctll::push_front(Char<V>(), ctx.atoms);
-            return SmartsContext{atoms, ctx.bonds, ctx.params};
+            return SmartsContext{atoms, ctx.bonds, ctx.params, ctx.parent};
         }
 
         // pop_char
-        template <auto V, auto C, typename ... Ts, typename Bonds, typename Params>
-        static constexpr auto apply(SmartsGrammar::pop_char, ctll::term<V> term, SmartsContext<ctll::list<Char<C>, Ts...>, Bonds, Params> ctx)
+        template <auto V, auto C, typename ... Ts, typename Bonds, typename Params, typename Parent>
+        static constexpr auto apply(SmartsGrammar::pop_char, ctll::term<V> term, SmartsContext<ctll::list<Char<C>, Ts...>, Bonds, Params, Parent> ctx)
         {
-            return SmartsContext{ctll::list<Ts...>(), ctx.bonds, ctx.params};
+            return SmartsContext{ctll::list<Ts...>(), ctx.bonds, ctx.params, ctx.parent};
         }
 
         // start_number
@@ -2818,14 +2920,14 @@ namespace Kitimar::CTSmarts {
         static constexpr auto apply(SmartsGrammar::start_number, ctll::term<V>, Context ctx)
         {
             auto atoms = ctll::push_front(Number<V - '0'>(), ctx.atoms);
-            return SmartsContext{atoms, ctx.bonds, ctx.params};
+            return SmartsContext{atoms, ctx.bonds, ctx.params, ctx.parent};
         }
 
         // push_number
-        template <auto V, auto N, typename ... Ts, typename Bonds, typename Params>
-        static constexpr auto apply(SmartsGrammar::push_number, ctll::term<V> term, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params> ctx)
+        template <auto V, auto N, typename ... Ts, typename Bonds, typename Params, typename Parent>
+        static constexpr auto apply(SmartsGrammar::push_number, ctll::term<V> term, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params, Parent> ctx)
         {
-            return SmartsContext{ctll::list<Number<10 * N + V - '0'>, Ts...>(), ctx.bonds, ctx.params};
+            return SmartsContext{ctll::list<Number<10 * N + V - '0'>, Ts...>(), ctx.bonds, ctx.params, ctx.parent};
         }
 
         //
@@ -2931,17 +3033,17 @@ namespace Kitimar::CTSmarts {
         // - create bond if needed
         //
 
-        template<typename Atoms, typename Bonds, typename Params>
-        static constexpr auto makeBond(Atoms atoms, Bonds bonds, Params params)
+        template<typename Atoms, typename Bonds, typename Params, typename Parent>
+        static constexpr auto makeBond(Atoms atoms, Bonds bonds, Params params, Parent parent)
         {
             if constexpr (ctll::empty(params.prevIndex)) {
-                return SmartsContext{atoms, bonds, params.nextAtom()};
+                return SmartsContext{atoms, bonds, params.nextAtom(), parent};
             } else {
                 constexpr auto prevIndex = ctll::front(params.prevIndex).value;
                 auto expr = makeBondAST(ctll::rotate(params.bondExpr));
                 auto bond = Bond<ctll::size(bonds), prevIndex, params.nextIndex(), decltype(expr)>();
                 auto bonds2 = ctll::push_front(bond, bonds);
-                return SmartsContext{atoms, bonds2, params.nextAtom()};
+                return SmartsContext{atoms, bonds2, params.nextAtom(), parent};
             }
         }
 
@@ -2951,7 +3053,7 @@ namespace Kitimar::CTSmarts {
             auto expr = makeAtomAST(ctll::rotate(ctx.params.atomExpr));
             auto atom = Atom<ctll::size(ctx.atoms), decltype(expr)>{};
             auto atoms = ctll::push_front(atom, ctx.atoms);
-            return makeBond(atoms, ctx.bonds, ctx.params.setAtomExpr(ctll::empty_list())); // FIXME empty atomExpr in nextAtom
+            return makeBond(atoms, ctx.bonds, ctx.params.setAtomExpr(ctll::empty_list()), ctx.parent); // FIXME empty atomExpr in nextAtom
         }
 
         //
@@ -2963,7 +3065,7 @@ namespace Kitimar::CTSmarts {
         {
             auto atomExpr = pushExpr(ctx.params.atomExpr, leaf);
             auto params = ctx.params.setAtomExpr(atomExpr);
-            return SmartsContext{atoms, ctx.bonds, params};
+            return SmartsContext{atoms, ctx.bonds, params, ctx.parent};
         }
 
         // make_any_atom
@@ -2993,8 +3095,8 @@ namespace Kitimar::CTSmarts {
         {
             return pushAtomExpr(ctx, ctx.atoms, AliphaticAtom<termAtomicNumber(term)>());
         }
-        template <auto V, auto C, typename ...Ts, typename Bonds, typename Params>
-        static constexpr auto apply(SmartsGrammar::make_aliphatic, ctll::term<V> term, SmartsContext<ctll::list<Char<C>, Ts...>, Bonds, Params> ctx)
+        template <auto V, auto C, typename ...Ts, typename Bonds, typename Params, typename Parent>
+        static constexpr auto apply(SmartsGrammar::make_aliphatic, ctll::term<V> term, SmartsContext<ctll::list<Char<C>, Ts...>, Bonds, Params, Parent> ctx)
         {
             auto expr = AliphaticAtom<symbolAtomicNumber(Char<C>(), term)>();
             return pushAtomExpr(ctx, ctll::list<Ts...>(), expr);
@@ -3006,16 +3108,16 @@ namespace Kitimar::CTSmarts {
         {
             return pushAtomExpr(ctx, ctx.atoms, AromaticAtom<termAtomicNumber(term)>());
         }
-        template <auto V, auto C, typename ...Ts, typename Bonds, typename Params>
-        static constexpr auto apply(SmartsGrammar::make_aromatic, ctll::term<V> term, SmartsContext<ctll::list<Char<C>, Ts...>, Bonds, Params> ctx)
+        template <auto V, auto C, typename ...Ts, typename Bonds, typename Params, typename Parent>
+        static constexpr auto apply(SmartsGrammar::make_aromatic, ctll::term<V> term, SmartsContext<ctll::list<Char<C>, Ts...>, Bonds, Params, Parent> ctx)
         {
             auto expr = AromaticAtom<symbolAtomicNumber(Char<C>(), term)>();
             return pushAtomExpr(ctx, ctll::list<Ts...>(), expr);
         }
 
         // make_isotope
-        template <auto V, auto N, typename ...Ts, typename Bonds, typename Params>
-        static constexpr auto apply(SmartsGrammar::make_isotope, ctll::term<V> term, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params> ctx)
+        template <auto V, auto N, typename ...Ts, typename Bonds, typename Params, typename Parent>
+        static constexpr auto apply(SmartsGrammar::make_isotope, ctll::term<V> term, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params, Parent> ctx)
         {
             return pushAtomExpr(ctx, ctll::list<Ts...>(), Isotope<N>());
         }
@@ -3026,8 +3128,8 @@ namespace Kitimar::CTSmarts {
         {
             return pushAtomExpr(ctx, ctx.atoms, Element<1>());
         }
-        template <auto V, auto N, typename ...Ts, typename Bonds, typename Params>
-        static constexpr auto apply(SmartsGrammar::make_element, ctll::term<V> term, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params> ctx)
+        template <auto V, auto N, typename ...Ts, typename Bonds, typename Params, typename Parent>
+        static constexpr auto apply(SmartsGrammar::make_element, ctll::term<V> term, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params, Parent> ctx)
         {
             return pushAtomExpr(ctx, ctll::list<Ts...>(), Element<N>());
         }
@@ -3038,8 +3140,8 @@ namespace Kitimar::CTSmarts {
         {
             return pushAtomExpr(ctx, ctx.atoms, Degree<1>());
         }
-        template <auto V, auto N, typename ...Ts, typename Bonds, typename Params>
-        static constexpr auto apply(SmartsGrammar::make_degree, ctll::term<V> term, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params> ctx)
+        template <auto V, auto N, typename ...Ts, typename Bonds, typename Params, typename Parent>
+        static constexpr auto apply(SmartsGrammar::make_degree, ctll::term<V> term, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params, Parent> ctx)
         {
             return pushAtomExpr(ctx, ctll::list<Ts...>(), Degree<N>());
         }
@@ -3050,8 +3152,8 @@ namespace Kitimar::CTSmarts {
         {
             return pushAtomExpr(ctx, ctx.atoms, Valence<1>());
         }
-        template <auto V, auto N, typename ...Ts, typename Bonds, typename Params>
-        static constexpr auto apply(SmartsGrammar::make_valence, ctll::term<V> term, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params> ctx)
+        template <auto V, auto N, typename ...Ts, typename Bonds, typename Params, typename Parent>
+        static constexpr auto apply(SmartsGrammar::make_valence, ctll::term<V> term, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params, Parent> ctx)
         {
             return pushAtomExpr(ctx, ctll::list<Ts...>(), Valence<N>());
         }
@@ -3062,8 +3164,8 @@ namespace Kitimar::CTSmarts {
         {
             return pushAtomExpr(ctx, ctx.atoms, Connectivity<1>());
         }
-        template <auto V, auto N, typename ...Ts, typename Bonds, typename Params>
-        static constexpr auto apply(SmartsGrammar::make_connectivity, ctll::term<V> term, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params> ctx)
+        template <auto V, auto N, typename ...Ts, typename Bonds, typename Params, typename Parent>
+        static constexpr auto apply(SmartsGrammar::make_connectivity, ctll::term<V> term, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params, Parent> ctx)
         {
             return pushAtomExpr(ctx, ctll::list<Ts...>(), Connectivity<N>());
         }
@@ -3088,8 +3190,8 @@ namespace Kitimar::CTSmarts {
         {
             return pushAtomExpr(ctx, ctx.atoms, RingCount<1>());
         }
-        template <auto V, auto N, typename ...Ts, typename Bonds, typename Params>
-        static constexpr auto apply(SmartsGrammar::make_ring_count, ctll::term<V> term, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params> ctx)
+        template <auto V, auto N, typename ...Ts, typename Bonds, typename Params, typename Parent>
+        static constexpr auto apply(SmartsGrammar::make_ring_count, ctll::term<V> term, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params, Parent> ctx)
         {
             return pushAtomExpr(ctx, ctll::list<Ts...>(), RingCount<N>());
         }
@@ -3100,8 +3202,8 @@ namespace Kitimar::CTSmarts {
         {
             return pushAtomExpr(ctx, ctx.atoms, RingSize<1>());
         }
-        template <auto V, auto N, typename ...Ts, typename Bonds, typename Params>
-        static constexpr auto apply(SmartsGrammar::make_ring_size, ctll::term<V> term, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params> ctx)
+        template <auto V, auto N, typename ...Ts, typename Bonds, typename Params, typename Parent>
+        static constexpr auto apply(SmartsGrammar::make_ring_size, ctll::term<V> term, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params, Parent> ctx)
         {
             return pushAtomExpr(ctx, ctll::list<Ts...>(), RingSize<N>());
         }
@@ -3112,18 +3214,18 @@ namespace Kitimar::CTSmarts {
         {
             return pushAtomExpr(ctx, ctx.atoms, RingConnectivity<1>());
         }
-        template <auto V, auto N, typename ...Ts, typename Bonds, typename Params>
-        static constexpr auto apply(SmartsGrammar::make_ring_connectivity, ctll::term<V> term, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params> ctx)
+        template <auto V, auto N, typename ...Ts, typename Bonds, typename Params, typename Parent>
+        static constexpr auto apply(SmartsGrammar::make_ring_connectivity, ctll::term<V> term, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params, Parent> ctx)
         {
             return pushAtomExpr(ctx, ctll::list<Ts...>(), RingConnectivity<N>());
         }
 
         // make_class
-        template <auto V, auto N, typename ...Ts, typename Bonds, typename Params>
-        static constexpr auto apply(SmartsGrammar::make_class, ctll::term<V> term, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params> ctx)
+        template <auto V, auto N, typename ...Ts, typename Bonds, typename Params, typename Parent>
+        static constexpr auto apply(SmartsGrammar::make_class, ctll::term<V> term, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params, Parent> ctx)
         {
             auto cls = ctll::push_front(ClassHelper<N, ctx.params.nextIndex()>(), ctx.params.classes);
-            return SmartsContext{ctll::list<Ts...>(), ctx.bonds, ctx.params.setClasses(cls)};
+            return SmartsContext{ctll::list<Ts...>(), ctx.bonds, ctx.params.setClasses(cls), ctx.parent};
         }
 
         // make_impl_h
@@ -3206,7 +3308,7 @@ namespace Kitimar::CTSmarts {
         {
             constexpr auto value = V == '+' ? 1 : -1;
             auto atoms = ctll::push_front(Charge<value>{}, ctx.atoms);
-            return SmartsContext{atoms, ctx.bonds, ctx.params};
+            return SmartsContext{atoms, ctx.bonds, ctx.params, ctx.parent};
         }
 
         template <int Value, typename Context>
@@ -3214,7 +3316,7 @@ namespace Kitimar::CTSmarts {
         {
             auto [charge, tail] = ctll::pop_and_get_front(ctx.atoms);
             auto atoms = ctll::push_front(Charge<charge.value + Value>{}, tail);
-            return SmartsContext{atoms, ctx.bonds, ctx.params};
+            return SmartsContext{atoms, ctx.bonds, ctx.params, ctx.parent};
         }
 
         // increment_charge
@@ -3252,13 +3354,13 @@ namespace Kitimar::CTSmarts {
         static constexpr auto apply(SmartsGrammar::make_atom_not, ctll::term<V> term, Context ctx)
         {
             auto atomExpr = pushExpr(ctx.params.atomExpr, NotTag());
-            return SmartsContext{ctx.atoms, ctx.bonds, ctx.params.setAtomExpr(atomExpr)};
+            return SmartsContext{ctx.atoms, ctx.bonds, ctx.params.setAtomExpr(atomExpr), ctx.parent};
         }
 
         static constexpr auto makeAtomOp(auto ctx, auto op)
         {
             auto atomExpr = ctll::push_front(op, ctx.params.atomExpr);
-            return SmartsContext{ctx.atoms, ctx.bonds, ctx.params.setAtomExpr(atomExpr)};
+            return SmartsContext{ctx.atoms, ctx.bonds, ctx.params.setAtomExpr(atomExpr), ctx.parent};
         }
 
         // make_atom_and_high
@@ -3287,13 +3389,13 @@ namespace Kitimar::CTSmarts {
         static constexpr auto apply(SmartsGrammar::make_bond_not, ctll::term<V> term, Context ctx)
         {
             auto bondExpr = pushExpr(ctx.params.bondExpr, NotTag());
-            return SmartsContext{ctx.atoms, ctx.bonds, ctx.params.setBondExpr(bondExpr)};
+            return SmartsContext{ctx.atoms, ctx.bonds, ctx.params.setBondExpr(bondExpr), ctx.parent};
         }
 
         static constexpr auto makeBondOp(auto ctx, auto op)
         {
             auto bondExpr = ctll::push_front(op, ctx.params.bondExpr);
-            return SmartsContext{ctx.atoms, ctx.bonds, ctx.params.setBondExpr(bondExpr)};
+            return SmartsContext{ctx.atoms, ctx.bonds, ctx.params.setBondExpr(bondExpr), ctx.parent};
         }
 
         // make_bond_and_high
@@ -3325,21 +3427,38 @@ namespace Kitimar::CTSmarts {
         template <auto V, typename Context>
         static constexpr auto apply(SmartsGrammar::push_prev, ctll::term<V> term, Context ctx)
         {
-            return SmartsContext{ctx.atoms, ctx.bonds, ctx.params.pushPrevIndex()};
+            return SmartsContext{ctx.atoms, ctx.bonds, ctx.params.pushPrevIndex(), ctx.parent};
         }
 
         // pop_prev
         template <auto V, typename Context>
         static constexpr auto apply(SmartsGrammar::pop_prev, ctll::term<V> term, Context ctx)
         {
-            return SmartsContext{ctx.atoms, ctx.bonds, ctx.params.popPrevIndex()};
+            return SmartsContext{ctx.atoms, ctx.bonds, ctx.params.popPrevIndex(), ctx.parent};
         }
 
         // reset_prev
         template <auto V, typename Context>
         static constexpr auto apply(SmartsGrammar::reset_prev, ctll::term<V> term, Context ctx)
         {
-            return SmartsContext{ctx.atoms, ctx.bonds, ctx.params.popPrevIndex()};
+            return SmartsContext{ctx.atoms, ctx.bonds, ctx.params.popPrevIndex(), ctx.parent};
+        }
+
+        //
+        // Recursive
+        //
+
+        template <auto V, typename Context>
+        static constexpr auto apply(SmartsGrammar::push_recursive, ctll::term<V> term, Context ctx)
+        {
+            return SmartsContext{{}, {}, {}, ctx};
+        }
+
+        template <auto V, typename Context>
+        static constexpr auto apply(SmartsGrammar::pop_recursive, ctll::term<V> term, Context ctx)
+        {
+            auto expr = BasicSmarts{ctll::rotate(Context::atoms), ctll::rotate(Context::bonds)};
+            return pushAtomExpr(ctx.parent, ctx.parent.atoms, expr);
         }
 
         //
@@ -3351,7 +3470,7 @@ namespace Kitimar::CTSmarts {
         {
             auto bondExpr = pushExpr(ctx.params.bondExpr, leaf);
             auto params = ctx.params.setBondExpr(bondExpr);
-            return SmartsContext{atoms, ctx.bonds, params};
+            return SmartsContext{atoms, ctx.bonds, params, ctx.parent};
         }
 
         // bond_primitive
@@ -3360,21 +3479,17 @@ namespace Kitimar::CTSmarts {
         {
             static_assert(!ctll::empty(ctx.params.prevIndex));
             return pushBondExpr(ctx, ctx.atoms, bondPrimitive(term));
-            //auto expr = leafBondExpr<ctx.params.notSet>(ctx.params.operation, ctx.params.bondExpr, bondPrimitive(term));
-            //return SmartsContext{ctx.atoms, ctx.bonds, ctx.params.setBondExpr(expr)};
-            //return ctx;
-
         }
-        template <auto V, auto C, typename ...Ts, typename Bonds, typename Params>
-        static constexpr auto apply(SmartsGrammar::make_bond_primitive, ctll::term<V> term, SmartsContext<ctll::list<Char<C>, Ts...>, Bonds, Params> ctx)
+        template <auto V, auto C, typename ...Ts, typename Bonds, typename Params, typename Parent>
+        static constexpr auto apply(SmartsGrammar::make_bond_primitive, ctll::term<V> term, SmartsContext<ctll::list<Char<C>, Ts...>, Bonds, Params, Parent> ctx)
         {
             static_assert(!ctll::empty(ctx.params.prevIndex));
             if constexpr (V == '?') {
                 auto expr = leafBondExpr<ctx.params.operation, ctx.params.notSet>(ctx.params.bondExpr, UpOrDownBond());
-                return SmartsContext{ctx.atoms, ctx.bonds, ctx.params.setBondExpr(expr)};
+                return SmartsContext{ctx.atoms, ctx.bonds, ctx.params.setBondExpr(expr), ctx.parent};
             } else {
                 auto expr = leafBondExpr<ctx.params.operation, ctx.params.notSet>(ctx.params.bondExpr, bondPrimitive(ctll::term<C>()));
-                return SmartsContext{ctx.atoms, ctx.bonds, ctx.params.setBondExpr(expr)};
+                return SmartsContext{ctx.atoms, ctx.bonds, ctx.params.setBondExpr(expr), ctx.parent};
             }
         }
 
@@ -3420,7 +3535,7 @@ namespace Kitimar::CTSmarts {
             if constexpr (std::is_same_v<decltype(rb), ctll::_nothing>) {
                 auto rb2 = RingBondHelper<N, atomIndex, decltype(ctx.params.bondExpr)>();
                 auto ringBonds = ctll::push_front(rb2, ctx.params.ringBonds);
-                return SmartsContext{atoms, ctx.bonds, ctx.params.setRingBonds(ringBonds).setBondExpr(ctll::empty_list())};
+                return SmartsContext{atoms, ctx.bonds, ctx.params.setRingBonds(ringBonds).setBondExpr(ctll::empty_list()), ctx.parent};
             } else {
                 constexpr auto prevIndex = rb.atomIndex;
                 constexpr auto ringBond = makeRingBond<ctll::size(ctx.bonds), atomIndex, prevIndex>(makeBondAST(ctll::rotate(rb.bondExpr)), makeBondAST(ctll::rotate(ctx.params.bondExpr)));
@@ -3429,9 +3544,9 @@ namespace Kitimar::CTSmarts {
                 auto bonds = ctll::push_front(bond, ctx.bonds);
                 auto ringBonds = ctll::remove_item(rb, ctx.params.ringBonds);
                 if constexpr (std::is_same_v<NoErrorTag, decltype(error)>)
-                    return SmartsContext{atoms, bonds, ctx.params.setRingBonds(ringBonds).setBondExpr(ctll::empty_list())};
+                    return SmartsContext{atoms, bonds, ctx.params.setRingBonds(ringBonds).setBondExpr(ctll::empty_list()), ctx.parent};
                 else
-                    return SmartsContext{atoms, bonds, ctx.params.setRingBonds(ringBonds).setBondExpr(ctll::empty_list()).setError(error)};
+                    return SmartsContext{atoms, bonds, ctx.params.setRingBonds(ringBonds).setBondExpr(ctll::empty_list()).setError(error), ctx.parent};
             }
         }
 
@@ -3441,8 +3556,8 @@ namespace Kitimar::CTSmarts {
             return handleRingBond<V - '0'>(ctx, ctx.atoms);
         }
 
-        template <auto V, auto N, typename ...Ts, typename Bonds, typename Params>
-        static constexpr auto apply(SmartsGrammar::handle_ring_bond, ctll::term<V> term, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params> ctx)
+        template <auto V, auto N, typename ...Ts, typename Bonds, typename Params, typename Parent>
+        static constexpr auto apply(SmartsGrammar::handle_ring_bond, ctll::term<V> term, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params, Parent> ctx)
         {
             return handleRingBond<10 * N + V - '0'>(ctx, ctll::list<Ts...>());
         }
@@ -3454,8 +3569,7 @@ namespace Kitimar::CTSmarts {
         template <auto V, typename Context>
         static constexpr auto apply(SmartsGrammar::error_empty_bracket, ctll::term<V> term, Context ctx)
         {
-            //return SmartsContext{ctx.atoms, ctx.bonds, ctx.params.template setError<EmptyBracketAtomTag>(EmptyBracketAtomTag())};
-            return SmartsContext{ctx.atoms, ctx.bonds, ctx.params.setError(EmptyBracketAtomTag())};
+            return SmartsContext{ctx.atoms, ctx.bonds, ctx.params.setError(EmptyBracketAtomTag()), ctx.parent};
         }
 
     };
@@ -3468,9 +3582,6 @@ namespace Kitimar::CTSmarts {
 #include <algorithm>
 
 namespace Kitimar::CTSmarts {
-
-    template <ctll::fixed_string SMARTS, bool IgnoreInvalid = false>
-    struct Smarts;
 
     constexpr auto cycleRank(auto numVertices, auto numEdges, auto numComponents)
     {
@@ -3572,32 +3683,21 @@ namespace Kitimar::CTSmarts {
         return ringBondIds(ctll::list<Bonds...>(), ctll::push_front(Number<Bond::n>(), Ids()));
     }
 
-    //template<typename Atoms, typename Bonds>
-    template <ctll::fixed_string SMARTS, bool IgnoreInvalid>
-    struct Smarts
+    template <ctll::fixed_string SMARTS, bool IgnoreInvalid = false,
+              typename Result = ctll::parser<SmartsGrammar, SMARTS, SmartsActions>::template output<SmartsContext<>>,
+              typename Context = Result::output_type>
+    struct Smarts : BasicSmarts<decltype(ctll::rotate(Context::atoms)), decltype(ctll::rotate(Context::bonds))>
     {
-        using Result = ctll::parser<SmartsGrammar, SMARTS, SmartsActions>::template output<SmartsContext<>>;
-        using Context = Result::output_type;
-
         static constexpr inline auto smarts = SMARTS;
+        static constexpr inline auto context = Context();
+        static constexpr inline auto valid = Result::is_correct;
+        static constexpr inline auto position = Result::position;
 
         static constexpr auto input()
         {
             auto str = SMARTS | std::views::transform([] (auto c) { return static_cast<char>(c); });
             return std::string(str.begin(), str.end());
         }
-
-        static constexpr inline auto context = Context();
-        static constexpr inline auto valid = Result::is_correct;
-        static constexpr inline auto position = Result::position;
-
-        static constexpr inline auto atoms = ctll::rotate(Context::atoms);
-        static constexpr inline auto bonds = ctll::rotate(Context::bonds);
-        static constexpr inline auto numAtoms = ctll::size(atoms);
-        static constexpr inline auto numBonds = ctll::size(bonds);
-
-        static constexpr inline auto isSingleAtom = numAtoms == 1;
-        static constexpr inline auto isSingleBond = numAtoms == 2 && numBonds == 1;
 
         template<typename ErrorTag>
         static constexpr auto getError(ErrorTag)
@@ -3622,193 +3722,6 @@ namespace Kitimar::CTSmarts {
 
 } // namespace ctsmarts
 
-namespace Kitimar::CTSmarts {
-
-    //
-    // Operators
-    //
-
-    template<typename Expr>
-    constexpr bool matchAtomExpr(const auto &mol, const auto &atom, Not<Expr>)
-    {
-        return !matchAtomExpr(mol, atom, Expr());
-    }
-
-    template<typename ...Expr>
-    constexpr bool matchAtomExpr(const auto &mol, const auto &atom, Or<Expr...>)
-    {
-        return (matchAtomExpr(mol, atom, Expr()) || ...);
-    }
-
-    template<typename ...Expr>
-    constexpr bool matchAtomExpr(const auto &mol, const auto &atom, And<Expr...>)
-    {
-        return (matchAtomExpr(mol, atom, Expr()) && ...);
-    }
-
-    template<typename Expr>
-    constexpr bool matchBondExpr(const auto &mol, const auto &bond, Not<Expr>)
-    {
-        return !matchBondExpr(mol, bond, Expr());
-    }
-
-    template<typename ...Expr>
-    constexpr bool matchBondExpr(const auto &mol, const auto &bond, Or<Expr...>)
-    {
-        return (matchBondExpr(mol, bond, Expr()) || ...);
-    }
-
-    template<typename ...Expr>
-    constexpr bool matchBondExpr(const auto &mol, const auto &bond, And<Expr...>)
-    {
-        return (matchBondExpr(mol, bond, Expr()) && ...);
-    }
-
-    //
-    // Atoms
-    //
-
-    constexpr bool matchAtomExpr(const auto &mol, const auto &atom, AnyAtom)
-    {
-        return true;
-    }
-
-    constexpr bool matchAtomExpr(const auto &mol, const auto &atom, AnyAromatic)
-    {
-        return is_aromatic_atom(mol, atom);
-    }
-
-    constexpr bool matchAtomExpr(const auto &mol, const auto &atom, AnyAliphatic)
-    {
-        return !is_aromatic_atom(mol, atom);
-    }
-
-    template<int Element>
-    constexpr bool matchAtomExpr(const auto &mol, const auto &atom, AliphaticAtom<Element>)
-    {
-        return get_element(mol, atom) == Element && !is_aromatic_atom(mol, atom);
-    }
-
-    template<int Element>
-    constexpr bool matchAtomExpr(const auto &mol, const auto &atom, AromaticAtom<Element>)
-    {
-        return get_element(mol, atom) == Element && is_aromatic_atom(mol, atom);
-    }
-
-    template<int N>
-    constexpr bool matchAtomExpr(const auto &mol, const auto &atom, Isotope<N>)
-    {
-        return get_isotope(mol, atom) == N;
-    }
-
-    template<int N>
-    constexpr bool matchAtomExpr(const auto &mol, const auto &atom, Element<N>)
-    {
-        return get_element(mol, atom) == N;
-    }
-
-    template<int N>
-    constexpr bool matchAtomExpr(const auto &mol, const auto &atom, Degree<N>)
-    {
-        return get_degree(mol, atom) == N;
-    }
-
-    template<int N>
-    constexpr bool matchAtomExpr(const auto &mol, const auto &atom, Valence<N>)
-    {
-        return get_valence(mol, atom) == N;
-    }
-
-    template<int N>
-    constexpr bool matchAtomExpr(const auto &mol, const auto &atom, Connectivity<N>)
-    {
-        return get_degree(mol, atom) + get_implicit_hydrogens(mol, atom) == N;
-    }
-
-    template<int N>
-    constexpr bool matchAtomExpr(const auto &mol, const auto &atom, TotalH<N>)
-    {
-        return get_total_hydrogens(mol, atom) == N;
-    }
-
-    template<int N>
-    constexpr bool matchAtomExpr(const auto &mol, const auto &atom, ImplicitH<N>)
-    {
-        return get_implicit_hydrogens(mol, atom) == N;
-    }
-
-    constexpr bool matchAtomExpr(const auto &mol, const auto &atom, Cyclic)
-    {
-        return is_ring_atom(mol, atom);
-    }
-
-    constexpr bool matchAtomExpr(const auto &mol, const auto &atom, Acyclic)
-    {
-        return !is_ring_atom(mol, atom);
-    }
-
-    template<int N>
-    constexpr bool matchAtomExpr(const auto &mol, const auto &atom, RingCount<N>)
-    {
-        return get_ring_count(mol, atom) == N;
-    }
-
-    template<int N>
-    constexpr bool matchAtomExpr(const auto &mol, const auto &atom, RingSize<N>)
-    {
-        return is_in_ring_size(mol, atom, N);
-    }
-
-    template<int N>
-    constexpr bool matchAtomExpr(const auto &mol, const auto &atom, RingConnectivity<N>)
-    {
-        return get_ring_degree(mol, atom) == N;
-    }
-
-    template<int N>
-    constexpr bool matchAtomExpr(const auto &mol, const auto &atom, Charge<N>)
-    {
-        return get_charge(mol, atom) == N;
-    }
-
-    //
-    // Bonds
-    //
-
-    constexpr bool matchBondExpr(const auto &mol, const auto &bond, ImplicitBond)
-    {
-        return get_order(mol, bond) == 1 || is_aromatic_bond(mol, bond);
-    }
-
-    constexpr bool matchBondExpr(const auto &mol, const auto &bond, AnyBond)
-    {
-        return true;
-    }
-
-    template<int Order>
-    constexpr bool matchBondExpr(const auto &mol, const auto &bond, BondOrder<Order>)
-    {
-        return get_order(mol, bond) == Order && !is_aromatic_bond(mol, bond);
-        /*
-        if constexpr (requires { is_aromatic(mol, bond); })
-            return get_order(mol, bond) == Order && !is_aromatic(mol, bond);
-        else
-            return get_order(mol, bond) == Order;
-        */
-    }
-
-    constexpr bool matchBondExpr(const auto &mol, const auto &bond, AromaticBond)
-    {
-        return is_aromatic_bond(mol, bond);
-    }
-
-    constexpr bool matchBondExpr(const auto &mol, const auto &bond, RingBond)
-    {
-        return is_ring_bond(mol, bond);
-    }
-
-} // namespace ctsmarts
-
 #include <array>
 #include <vector>
 #include <ranges>
@@ -3821,7 +3734,7 @@ template<std::integral I, auto N>
 std::ostream& operator<<(std::ostream &os, const std::array<I, N> &map)
 {
     os << "[";
-    for (auto i = 0; i < map.size(); ++i)
+    for (auto i = 0UL; i < map.size(); ++i)
         os << " " << map[i];
     os << " ]";
     return os;
@@ -3950,10 +3863,19 @@ namespace Kitimar::CTSmarts {
         consteval SmartsQuery(VertexDegree, DfsBondList) noexcept {};
     };
 
+    enum class SeedType {
+        Molecule, // start from any atom/bond
+        Atom, // start from first atom
+        Bond // start from first bond
+    };
+
+    template<SeedType T>
+    using SeedTypeTag = std::integral_constant<SeedType, T>;
+
     struct NoOptimizer
     {
-        template<typename SmartsT>
-        static constexpr auto create(SmartsT) noexcept
+        template<typename SmartsT, SeedType SeedT>
+        static constexpr auto create(SmartsT, SeedTypeTag<SeedT>) noexcept
         {
             constexpr auto smarts = SmartsT{};
             constexpr auto edgeList = EdgeList{smarts};
@@ -3969,16 +3891,16 @@ namespace Kitimar::CTSmarts {
     // FIXME: optimize atom expressions...
     struct FullOptimizer
     {
-        template<typename SmartsT>
-        static constexpr auto create(SmartsT) noexcept
+        template<typename SmartsT, SeedType SeedT>
+        static constexpr auto create(SmartsT, SeedTypeTag<SeedT>) noexcept
         {
             constexpr auto smarts = SmartsT{};
             constexpr auto edgeList = EdgeList{smarts};
             constexpr auto vertexDegree = VertexDegree{smarts, edgeList};
             constexpr auto incidentList = IncidentList{smarts, edgeList, vertexDegree};
             constexpr auto atomFreq = AtomFrequency{smarts};
-            constexpr auto optimizedIncidentList = OptimizeIncidentList{smarts, incidentList, atomFreq};
-            constexpr auto sourceIndex = std::ranges::min_element(atomFreq.data) - std::begin(atomFreq.data);
+            constexpr auto optimizedIncidentList = OptimizeIncidentList{smarts, incidentList, atomFreq, std::false_type{}};
+            constexpr auto sourceIndex = (SeedT == SeedType::Molecule) ? std::ranges::min_element(atomFreq.data) - std::begin(atomFreq.data) : 0;
             constexpr auto dfsEdges = DfsEdgeList{smarts, optimizedIncidentList, Number<sourceIndex>{}};
             constexpr auto cycleMembership = CycleMembership{smarts, optimizedIncidentList};
             constexpr auto dfsBonds = DfsBondList{smarts, dfsEdges, cycleMembership};
@@ -4011,6 +3933,204 @@ namespace Kitimar::CTSmarts {
     //using NoSpecializeConfig = Config<NoSpecialize, FullOptimizer, InverseMap>;
 
 } // namespace Kitimar::CTSmarts
+
+#include <Kitimar/Molecule/Molecule.hpp>
+
+namespace Kitimar::CTSmarts {
+
+    //
+    // Operators
+    //
+
+    template<typename Expr>
+    constexpr bool matchAtomExpr(auto &mol, const auto &atom, Not<Expr>)
+    {
+        return !matchAtomExpr(mol, atom, Expr());
+    }
+
+    template<typename ...Expr>
+    constexpr bool matchAtomExpr(auto &mol, const auto &atom, Or<Expr...>)
+    {
+        return (matchAtomExpr(mol, atom, Expr()) || ...);
+    }
+
+    template<typename ...Expr>
+    constexpr bool matchAtomExpr(auto &mol, const auto &atom, And<Expr...>)
+    {
+        return (matchAtomExpr(mol, atom, Expr()) && ...);
+    }
+
+    template<typename Expr>
+    constexpr bool matchBondExpr(auto &mol, const auto &bond, Not<Expr>)
+    {
+        return !matchBondExpr(mol, bond, Expr());
+    }
+
+    template<typename ...Expr>
+    constexpr bool matchBondExpr(auto &mol, const auto &bond, Or<Expr...>)
+    {
+        return (matchBondExpr(mol, bond, Expr()) || ...);
+    }
+
+    template<typename ...Expr>
+    constexpr bool matchBondExpr(auto &mol, const auto &bond, And<Expr...>)
+    {
+        return (matchBondExpr(mol, bond, Expr()) && ...);
+    }
+
+    //
+    // Atoms
+    //
+
+    constexpr bool matchAtomExpr(auto &mol, const auto &atom, AnyAtom)
+    {
+        return true;
+    }
+
+    constexpr bool matchAtomExpr(auto &mol, const auto &atom, AnyAromatic)
+    {
+        return is_aromatic_atom(mol, atom);
+    }
+
+    constexpr bool matchAtomExpr(auto &mol, const auto &atom, AnyAliphatic)
+    {
+        return !is_aromatic_atom(mol, atom);
+    }
+
+    template<int Element>
+    constexpr bool matchAtomExpr(auto &mol, const auto &atom, AliphaticAtom<Element>)
+    {
+        return get_element(mol, atom) == Element && !is_aromatic_atom(mol, atom);
+    }
+
+    template<int Element>
+    constexpr bool matchAtomExpr(auto &mol, const auto &atom, AromaticAtom<Element>)
+    {
+        return get_element(mol, atom) == Element && is_aromatic_atom(mol, atom);
+    }
+
+    template<int N>
+    constexpr bool matchAtomExpr(auto &mol, const auto &atom, Isotope<N>)
+    {
+        return get_isotope(mol, atom) == N;
+    }
+
+    template<int N>
+    constexpr bool matchAtomExpr(auto &mol, const auto &atom, Element<N>)
+    {
+        return get_element(mol, atom) == N;
+    }
+
+    template<int N>
+    constexpr bool matchAtomExpr(auto &mol, const auto &atom, Degree<N>)
+    {
+        return get_degree(mol, atom) == N;
+    }
+
+    template<int N>
+    constexpr bool matchAtomExpr(auto &mol, const auto &atom, Valence<N>)
+    {
+        return get_valence(mol, atom) == N;
+    }
+
+    template<int N>
+    constexpr bool matchAtomExpr(auto &mol, const auto &atom, Connectivity<N>)
+    {
+        return get_degree(mol, atom) + get_implicit_hydrogens(mol, atom) == N;
+    }
+
+    template<int N>
+    constexpr bool matchAtomExpr(auto &mol, const auto &atom, TotalH<N>)
+    {
+        return get_total_hydrogens(mol, atom) == N;
+    }
+
+    template<int N>
+    constexpr bool matchAtomExpr(auto &mol, const auto &atom, ImplicitH<N>)
+    {
+        return get_implicit_hydrogens(mol, atom) == N;
+    }
+
+    constexpr bool matchAtomExpr(auto &mol, const auto &atom, Cyclic)
+    {
+        return is_ring_atom(mol, atom);
+    }
+
+    constexpr bool matchAtomExpr(auto &mol, const auto &atom, Acyclic)
+    {
+        return !is_ring_atom(mol, atom);
+    }
+
+    template<int N>
+    constexpr bool matchAtomExpr(auto &mol, const auto &atom, RingCount<N>)
+    {
+        return get_ring_count(mol, atom) == N;
+    }
+
+    template<int N>
+    constexpr bool matchAtomExpr(auto &mol, const auto &atom, RingSize<N>)
+    {
+        return is_in_ring_size(mol, atom, N);
+    }
+
+    template<int N>
+    constexpr bool matchAtomExpr(auto &mol, const auto &atom, RingConnectivity<N>)
+    {
+        return get_ring_degree(mol, atom) == N;
+    }
+
+    template<int N>
+    constexpr bool matchAtomExpr(auto &mol, const auto &atom, Charge<N>)
+    {
+        return get_charge(mol, atom) == N;
+    }
+
+    //
+    // Recursive
+    //
+
+    namespace impl {
+        template<typename SmartsT, typename Config, Molecule::Molecule Mol>
+        constexpr bool match_atom(Mol &mol, const auto &atom);
+    }
+
+    template<Molecule::Molecule Mol, typename Atoms, typename Bonds>
+    constexpr bool matchAtomExpr(Mol &mol, const auto &atom, BasicSmarts<Atoms, Bonds>)
+    {
+        return impl::match_atom<BasicSmarts<Atoms, Bonds>, DefaultConfig, Mol>(mol, atom);
+    }
+
+    //
+    // Bonds
+    //
+
+    constexpr bool matchBondExpr(auto &mol, const auto &bond, ImplicitBond)
+    {
+        return get_order(mol, bond) == 1 || is_aromatic_bond(mol, bond);
+    }
+
+    constexpr bool matchBondExpr(auto &mol, const auto &bond, AnyBond)
+    {
+        return true;
+    }
+
+    template<int Order>
+    constexpr bool matchBondExpr(auto &mol, const auto &bond, BondOrder<Order>)
+    {
+        return get_order(mol, bond) == Order && !is_aromatic_bond(mol, bond);
+    }
+
+    constexpr bool matchBondExpr(auto &mol, const auto &bond, AromaticBond)
+    {
+        return is_aromatic_bond(mol, bond);
+    }
+
+    constexpr bool matchBondExpr(auto &mol, const auto &bond, RingBond)
+    {
+        return is_ring_bond(mol, bond);
+    }
+
+} // namespace ctsmarts
 
 namespace Kitimar::CTSmarts {
 
@@ -4292,7 +4412,6 @@ namespace Kitimar::CTSmarts {
 
 namespace Kitimar::CTSmarts {
 
-    // FIXME: rename to search type
     enum class SearchType
     {
         Single,
@@ -4313,7 +4432,7 @@ namespace Kitimar::CTSmarts {
 
     struct ConditionalFilterPolicy : FilterPolicy<> {};
 
-    template<Molecule::Molecule Mol, typename SmartsT, SearchType Type, typename Config = DefaultConfig>
+    template<Molecule::Molecule Mol, typename SmartsT, SearchType SearchT, SeedType SeedT, typename Config = DefaultConfig>
     class Isomorphism
     {
 
@@ -4324,7 +4443,7 @@ namespace Kitimar::CTSmarts {
 
             static constexpr inline auto invalidIndex = static_cast<Index>(-1);
             static constexpr inline auto smarts = SmartsT{};
-            static constexpr inline auto query = Config::Optimizer::create(smarts);
+            static constexpr inline auto query = Config::Optimizer::create(smarts, SeedTypeTag<SeedT>{});
 
             static_assert(smarts.numBonds);
             static_assert(ctll::size(smarts.bonds) == ctll::size(query.bonds));
@@ -4344,12 +4463,14 @@ namespace Kitimar::CTSmarts {
 
             bool matchAtom(Mol &mol, const auto &atom)
             {
+                static_assert(SeedT == SeedType::Atom);
                 matchDfs(mol, nullptr, get_index(mol, atom));
                 return isDone();
             }
 
             bool matchBond(Mol &mol, const auto &bond)
             {
+                static_assert(SeedT == SeedType::Bond);
                 reset(mol);
                 auto source = get_source(mol, bond);
                 auto target = get_target(mol, bond);
@@ -4384,11 +4505,13 @@ namespace Kitimar::CTSmarts {
 
             auto countAtom(Mol &mol, const auto &atom)
             {
+                static_assert(SeedT == SeedType::Atom);
                 return count(mol, get_index(mol, atom));
             }
 
             auto countBond(Mol &mol, const auto &bond)
             {
+                static_assert(SeedT == SeedType::Bond);
                 reset(mol);
                 auto source = get_source(mol, bond);
                 auto target = get_target(mol, bond);
@@ -4419,11 +4542,13 @@ namespace Kitimar::CTSmarts {
 
             auto singleAtom(Mol &mol, const auto &atom)
             {
+                static_assert(SeedT == SeedType::Atom);
                 return single(mol, get_index(mol, atom));
             }
 
             auto singleBond(Mol &mol, const auto &bond)
             {
+                static_assert(SeedT == SeedType::Bond);
                 reset(mol);
                 auto source = get_source(mol, bond);
                 auto target = get_target(mol, bond);
@@ -4463,11 +4588,13 @@ namespace Kitimar::CTSmarts {
 
             auto allAtom(Mol &mol, const auto &atom)
             {
+                static_assert(SeedT == SeedType::Atom);
                 return all(mol, get_index(mol, atom));
             }
 
             auto allBond(Mol &mol, const auto &bond)
             {
+                static_assert(SeedT == SeedType::Bond);
                 reset(mol);
                 auto source = get_source(mol, bond);
                 auto target = get_target(mol, bond);
@@ -4522,7 +4649,7 @@ namespace Kitimar::CTSmarts {
             void addAtom(int queryAtomIndex, auto atomIndex) noexcept
             {
                 debug("    ", queryAtomIndex, " -> ", atomIndex);
-                assert(queryAtomIndex < m_map.map().size());
+                assert(static_cast<std::size_t>(queryAtomIndex) < m_map.map().size());
                 assert(!m_map.containsQueryAtom(queryAtomIndex));
                 m_map.add(queryAtomIndex, atomIndex);
             }
@@ -4530,7 +4657,7 @@ namespace Kitimar::CTSmarts {
             void removeAtom(int queryAtomIndex, auto atomIndex) noexcept
             {
                 debug("    backtrack: ", m_map(queryAtomIndex));
-                assert(queryAtomIndex < m_map.map().size());
+                assert(static_cast<std::size_t>(queryAtomIndex) < m_map.map().size());
                 assert(m_map.containsQueryAtom(queryAtomIndex));
                 m_map.remove(queryAtomIndex, atomIndex);
             }
@@ -4667,19 +4794,19 @@ namespace Kitimar::CTSmarts {
 
                         assert(!isDone());
 
-                        assert(std::ranges::count(m_map.map(), invalidIndex) == m_map.map().size());
+                        assert(static_cast<std::size_t>(std::ranges::count(m_map.map(), invalidIndex)) == m_map.map().size());
                         //if constexpr (std::is_same_v<MappedPolicy<void>, MappedVector<void>>)
                         //    assert(std::ranges::count(m_mapped, true) == 0);
 
                         m_map.reset(num_atoms(mol));
 
+                        auto queryBond = ctll::front(query.bonds);
+                        auto queryAtom = queryBond.source;
+
                         for (auto atom : get_atoms(mol)) {
                             if (startAtom != -1)
                                 atom = get_atom(mol, startAtom);
                             auto index = get_index(mol, atom);
-
-                            auto queryBond = ctll::front(query.bonds);
-                            auto queryAtom = queryBond.source;
 
                             debug("    start atom: ",  index);
 
@@ -4721,9 +4848,9 @@ namespace Kitimar::CTSmarts {
             template<typename Callback>
             constexpr auto addMapping(Molecule::Molecule auto &mol, Callback callback) noexcept
             {
-                if constexpr (Type == SearchType::Single)
+                if constexpr (SearchT == SearchType::Single)
                     setDone(true);
-                if constexpr (Type == SearchType::Unique) {
+                if constexpr (SearchT == SearchType::Unique) {
                     // create bit mask of atoms (to ensure uniqueness of mapping)
                     std::vector<bool> atoms(num_atoms(mol));
                     for (auto index : m_map.map())
@@ -4739,7 +4866,7 @@ namespace Kitimar::CTSmarts {
             }
 
             Config::template Map<Index, SmartsT::numAtoms> m_map; // current mapping: query atom index -> queried atom index
-            std::conditional_t<Type == SearchType::Unique, std::unordered_set<std::size_t>, std::monostate> m_maps;
+            std::conditional_t<SearchT == SearchType::Unique, std::unordered_set<std::size_t>, std::monostate> m_maps;
             bool m_done = false;
     };
 
@@ -4827,7 +4954,7 @@ namespace Kitimar::CTSmarts {
                     return true;
             return false;
         } else {
-            auto iso = Isomorphism<Mol, decltype(smarts), SearchType::Single, Config>{};
+            auto iso = Isomorphism<Mol, decltype(smarts), SearchType::Single, SeedType::Molecule, Config>{};
             return iso.match(mol);
         }
     }
@@ -4838,28 +4965,39 @@ namespace Kitimar::CTSmarts {
 
     // ctse::match_atom<"SMARTS">(mol, atom) -> bool
 
+    namespace impl {
+
+        template<typename SmartsT, typename Config, Molecule::Molecule Mol>
+        constexpr bool match_atom(Mol &mol, const auto &atom)
+        {
+            auto smarts = SmartsT{};
+            if constexpr (smarts.isSingleAtom) {
+                // Optimize single atom SMARTS
+                return impl::singleAtomMatch(smarts, mol, atom);
+            } else if constexpr (Config::specialize && smarts.isSingleBond) {
+                // Optimize single bond SMARTS
+                if (!matchAtomExpr(mol, atom, get<0>(smarts.atoms).expr))
+                    return false;
+                for (auto bond : get_bonds(mol, atom)) {
+                    if (!matchBondExpr(mol, bond, get<0>(smarts.bonds).expr))
+                        continue;
+                    if (matchAtomExpr(mol, Kitimar::Molecule::get_nbr(mol, bond, atom), get<1>(smarts.atoms).expr))
+                        return true;
+                }
+                return false;
+            } else {
+                auto iso = Isomorphism<Mol, decltype(smarts), SearchType::Single, SeedType::Atom, Config>{};
+                return iso.matchAtom(mol, atom);
+            }
+        }
+
+    } // namespace impl
+
     template<ctll::fixed_string SMARTS, typename Config = DefaultConfig, Molecule::Molecule Mol>
     constexpr bool match_atom(Mol &mol, const auto &atom)
     {
-        auto smarts = Smarts<SMARTS>{};
-        if constexpr (smarts.isSingleAtom) {
-            // Optimize single atom SMARTS
-            return impl::singleAtomMatch(smarts, mol, atom);
-        } else if constexpr (Config::specialize && smarts.isSingleBond) {
-            // Optimize single bond SMARTS
-            if (!matchAtomExpr(mol, atom, get<0>(smarts.atoms).expr))
-                return false;
-            for (auto bond : get_bonds(mol, atom)) {
-                if (!matchBondExpr(mol, bond, get<0>(smarts.bonds).expr))
-                    continue;
-                if (matchAtomExpr(mol, Kitimar::Molecule::get_nbr(mol, bond, atom), get<1>(smarts.atoms).expr))
-                    return true;
-            }
-            return false;
-        } else {
-            auto iso = Isomorphism<Mol, decltype(smarts), SearchType::Single, NoOptimizeConfig>{}; // FIXME: allow optimizations to be used...
-            return iso.matchAtom(mol, atom);
-        }
+        return impl::match_atom<Smarts<SMARTS>, Config, Mol>(mol, atom);
+
     }
 
     //
@@ -4877,7 +5015,7 @@ namespace Kitimar::CTSmarts {
             // Optimize single bond SMARTS
             return impl::singleBondMatch(smarts, mol, bond);
         } else {
-            auto iso = Isomorphism<Mol, decltype(smarts), SearchType::All, NoOptimizeConfig>{}; // FIXME: allow optimizations to be used...
+            auto iso = Isomorphism<Mol, decltype(smarts), SearchType::All, SeedType::Bond, Config>{};
             return iso.matchBond(mol, bond);
         }
     }
@@ -4929,7 +5067,7 @@ namespace Kitimar::CTSmarts {
             }
             return n;
         } else {
-            auto iso = Isomorphism<Mol, decltype(smarts), M, Config>{};
+            auto iso = Isomorphism<Mol, decltype(smarts), M, SeedType::Molecule, Config>{};
             return iso.count(mol);
         }
     }
@@ -4955,7 +5093,7 @@ namespace Kitimar::CTSmarts {
         if constexpr (smarts.isSingleAtom)
             return match_atom<SMARTS, Config>(mol, atom) ? 1 : 0;
         else {
-            auto iso = Isomorphism<Mol, decltype(smarts), M, NoOptimizeConfig>{}; // FIXME: NoOptimizeConfig
+            auto iso = Isomorphism<Mol, decltype(smarts), M, SeedType::Atom, Config>{};
             return iso.countAtom(mol, atom);
         }
     }
@@ -4989,7 +5127,7 @@ namespace Kitimar::CTSmarts {
             }
             return 0;
         }
-        auto iso = Isomorphism<Mol, decltype(smarts), M, NoOptimizeConfig>{}; // FIXME: NoOptimizeConfig
+        auto iso = Isomorphism<Mol, decltype(smarts), M, SeedType::Bond, Config>{};
         return iso.countBond(mol, bond);
     }
 
@@ -5059,7 +5197,7 @@ namespace Kitimar::CTSmarts {
             }
             return std::make_tuple(false, Map{});
         } else {
-            auto iso = Isomorphism<Mol, decltype(smarts), SearchType::Single, Config>{};
+            auto iso = Isomorphism<Mol, decltype(smarts), SearchType::Single, SeedType::Molecule, Config>{};
             return iso.single(mol);
         }
     }
@@ -5075,7 +5213,7 @@ namespace Kitimar::CTSmarts {
     {
         auto smarts = Smarts<SMARTS>{};
         static_assert(!smarts.isSingleAtom, "Use CTSmarts::match_atom<\"SMARTS\">(mol, atom) to check for a single match.");
-        auto iso = Isomorphism<Mol, decltype(smarts), SearchType::Single, NoOptimizeConfig>{}; // FIXME: NoOptimizeConfig
+        auto iso = Isomorphism<Mol, decltype(smarts), SearchType::Single, SeedType::Atom, Config>{};
         return iso.singleAtom(mol, atom);
     }
 
@@ -5090,7 +5228,7 @@ namespace Kitimar::CTSmarts {
     {
         auto smarts = Smarts<SMARTS>{};
         static_assert(smarts.numBonds, "There should at least be one bond in the SMARTS expression.");
-        auto iso = Isomorphism<Mol, decltype(smarts), SearchType::Single, NoOptimizeConfig>{}; // FIXME: NoOptimizeConfig
+        auto iso = Isomorphism<Mol, decltype(smarts), SearchType::Single, SeedType::Bond, Config>{};
         return iso.singleBond(mol, bond);
     }
 
@@ -5149,7 +5287,7 @@ namespace Kitimar::CTSmarts {
         //} else if constexpr (smarts.centralAtom != -1) {
 
         } else {
-            auto iso = Isomorphism<Mol, decltype(smarts), M, Config>{};
+            auto iso = Isomorphism<Mol, decltype(smarts), M, SeedType::Molecule, Config>{};
             return iso.all(mol);
         }
     }
@@ -5174,7 +5312,7 @@ namespace Kitimar::CTSmarts {
         auto smarts = Smarts<SMARTS>{};
         static_assert(M != SearchType::Single && !smarts.isSingleAtom,
                     "Use CTSmarts::map_atom<\"SMARTS\">(mol, atom) to check for a single match.");
-        auto iso = Isomorphism<Mol, decltype(smarts), M, NoOptimizeConfig>{}; // FIXME: NoOptimizeConfig
+        auto iso = Isomorphism<Mol, decltype(smarts), M, SeedType::Atom, Config>{};
         return iso.allAtom(mol, atom);
     }
 
@@ -5198,7 +5336,7 @@ namespace Kitimar::CTSmarts {
         auto smarts = Smarts<SMARTS>{};
         static_assert(M != SearchType::Single && !smarts.isSingleAtom /*&& !smarts.isSingleBond*/,
                 "Use CTSmarts::map_bond<\"SMARTS\">(mol, bond) to check for a single match.");
-        auto iso = Isomorphism<Mol, decltype(smarts), M, NoOptimizeConfig>{}; // FIXME: NoOptimizeConfig
+        auto iso = Isomorphism<Mol, decltype(smarts), M, SeedType::Bond, Config>{};
         return iso.allBond(mol, bond);
     }
 
@@ -5267,7 +5405,7 @@ namespace Kitimar::CTSmarts {
             }
             return impl::singleBondCapture(smarts, mol, null_bond(mol), 0);
         } else {
-            auto iso = Isomorphism<Mol, decltype(smarts), SearchType::Single, Config>{};
+            auto iso = Isomorphism<Mol, decltype(smarts), SearchType::Single, SeedType::Molecule, Config>{};
             constexpr auto captureSet = captureMapping(smarts);
             auto [found, map] = iso.single(mol);
             return impl::captureMatchAtoms(mol, smarts, captureSet, found, map);
@@ -5285,7 +5423,7 @@ namespace Kitimar::CTSmarts {
     {
         auto smarts = Smarts<SMARTS>{};
         static_assert(!smarts.isSingleAtom, "Use CTSmarts::match_atom<\"SMARTS\">(mol, atom) to check for a single match.");
-        auto iso = Isomorphism<Mol, decltype(smarts), SearchType::Single, NoOptimizeConfig>{}; // FIXME: NoOptimizeConfig
+        auto iso = Isomorphism<Mol, decltype(smarts), SearchType::Single, SeedType::Atom, Config>{};
         constexpr auto captureSet = captureMapping(smarts);
         auto [found, map] = iso.singleAtom(mol, atom);
         return impl::captureMatchAtoms(mol, smarts, captureSet, found, map);
@@ -5302,7 +5440,7 @@ namespace Kitimar::CTSmarts {
     {
         auto smarts = Smarts<SMARTS>{};
         static_assert(!smarts.isSingleAtom, "Use CTSmarts::match_atom<\"SMARTS\">(mol, atom) to check for a single match.");
-        auto iso = Isomorphism<Mol, decltype(smarts), SearchType::Single, NoOptimizeConfig>{}; // FIXME: NoOptimizeConfig
+        auto iso = Isomorphism<Mol, decltype(smarts), SearchType::Single, SeedType::Bond, Config>{};
         constexpr auto captureSet = captureMapping(smarts);
         auto [found, map] = iso.singleBond(mol, atom);
         return impl::captureMatchAtoms(mol, smarts, captureSet, found, map);
@@ -5370,7 +5508,7 @@ namespace Kitimar::CTSmarts {
             return maps;
         } else {
             if constexpr (captureSet.size() == smarts.numAtoms) {
-                auto iso = Isomorphism<Mol, decltype(smarts), M, Config>{};
+                auto iso = Isomorphism<Mol, decltype(smarts), M, SeedType::Molecule, Config>{};
                 if constexpr (__cpp_lib_ranges >= 202110L)
                     return iso.all(mol) | std::views::transform([&] (const auto &map) {
                         return impl::toCapture(mol, smarts, true, map, captureSet);
@@ -5379,7 +5517,7 @@ namespace Kitimar::CTSmarts {
                     // missing std::ranges::owning_view
                     return impl::toCaptures(mol, iso, captureSet, iso.all(mol));
             } else {
-                auto iso = Isomorphism<Mol, decltype(smarts), SearchType::All, Config>{};
+                auto iso = Isomorphism<Mol, decltype(smarts), SearchType::All, SeedType::Molecule, Config>{};
                 AtomMaps maps = impl::toCaptures(mol, iso, captureSet, iso.all(mol));
 
                 // Remove duplicates
@@ -5415,7 +5553,7 @@ namespace Kitimar::CTSmarts {
         auto smarts = Smarts<SMARTS>{};
         static_assert(M != SearchType::Single && !smarts.isSingleAtom,
                     "Use CTSmarts::capture_atom<\"SMARTS\">(mol, atom) to check for a single match.");
-        auto iso = Isomorphism<Mol, decltype(smarts), M, NoOptimizeConfig>{}; // FIXME: NoOptimizeConfig
+        auto iso = Isomorphism<Mol, decltype(smarts), M, SeedType::Atom, Config>{};
         static constexpr auto captureSet = captureMapping(smarts);
         if constexpr (__cpp_lib_ranges >= 202110L)
             return iso.allAtom(mol, atom) | std::views::transform([&] (const auto &map) {
@@ -5446,7 +5584,7 @@ namespace Kitimar::CTSmarts {
         auto smarts = Smarts<SMARTS>{};
         static_assert(M != SearchType::Single && !smarts.isSingleAtom,
                     "Use CTSmarts::capture_bond<\"SMARTS\">(mol, bond) to check for a single match.");
-        auto iso = Isomorphism<Mol, decltype(smarts), M, NoOptimizeConfig>{}; // FIXME: NoOptimizeConfig
+        auto iso = Isomorphism<Mol, decltype(smarts), M, SeedType::Bond, Config>{};
         static constexpr auto captureSet = captureMapping(smarts);
         if constexpr (__cpp_lib_ranges >= 202110L)
             return iso.allBond(mol, bond) | std::views::transform([&] (const auto &map) {

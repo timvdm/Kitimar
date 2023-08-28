@@ -34,25 +34,25 @@ void serializeOpenBabelSmilesToKitimarTypeIndex()
 
     // Pass 1: Determine types
     for (auto mol : source.molecules()) {
-        for (auto atom : get_atoms(mol)) {
+        for (auto atom : get_atoms(*mol)) {
             auto type = AtomType{
-                static_cast<uint8_t>(get_element(mol, atom)),
-                static_cast<uint8_t>(get_isotope(mol, atom)),
-                static_cast<int8_t>(get_charge(mol, atom)),
-                static_cast<uint8_t>(get_degree(mol, atom)),
-                static_cast<uint8_t>(get_implicit_hydrogens(mol, atom)),
-                is_aromatic_atom(mol, atom)
+                static_cast<uint8_t>(get_element(*mol, atom)),
+                static_cast<uint8_t>(get_isotope(*mol, atom)),
+                static_cast<int8_t>(get_charge(*mol, atom)),
+                static_cast<uint8_t>(get_degree(*mol, atom)),
+                static_cast<uint8_t>(get_implicit_hydrogens(*mol, atom)),
+                is_aromatic_atom(*mol, atom)
             };
 
             if (std::ranges::find(atomTypes, type) == atomTypes.end())
                 atomTypes.push_back(type);
         }
 
-        for (auto bond : get_bonds(mol)) {
+        for (auto bond : get_bonds(*mol)) {
             auto type = BondType{
-                static_cast<uint8_t>(get_order(mol, bond)),
-                is_ring_bond(mol, bond),
-                is_aromatic_bond(mol, bond)
+                static_cast<uint8_t>(get_order(*mol, bond)),
+                is_ring_bond(*mol, bond),
+                is_aromatic_bond(*mol, bond)
             };
 
             if (std::ranges::find(bondTypes, type) == bondTypes.end())
