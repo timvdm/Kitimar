@@ -722,6 +722,13 @@ namespace Kitimar::CTSmarts {
             return SmartsContext{ctll::list<Ts...>(), ctx.bonds, ctx.params.setClasses(cls), ctx.parent};
         }
 
+        // make_has_impl_h
+        template <auto V, typename Context>
+        static constexpr auto apply(SmartsGrammar::make_has_impl_h, ctll::term<V> term, Context ctx)
+        {
+            return pushAtomExpr(ctx, ctx.atoms, HasImplicitH{});
+        }
+
         // make_impl_h
         template <auto V, typename Context>
         static constexpr auto apply(SmartsGrammar::make_impl_h, ctll::term<V> term, Context ctx)
@@ -963,7 +970,7 @@ namespace Kitimar::CTSmarts {
         template <auto V, typename Context>
         static constexpr auto apply(SmartsGrammar::pop_recursive, ctll::term<V> term, Context ctx)
         {
-            auto expr = BasicSmarts{ctll::rotate(Context::atoms), ctll::rotate(Context::bonds)};
+            auto expr = BasicSmarts{ctll::rotate(Context::atoms), ctll::rotate(Context::bonds), Context::params.classes};
             return pushAtomExpr(ctx.parent, ctx.parent.atoms, expr);
         }
 

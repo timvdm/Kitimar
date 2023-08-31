@@ -114,6 +114,11 @@ namespace Kitimar::CTSmarts {
         return get_total_hydrogens(mol, atom) == N;
     }
 
+    constexpr bool matchAtomExpr(auto &mol, const auto &atom, HasImplicitH)
+    {
+        return get_implicit_hydrogens(mol, atom) > 0;
+    }
+
     template<int N>
     constexpr bool matchAtomExpr(auto &mol, const auto &atom, ImplicitH<N>)
     {
@@ -163,10 +168,10 @@ namespace Kitimar::CTSmarts {
         constexpr bool match_atom(Mol &mol, const auto &atom);
     }
 
-    template<Molecule::Molecule Mol, typename Atoms, typename Bonds>
-    constexpr bool matchAtomExpr(Mol &mol, const auto &atom, BasicSmarts<Atoms, Bonds>)
+    template<Molecule::Molecule Mol, typename Atoms, typename Bonds, typename Classes>
+    constexpr bool matchAtomExpr(Mol &mol, const auto &atom, BasicSmarts<Atoms, Bonds, Classes>)
     {
-        return impl::match_atom<BasicSmarts<Atoms, Bonds>, DefaultConfig, Mol>(mol, atom);
+        return impl::match_atom<BasicSmarts<Atoms, Bonds, Classes>, DefaultConfig, Mol>(mol, atom);
     }
 
     //

@@ -1,8 +1,8 @@
  #pragma once
 
 #include "Smarts.hpp"
-#include "MatchExpr.hpp"
 #include "Config.hpp"
+#include "MatchExpr.hpp"
 
 #include "Filter/NumAtomBondFilter.hpp"
 #include "Filter/ElementFilter.hpp"
@@ -44,6 +44,12 @@ namespace Kitimar::CTSmarts {
     static constexpr auto Unique = SearchTypeTag<SearchType::Unique>{};
     static constexpr auto All    = SearchTypeTag<SearchType::All>{};
 
+
+    template<ctll::fixed_string SMARTS>
+    bool requiresExplicitHydrogens() noexcept
+    {
+        return impl::containsExpr(AliphaticAtom<1>{}, Smarts<SMARTS>::atoms);
+    }
 
 
     struct NoFilterPolicy : FilterPolicy<> {};

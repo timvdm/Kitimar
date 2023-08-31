@@ -1,7 +1,7 @@
 if(Kitimar_WITH_VALIDATION_BASIC OR Kitimar_WITH_VALIDATION_SQC)
 
     if(Kitimar_WITH_OPENBABEL AND Kitimar_WITH_RDKIT)
-        add_executable(ValidateCTSmarts ValidateCTSmarts.cpp)
+        add_executable(ValidateCTSmarts Validate.hpp ValidateCTSmarts.cpp)
         if(Kitimar_WITH_VALIDATION_BASIC)
             target_sources(ValidateCTSmarts PRIVATE Basic.cpp)
             target_compile_definitions(ValidateCTSmarts PRIVATE -DKITIMAR_WITH_VALIDATION_BASIC)

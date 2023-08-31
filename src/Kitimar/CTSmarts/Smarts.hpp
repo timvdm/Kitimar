@@ -60,7 +60,7 @@ namespace Kitimar::CTSmarts {
 
     constexpr auto captureMapping(auto smarts)
     {
-        constexpr auto mapping = captureMappingHelper<1>(smarts.context.params.classes, ctll::empty_list());
+        constexpr auto mapping = captureMappingHelper<1>(smarts.classes, ctll::empty_list());
         return toArray(mapping);
     }
 
@@ -140,10 +140,10 @@ namespace Kitimar::CTSmarts {
     template <ctll::fixed_string SMARTS, bool IgnoreInvalid = false,
               typename Result = ctll::parser<SmartsGrammar, SMARTS, SmartsActions>::template output<SmartsContext<>>,
               typename Context = Result::output_type>
-    struct Smarts : BasicSmarts<decltype(ctll::rotate(Context::atoms)), decltype(ctll::rotate(Context::bonds))>
+    struct Smarts : BasicSmarts<decltype(ctll::rotate(Context::atoms)), decltype(ctll::rotate(Context::bonds)), std::remove_const_t<decltype(Context::params.classes)>>
     {
         static constexpr inline auto smarts = SMARTS;
-        static constexpr inline auto context = Context();
+        static constexpr inline auto context = Context{};
         static constexpr inline auto valid = Result::is_correct;
         static constexpr inline auto position = Result::position;
 

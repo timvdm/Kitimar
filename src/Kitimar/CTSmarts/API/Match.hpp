@@ -14,14 +14,14 @@ namespace Kitimar::CTSmarts {
     template<ctll::fixed_string SMARTS, typename Config = DefaultConfig, Molecule::Molecule Mol>
     constexpr bool match(Mol &mol)
     {
-        auto smarts = Smarts<SMARTS>{};
+        auto smarts = Config::transformSmarts(Smarts<SMARTS>{});
         if constexpr (smarts.isSingleAtom) {
             // Optimize single atom SMARTS
             for (auto atom : get_atoms(mol)) // FIXME: use std::ranges::find_if -> check assembly?
                 if (impl::singleAtomMatch(smarts, mol, atom))
                     return true;
             return false;
-        } else if constexpr (Config::specialize && smarts.isSingleBond) {
+        } else if constexpr ((Config::specialize & Specialize::Bond) && smarts.isSingleBond) {
             // Optimize single bond SMARTS
             for (auto bond : get_bonds(mol))
                 if (impl::singleBondMatch(smarts, mol, bond))
@@ -44,11 +44,11 @@ namespace Kitimar::CTSmarts {
         template<typename SmartsT, typename Config, Molecule::Molecule Mol>
         constexpr bool match_atom(Mol &mol, const auto &atom)
         {
-            auto smarts = SmartsT{};
+            auto smarts = Config::transformSmarts(SmartsT{}); // FIXME: replaceExpr(BasicSmarts<...>)
             if constexpr (smarts.isSingleAtom) {
                 // Optimize single atom SMARTS
                 return impl::singleAtomMatch(smarts, mol, atom);
-            } else if constexpr (Config::specialize && smarts.isSingleBond) {
+            } else if constexpr ((Config::specialize & Specialize::Bond) && smarts.isSingleBond) {
                 // Optimize single bond SMARTS
                 if (!matchAtomExpr(mol, atom, get<0>(smarts.atoms).expr))
                     return false;
@@ -83,9 +83,9 @@ namespace Kitimar::CTSmarts {
     template<ctll::fixed_string SMARTS, typename Config = DefaultConfig, Molecule::Molecule Mol>
     constexpr bool match_bond(Mol &mol, const auto &bond)
     {
-        auto smarts = Smarts<SMARTS>{};
+        auto smarts = Config::transformSmarts(Smarts<SMARTS>{});
         static_assert(smarts.numBonds, "There should at least be one bond in the SMARTS expression.");
-        if constexpr (Config::specialize && smarts.isSingleBond) {
+        if constexpr ((Config::specialize & Specialize::Bond) && smarts.isSingleBond) {
             // Optimize single bond SMARTS
             return impl::singleBondMatch(smarts, mol, bond);
         } else {

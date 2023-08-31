@@ -117,6 +117,7 @@ namespace Kitimar::CTSmarts {
         struct make_valence : ctll::action {};
         struct make_connectivity : ctll::action {};
         struct make_total_h : ctll::action {};
+        struct make_has_impl_h : ctll::action {};
         struct make_impl_h : ctll::action {};
         struct make_cyclic : ctll::action {};
         struct make_acyclic : ctll::action {};
@@ -266,7 +267,7 @@ namespace Kitimar::CTSmarts {
         // implicit hydrogens: 'h' | 'h' DIGIT
         template<typename P> static constexpr auto rule(atom_expr2<P>, ctll::term<'h'>) -> ctll::push<ctll::anything, atom_expr_impl_h<P>>;
         template<typename P> static constexpr auto rule(atom_expr_impl_h<P>, digit_chars) -> ctll::push<ctll::anything, make_impl_h, atom_expr2<P>>;
-        template<typename P> static constexpr auto rule(atom_expr_impl_h<P>, not_digit_chars) -> ctll::push<make_impl_h, atom_expr2<P>>;
+        template<typename P> static constexpr auto rule(atom_expr_impl_h<P>, not_digit_chars) -> ctll::push<make_has_impl_h, atom_expr2<P>>;
 
         // cyclic: 'r'
         // acyclic: 'r0'

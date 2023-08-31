@@ -12,6 +12,7 @@ namespace Kitimar::CTSmarts {
         return std::get<Index>(std::tuple<Ts...>());
     }
 
+    // resize list by adding T at front
     template<int Size, typename T, typename ...Ts>
     constexpr auto resize(ctll::list<Ts...> = {})
     {

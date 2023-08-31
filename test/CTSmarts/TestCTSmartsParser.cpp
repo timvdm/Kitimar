@@ -1,6 +1,8 @@
 #include <Kitimar/CTSmarts/CTSmarts.hpp>
 #include <catch2/catch_test_macros.hpp>
 
+#include "../Test.hpp"
+
 using namespace Kitimar;
 using namespace Kitimar::CTSmarts;
 
@@ -289,11 +291,69 @@ TEST_CASE("TotalH")
 
 TEST_CASE("ImplicitH")
 {
-    test_atom_expr<"[h]",  ImplicitH<1> >();
+    test_atom_expr<"[h]",  HasImplicitH >();
     test_atom_expr<"[h0]", ImplicitH<0> >();
     test_atom_expr<"[h1]", ImplicitH<1> >();
     test_atom_expr<"[h3]", ImplicitH<3> >();
 }
+
+template<typename Expr, typename Expected>
+void test_default_implicit_h()
+{
+    auto atoms = impl::replaceExpr(HasImplicitH{}, ImplicitH<1>{}, Expr{});
+    static_assert(std::is_same_v<decltype(atoms), Expected>);
+}
+
+TEST_CASE("DefaultImplicitH")
+{
+    test_default_implicit_h<HasImplicitH, ImplicitH<1>>();
+    test_default_implicit_h<Not<HasImplicitH>, Not<ImplicitH<1>>>();
+    test_default_implicit_h<Or<HasImplicitH>, Or<ImplicitH<1>>>();
+    test_default_implicit_h<And<HasImplicitH>, And<ImplicitH<1>>>();
+    test_default_implicit_h<ctll::list<HasImplicitH>, ctll::list<ImplicitH<1>>>();
+    test_default_implicit_h<ctll::list<Or<HasImplicitH>>, ctll::list<Or<ImplicitH<1>>>>();
+
+    test_default_implicit_h<
+            ctll::list<AnyAtom, HasImplicitH, Not<HasImplicitH>, And<AnyAtom, Or<HasImplicitH, And<AnyAtom, HasImplicitH>>>>,
+            ctll::list<AnyAtom, ImplicitH<1>, Not<ImplicitH<1>>, And<AnyAtom, Or<ImplicitH<1>, And<AnyAtom, ImplicitH<1>>>>>
+    >();
+}
+
+
+template<typename Expr, typename Query, bool expected>
+void test_contains_atom_expr()
+{
+    //constexpr auto found = impl::containsExpr(Expr{}, Query{}, AtomExprTag{});
+    constexpr auto found = impl::containsExpr(Query{}, Expr{});
+    static_assert(found == expected);
+}
+
+TEST_CASE("TransformExpr")
+{
+    using H = AliphaticAtom<1>;
+    using C = AliphaticAtom<6>;
+    using N = AliphaticAtom<7>;
+
+    test_contains_atom_expr<C, C, true>();
+    test_contains_atom_expr<C, N, false>();
+    test_contains_atom_expr<Not<C>, C, true>();
+    test_contains_atom_expr<And<C>, C, true>();
+    test_contains_atom_expr<Or<C>, C, true>();
+    test_contains_atom_expr<And<Not<C>>, C, true>();
+    test_contains_atom_expr<Not<And<C>>, C, true>(); //
+    test_contains_atom_expr<Or<Not<C>>, C, true>();
+    test_contains_atom_expr<Not<Or<C>>, C, true>(); //
+    test_contains_atom_expr<And<Or<C>>, C, true>();
+    test_contains_atom_expr<Or<And<C>>, C, true>(); //
+
+    test_contains_atom_expr<H, H, true>();
+    test_contains_atom_expr<Atom<0, H>, H, true>();
+    test_contains_atom_expr<ctll::list<Atom<0, H>>, H, true>();
+
+    //test_contains_atom_expr<Smarts<"[H]">::atoms, H, true>();
+}
+
+
 
 TEST_CASE("CyclicAtom")
 {
@@ -531,10 +591,10 @@ template<typename T>
 struct identify_type;
 
 template<typename Expr>
-using R1 = BasicSmarts<ctll::list<Atom<0, Expr>>>;
+using R1 = BasicSmarts<ctll::list<Atom<0, Expr>>, ctll::empty_list, ctll::empty_list>;
 
 template<typename Expr1, typename BondExpr, typename Expr2>
-using R2 = BasicSmarts<ctll::list<Atom<0, Expr1>, Atom<1, Expr2>>, ctll::list<Bond<0, 0, 1, BondExpr>>>;
+using R2 = BasicSmarts<ctll::list<Atom<0, Expr1>, Atom<1, Expr2>>, ctll::list<Bond<0, 0, 1, BondExpr>>, ctll::empty_list>;
 
 template<bool Component = false, typename Recursive = ctll::empty_list, int Branch = 0>
 using P = SmartsGrammar::Parenthesis<Component, Recursive, Branch>;
@@ -563,14 +623,16 @@ TEST_CASE("Recursive")
 
     test_atom_expr<"[$([CX4,c]=S),$([CX4,c]C(=S)[CX4,c])]",
             Or<BasicSmarts<ctll::list<Atom<0, Or<And<AliphaticAtom<6>, Connectivity<4> >, AromaticAtom<6> > >,
-                                              Atom<1, AliphaticAtom<16> > >,
-                                   ctll::list<Bond<0, 0, 1, BondOrder<2> > > >,
+                                                 Atom<1, AliphaticAtom<16> > >,
+                                      ctll::list<Bond<0, 0, 1, BondOrder<2> > >,
+                                      ctll::empty_list>,
                        BasicSmarts<ctll::list<Atom<0, Or<And<AliphaticAtom<6>, Connectivity<4> >, AromaticAtom<6> > >,
                                               Atom<1, AliphaticAtom<6> >, Atom<2, AliphaticAtom<16> >,
                                               Atom<3, Or<And<AliphaticAtom<6>, Connectivity<4> >, AromaticAtom<6> > > >,
                                    ctll::list<Bond<0, 0, 1, ImplicitBond>,
                                               Bond<1, 1, 2, BondOrder<2> >,
-                                              Bond<2, 1, 3, ImplicitBond> > > >
+                                              Bond<2, 1, 3, ImplicitBond> >,
+                                   ctll::empty_list > >
     >();
 }
 

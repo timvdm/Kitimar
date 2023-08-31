@@ -14,14 +14,14 @@ namespace Kitimar::CTSmarts {
     template <ctll::fixed_string SMARTS, typename Config = DefaultConfig, Molecule::Molecule Mol>
     auto capture(Mol &mol)
     {
-        auto smarts = Smarts<SMARTS>{};
+        auto smarts = Config::transformSmarts(Smarts<SMARTS>{});
         if constexpr (smarts.isSingleAtom) {
             // Optimize single atom SMARTS
             for (auto atom : get_atoms(mol))
                 if (impl::singleAtomMatch(smarts, mol, atom))
                     return std::make_tuple(true, atom);
             return std::make_tuple(false, null_atom(mol));
-        } else if constexpr (Config::specialize && smarts.isSingleBond) {
+        } else if constexpr ((Config::specialize & Specialize::Bond) && smarts.isSingleBond) {
             // Optimize single bond SMARTS
             for (auto bond : get_bonds(mol)) {
                 auto matchType = impl::singleBondMatch(smarts, mol, bond);
@@ -46,7 +46,7 @@ namespace Kitimar::CTSmarts {
     template <ctll::fixed_string SMARTS, typename Config = DefaultConfig, Molecule::Molecule Mol>
     auto capture_atom(Mol &mol, const auto &atom)
     {
-        auto smarts = Smarts<SMARTS>{};
+        auto smarts = Config::transformSmarts(Smarts<SMARTS>{});
         static_assert(!smarts.isSingleAtom, "Use CTSmarts::match_atom<\"SMARTS\">(mol, atom) to check for a single match.");
         auto iso = Isomorphism<Mol, decltype(smarts), SearchType::Single, SeedType::Atom, Config>{};
         constexpr auto captureSet = captureMapping(smarts);
@@ -63,7 +63,7 @@ namespace Kitimar::CTSmarts {
     template <ctll::fixed_string SMARTS, typename Config = DefaultConfig, Molecule::Molecule Mol>
     auto capture_bond(Mol &mol, const auto &atom)
     {
-        auto smarts = Smarts<SMARTS>{};
+        auto smarts = Config::transformSmarts(Smarts<SMARTS>{});
         static_assert(!smarts.isSingleAtom, "Use CTSmarts::match_atom<\"SMARTS\">(mol, atom) to check for a single match.");
         auto iso = Isomorphism<Mol, decltype(smarts), SearchType::Single, SeedType::Bond, Config>{};
         constexpr auto captureSet = captureMapping(smarts);

@@ -63,8 +63,11 @@ TEST_CASE("Match")
     TEST_MATCH("COc1c2ccoc2cc2oc(C)cc(=O)c12", "[cD3H0;r6;R2][*;r5,r6;R1]");
     TEST_MATCH("COc1c2ccoc2cc2oc(C)cc(=O)c12", "[*;r5,r6;R1][cD3H0;r6;R2]");
     TEST_MATCH("COc1c2ccoc2cc2oc(C)cc(=O)c12", "[cD3H0;r6;R2][*;r5,r6;R1][cD3H0;r6;R2]");
+}
 
-
+TEST_CASE("Debug")
+{
+    /*
     auto mol = Toolkit::readSmiles<Toolkit::rdkit>("COc1c2ccoc2cc2oc(C)cc(=O)c12");
 
     // rdkit
@@ -97,5 +100,5 @@ TEST_CASE("Match")
     }
 
     auto smarts = ctse::Smarts<"[cD3H0;r6;R2][*;r5,r6;R1][cD3H0;r6;R2]">{};
-
+    */
 }

@@ -129,7 +129,7 @@ namespace Kitimar {
             inline auto openbabelSmartsAll(std::string_view SMARTS, const OpenBabel::OBMol &mol, bool unique)
             {
                 OpenBabel::OBSmartsPattern smarts;
-                smarts.Init(Util::toString(SMARTS));
+                smarts.Init(std::string(SMARTS));
                 smarts.Match(const_cast<OpenBabel::OBMol&>(mol));
                 return unique ? smarts.GetUMapList() : smarts.GetMapList();
             }
@@ -140,7 +140,7 @@ namespace Kitimar {
         inline auto match<openbabel, OpenBabel::OBMol>(std::string_view SMARTS, const OpenBabel::OBMol &mol)
         {
             OpenBabel::OBSmartsPattern smarts;
-            smarts.Init(Util::toString(SMARTS));
+            smarts.Init(std::string(SMARTS));
             return smarts.HasMatch(const_cast<OpenBabel::OBMol&>(mol));
         }
 
@@ -148,7 +148,7 @@ namespace Kitimar {
         inline auto map<openbabel, OpenBabel::OBMol>(std::string_view SMARTS, const OpenBabel::OBMol &mol)
         {
             OpenBabel::OBSmartsPattern smarts;
-            smarts.Init(Util::toString(SMARTS));
+            smarts.Init(std::string(SMARTS));
             auto found = smarts.Match(const_cast<OpenBabel::OBMol&>(mol));
             if (found) {
                 auto maps = smarts.GetMapList();

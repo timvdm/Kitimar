@@ -14,7 +14,7 @@ namespace Kitimar::CTSmarts {
     constexpr auto count(Mol &mol, SearchTypeTag<M> = {})
     {
         static_assert(M != SearchType::Single, "Use CTSmarts::contains<\"SMARTS\">(mol) to check for a single match.");
-        auto smarts = Smarts<SMARTS>{};
+        auto smarts = Config::transformSmarts(Smarts<SMARTS>{});
         if constexpr (smarts.isSingleAtom) {
             // Optimize single atom SMARTS
             auto n = 0;
@@ -22,7 +22,7 @@ namespace Kitimar::CTSmarts {
                 if (impl::singleAtomMatch(smarts, mol, atom))
                     ++n;
             return n;
-        } else if constexpr (Config::specialize && smarts.isSingleBond) {
+        } else if constexpr ((Config::specialize & Specialize::Bond) && smarts.isSingleBond) {
             // Optimize single bond SMARTS
             auto n = 0;
             for (auto bond : get_bonds(mol)) {
@@ -57,7 +57,7 @@ namespace Kitimar::CTSmarts {
     template<ctll::fixed_string SMARTS, SearchType M = SearchType::Unique, typename Config = DefaultConfig, Molecule::Molecule Mol>
     constexpr auto count_atom(Mol &mol, const auto &atom, SearchTypeTag<M> = {})
     {
-        auto smarts = Smarts<SMARTS>{};
+        auto smarts = Config::transformSmarts(Smarts<SMARTS>{});
         if constexpr (smarts.isSingleAtom)
             return match_atom<SMARTS, Config>(mol, atom) ? 1 : 0;
         else {
@@ -83,9 +83,9 @@ namespace Kitimar::CTSmarts {
     template<ctll::fixed_string SMARTS, SearchType M = SearchType::Unique, typename Config = DefaultConfig, Molecule::Molecule Mol>
     constexpr auto count_bond(Mol &mol, const auto &bond, SearchTypeTag<M> = {})
     {
-        auto smarts = Smarts<SMARTS>{};
+        auto smarts = Config::transformSmarts(Smarts<SMARTS>{});
         static_assert(smarts.numBonds, "There should at least be one bond in the SMARTS expression.");
-        if constexpr (Config::specialize && smarts.isSingleBond) {
+        if constexpr ((Config::specialize & Specialize::Bond) && smarts.isSingleBond) {
             // Optimize single bond SMARTS
             if constexpr (M == SearchType::Unique) {
                 if (impl::singleBondMatch(smarts, mol, bond))

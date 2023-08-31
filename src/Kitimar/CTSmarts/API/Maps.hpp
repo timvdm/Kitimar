@@ -15,7 +15,7 @@ namespace Kitimar::CTSmarts {
     constexpr auto maps(Mol &mol, SearchTypeTag<M> = {})
     {
         static_assert(M != SearchType::Single, "Use CTSmarts::map<\"SMARTS\">(mol) to check for a single match.");
-        auto smarts = Smarts<SMARTS>{};
+        auto smarts = Config::transformSmarts(Smarts<SMARTS>{});
         using Maps = IsomorphismMaps<decltype(get_index(mol, get_atom(mol, 0))), smarts.numAtoms>;
         using Map = Maps::value_type;
 
@@ -27,7 +27,7 @@ namespace Kitimar::CTSmarts {
                 if (impl::singleAtomMatch(smarts, mol, atom))
                     maps.push_back(Map{get_index(mol, atom)});
             return maps;
-        } else if constexpr (Config::specialize && smarts.isSingleBond) {
+        } else if constexpr ((Config::specialize & Specialize::Bond) && smarts.isSingleBond) {
             // Optimize single bond SMARTS
             Maps maps;
             maps.reserve(num_bonds(mol));
@@ -66,7 +66,7 @@ namespace Kitimar::CTSmarts {
     template<ctll::fixed_string SMARTS, SearchType M = SearchType::Unique, typename Config = DefaultConfig, Molecule::Molecule Mol>
     constexpr auto maps_atom(Mol &mol, const auto &atom, SearchTypeTag<M> SearchType = {})
     {
-        auto smarts = Smarts<SMARTS>{};
+        auto smarts = Config::transformSmarts(Smarts<SMARTS>{});
         static_assert(M != SearchType::Single && !smarts.isSingleAtom,
                     "Use CTSmarts::map_atom<\"SMARTS\">(mol, atom) to check for a single match.");
         auto iso = Isomorphism<Mol, decltype(smarts), M, SeedType::Atom, Config>{};
@@ -90,7 +90,7 @@ namespace Kitimar::CTSmarts {
     template<ctll::fixed_string SMARTS, SearchType M = SearchType::Unique, typename Config = DefaultConfig, Molecule::Molecule Mol>
     constexpr auto maps_bond(Mol &mol, const auto &bond, SearchTypeTag<M> SearchType = {})
     {
-        auto smarts = Smarts<SMARTS>{};
+        auto smarts = Config::transformSmarts(Smarts<SMARTS>{});
         static_assert(M != SearchType::Single && !smarts.isSingleAtom /*&& !smarts.isSingleBond*/,
                 "Use CTSmarts::map_bond<\"SMARTS\">(mol, bond) to check for a single match.");
         auto iso = Isomorphism<Mol, decltype(smarts), M, SeedType::Bond, Config>{};

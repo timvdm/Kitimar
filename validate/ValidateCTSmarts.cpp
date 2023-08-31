@@ -24,12 +24,13 @@ void toolkit_validate_basic()
     }
 }
 
-TEST_CASE("rdkit_sqc")
+TEST_CASE("rdkit_basic")
 {
     toolkit_validate_basic<Toolkit::rdkit>();
 }
 
-TEST_CASE("openbabel_sqc")
+
+TEST_CASE("openbabel_basic")
 {
     toolkit_validate_basic<Toolkit::openbabel>();
 }
