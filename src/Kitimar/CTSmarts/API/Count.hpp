@@ -10,7 +10,7 @@ namespace Kitimar::CTSmarts {
 
     // ctse::count<"SMARTS">(mol, ctse::[Unique, All]) -> std::integeral
 
-    template<ctll::fixed_string SMARTS, SearchType M = SearchType::Unique, typename Config = DefaultConfig, Molecule::Molecule Mol>
+    template<ctll::fixed_string SMARTS, typename Config = DefaultConfig, SearchType M = SearchType::Unique, Molecule::Molecule Mol>
     constexpr auto count(const Mol &mol, SearchTypeTag<M> = {})
     {
         static_assert(M != SearchType::Single, "Use CTSmarts::contains<\"SMARTS\">(mol) to check for a single match.");
@@ -54,7 +54,7 @@ namespace Kitimar::CTSmarts {
 
     // ctse::count_atom<"SMARTS">(mol, atom, ctse::[Unique, All]) -> std::integeral
 
-    template<ctll::fixed_string SMARTS, SearchType M = SearchType::Unique, typename Config = DefaultConfig, Molecule::Molecule Mol>
+    template<ctll::fixed_string SMARTS, typename Config = DefaultConfig, SearchType M = SearchType::Unique, Molecule::Molecule Mol>
     constexpr auto count_atom(const Mol &mol, const auto &atom, SearchTypeTag<M> = {})
     {
         auto smarts = Config::transformSmarts(Smarts<SMARTS>{});
@@ -80,7 +80,7 @@ namespace Kitimar::CTSmarts {
 
     // ctse::count_bond<"SMARTS">(mol, bond, ctse::[Unique, All]) -> std::integeral
 
-    template<ctll::fixed_string SMARTS, SearchType M = SearchType::Unique, typename Config = DefaultConfig, Molecule::Molecule Mol>
+    template<ctll::fixed_string SMARTS, typename Config = DefaultConfig, SearchType M = SearchType::Unique, Molecule::Molecule Mol>
     constexpr auto count_bond(const Mol &mol, const auto &bond, SearchTypeTag<M> = {})
     {
         auto smarts = Config::transformSmarts(Smarts<SMARTS>{});

@@ -215,7 +215,7 @@ namespace Kitimar::CTSmarts {
 #define CTSMARTS_API_SEARCH(function, Search, search) \
     template<ctll::fixed_string SMARTS, typename Config = DefaultConfig> \
     constexpr auto function##_##search(const Molecule::Molecule auto &mol) \
-    { return function<SMARTS, SearchType::Search, Config>(mol); }
+    { return function<SMARTS, Config, SearchType::Search>(mol); }
 
 #define CTSMARTS_API_UNIQUE(function) CTSMARTS_API_SEARCH(function, Unique, unique)
 #define CTSMARTS_API_ALL(function) CTSMARTS_API_SEARCH(function, All, all)
@@ -225,7 +225,7 @@ namespace Kitimar::CTSmarts {
 #define CTSMARTS_API_ARG_SEARCH(function, arg, Search, search) \
     template<ctll::fixed_string SMARTS, typename Config = DefaultConfig> \
     constexpr auto function##_##arg##_##search(const Molecule::Molecule auto &mol, const auto &arg) \
-    { return function##_##arg<SMARTS, SearchType::Search, Config>(mol, arg); }
+    { return function##_##arg<SMARTS, Config, SearchType::Search>(mol, arg); }
 
 #define CTSMARTS_API_ATOM_UNIQUE(function) CTSMARTS_API_ARG_SEARCH(function, atom, Unique, unique)
 #define CTSMARTS_API_BOND_UNIQUE(function) CTSMARTS_API_ARG_SEARCH(function, bond, Unique, unique)
@@ -251,10 +251,10 @@ namespace Kitimar::CTSmarts {
 // function(mol, arg, search) -> function_atom(mol, arg, search)
 
 #define CTSMARTS_API_OVERLOAD_ARG_SEARCH(function, Arg, arg) \
-    template<ctll::fixed_string SMARTS, SearchType M = SearchType::Unique, typename Config = DefaultConfig, Molecule::Molecule Mol> \
+    template<ctll::fixed_string SMARTS, typename Config = DefaultConfig, SearchType M = SearchType::Unique, Molecule::Molecule Mol> \
     requires (!Molecule::MoleculeTraits<Mol>::SameAtomBondType) \
     constexpr auto function(const Mol &mol, typename Molecule::MoleculeTraits<Mol>::Arg arg, SearchTypeTag<M> searchType = {}) \
-    { return function##_##arg<SMARTS, M, Config>(mol, arg, searchType); }
+    { return function##_##arg<SMARTS, Config, M>(mol, arg, searchType); }
 
 #define CTSMARTS_API_OVERLOAD_ATOM_SEARCH(function) CTSMARTS_API_OVERLOAD_ARG_SEARCH(function, Atom, atom)
 #define CTSMARTS_API_OVERLOAD_BOND_SEARCH(function) CTSMARTS_API_OVERLOAD_ARG_SEARCH(function, Bond, bond)
