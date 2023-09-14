@@ -48,7 +48,7 @@ namespace Kitimar::CTSmarts {
     template<ctll::fixed_string SMARTS>
     bool requiresExplicitHydrogens() noexcept
     {
-        return impl::containsExpr(AliphaticAtom<1>{}, Smarts<SMARTS>::atoms);
+        return containsExpr(AliphaticAtom<1>{}, Smarts<SMARTS>::atoms);
     }
 
 
@@ -82,20 +82,20 @@ namespace Kitimar::CTSmarts {
 
             // match
 
-            bool match(Mol &mol)
+            bool match(const Mol &mol)
             {
                 matchDfs(mol, nullptr);
                 return isDone();
             }
 
-            bool matchAtom(Mol &mol, const auto &atom)
+            bool matchAtom(const Mol &mol, const auto &atom)
             {
                 static_assert(SeedT == SeedType::Atom);
                 matchDfs(mol, nullptr, get_index(mol, atom));
                 return isDone();
             }
 
-            bool matchBond(Mol &mol, const auto &bond)
+            bool matchBond(const Mol &mol, const auto &bond)
             {
                 static_assert(SeedT == SeedType::Bond);
                 reset(mol);
@@ -122,7 +122,7 @@ namespace Kitimar::CTSmarts {
 
             // count
 
-            auto count(Mol &mol, int startAtom = -1)
+            auto count(const Mol &mol, int startAtom = -1)
             {
                 auto n = 0;
                 auto cb = [&n] (const auto &array) { ++n; };
@@ -130,13 +130,13 @@ namespace Kitimar::CTSmarts {
                 return n;
             }
 
-            auto countAtom(Mol &mol, const auto &atom)
+            auto countAtom(const Mol &mol, const auto &atom)
             {
                 static_assert(SeedT == SeedType::Atom);
                 return count(mol, get_index(mol, atom));
             }
 
-            auto countBond(Mol &mol, const auto &bond)
+            auto countBond(const Mol &mol, const auto &bond)
             {
                 static_assert(SeedT == SeedType::Bond);
                 reset(mol);
@@ -161,19 +161,19 @@ namespace Kitimar::CTSmarts {
 
             // single
 
-            auto single(Mol &mol, int startAtom = -1)
+            auto single(const Mol &mol, int startAtom = -1)
             {
                 matchDfs(mol, nullptr, startAtom);
                 return std::make_tuple(isDone(), m_map.map());
             }
 
-            auto singleAtom(Mol &mol, const auto &atom)
+            auto singleAtom(const Mol &mol, const auto &atom)
             {
                 static_assert(SeedT == SeedType::Atom);
                 return single(mol, get_index(mol, atom));
             }
 
-            auto singleBond(Mol &mol, const auto &bond)
+            auto singleBond(const Mol &mol, const auto &bond)
             {
                 static_assert(SeedT == SeedType::Bond);
                 reset(mol);
@@ -203,7 +203,7 @@ namespace Kitimar::CTSmarts {
 
             // all
 
-            Maps all(Mol &mol, int startAtom = -1)
+            Maps all(const Mol &mol, int startAtom = -1)
             {
                 Maps maps;
                 auto cb = [&maps] (const auto &map) {
@@ -213,13 +213,13 @@ namespace Kitimar::CTSmarts {
                 return maps;
             }
 
-            auto allAtom(Mol &mol, const auto &atom)
+            auto allAtom(const Mol &mol, const auto &atom)
             {
                 static_assert(SeedT == SeedType::Atom);
                 return all(mol, get_index(mol, atom));
             }
 
-            auto allBond(Mol &mol, const auto &bond)
+            auto allBond(const Mol &mol, const auto &bond)
             {
                 static_assert(SeedT == SeedType::Bond);
                 reset(mol);
@@ -258,7 +258,7 @@ namespace Kitimar::CTSmarts {
             }
 
 
-            bool matchAtom(Mol &mol, const auto &atom, auto queryAtom) const noexcept
+            bool matchAtom(const Mol &mol, const auto &atom, auto queryAtom) const noexcept
             {
                 if (get_degree(mol, atom) < query.degrees[queryAtom.index])
                     return false;
@@ -266,7 +266,7 @@ namespace Kitimar::CTSmarts {
                 return matchAtomExpr(mol, atom, queryAtom.expr);
             }
 
-            bool matchBond(Mol &mol, const auto &bond, int queryBondIndex, auto queryBond) const noexcept
+            bool matchBond(const Mol &mol, const auto &bond, int queryBondIndex, auto queryBond) const noexcept
             {
                 if constexpr (queryBond.isCyclic)
                     if (!is_ring_bond(mol, bond))
@@ -353,7 +353,7 @@ namespace Kitimar::CTSmarts {
 
 
             template<typename Bonds = decltype(query.bonds)>
-            void matchDfs(Mol &mol, auto callback, int startAtom = -1, Bonds bonds = query.bonds)
+            void matchDfs(const Mol &mol, auto callback, int startAtom = -1, Bonds bonds = query.bonds)
             {
                 if (isDone())
                     return;
@@ -464,7 +464,7 @@ namespace Kitimar::CTSmarts {
                 }
             }
 
-            constexpr auto reset(Mol &mol) noexcept
+            constexpr auto reset(const Mol &mol) noexcept
             {
                 //debug("reset()");
                 setDone(false);
@@ -482,7 +482,7 @@ namespace Kitimar::CTSmarts {
             }
 
             template<typename Callback>
-            constexpr auto addMapping(Molecule::Molecule auto &mol, Callback callback) noexcept
+            constexpr auto addMapping(const Mol &mol, Callback callback) noexcept
             {
                 if constexpr (SearchT == SearchType::Single)
                     setDone(true);
@@ -525,7 +525,7 @@ namespace Kitimar::CTSmarts {
                 m_map.fill(-1);
             }
 
-            auto count(Mol &mol, int startAtom = - 1)
+            auto count(const Mol &mol, int startAtom = - 1)
             {
                 auto n = 0;
                 auto cb = [&n] (const auto &array) { ++n; };
@@ -537,7 +537,7 @@ namespace Kitimar::CTSmarts {
 
         private:
             template<typename Bonds = decltype(smarts.bonds)>
-            void matchCentralAtom(Mol &mol, auto callback, int startAtom = -1, Bonds bonds = smarts.bonds)
+            void matchCentralAtom(const Mol &mol, auto callback, int startAtom = -1, Bonds bonds = smarts.bonds)
             {
                 auto queryBond = ctll::front(bonds);
                 auto querySource = queryBond.source;

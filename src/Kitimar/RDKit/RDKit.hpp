@@ -318,13 +318,18 @@ namespace RDKit {
         });
     }
 
+    inline auto get_nbr(const RDKit::ROMol &mol, const RDKit::Bond *bond, const RDKit::Atom *atom) noexcept
+    {
+        return atom->getIdx() == bond->getBeginAtomIdx() ? bond->getEndAtom() : bond->getBeginAtom();
+    }
+
     // AdjacentAtomList
 
     inline auto get_nbrs(const RDKit::ROMol &mol, const RDKit::Atom *atom)
     {
         assert(atom);
-        return get_bonds(mol, atom) | std::views::transform([atom] (const RDKit::Bond *bond) -> const RDKit::Atom* {
-            return bond->getOtherAtom(atom);
+        return get_bonds(mol, atom) | std::views::transform([&mol, atom] (const RDKit::Bond *bond) -> const RDKit::Atom* {
+            return get_nbr(mol, bond, atom);
         });
     }
 
@@ -378,12 +383,16 @@ namespace RDKit {
 
     inline auto get_implicit_hydrogens(const RDKit::ROMol &mol, const RDKit::Atom *atom)
     {
-        return atom->getTotalNumHs(false);
+        return atom->getNumExplicitHs() + atom->getImplicitValence();
     }
 
     inline auto get_total_hydrogens(const RDKit::ROMol &mol, const RDKit::Atom *atom)
     {
-        return atom->getTotalNumHs(true);
+        auto count = 0;
+        for (auto nbr : get_nbrs(mol, atom))
+            if (get_element(mol, nbr) == 1)
+                ++count;
+        return count + get_implicit_hydrogens(mol, atom);
     }
 
     // RingLayer

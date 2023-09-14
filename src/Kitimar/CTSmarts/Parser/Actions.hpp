@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Grammar.hpp"
-#include "../AST.hpp"
+#include "../AST/AST.hpp"
 #include "../Util/Ctll.hpp"
 
 #include <cctype>

@@ -12,7 +12,7 @@ namespace Kitimar::CTSmarts {
     // ctse::match<"SMARTS">(mol) -> bool
 
     template<ctll::fixed_string SMARTS, typename Config = DefaultConfig, Molecule::Molecule Mol>
-    constexpr bool match(Mol &mol)
+    constexpr bool match(const Mol &mol)
     {
         auto smarts = Config::transformSmarts(Smarts<SMARTS>{});
         if constexpr (smarts.isSingleAtom) {
@@ -42,7 +42,7 @@ namespace Kitimar::CTSmarts {
     namespace impl {
 
         template<typename SmartsT, typename Config, Molecule::Molecule Mol>
-        constexpr bool match_atom(Mol &mol, const auto &atom)
+        constexpr bool match_atom(const Mol &mol, const auto &atom)
         {
             auto smarts = Config::transformSmarts(SmartsT{}); // FIXME: replaceExpr(BasicSmarts<...>)
             if constexpr (smarts.isSingleAtom) {
@@ -68,7 +68,7 @@ namespace Kitimar::CTSmarts {
     } // namespace impl
 
     template<ctll::fixed_string SMARTS, typename Config = DefaultConfig, Molecule::Molecule Mol>
-    constexpr bool match_atom(Mol &mol, const auto &atom)
+    constexpr bool match_atom(const Mol &mol, const auto &atom)
     {
         return impl::match_atom<Smarts<SMARTS>, Config, Mol>(mol, atom);
 
@@ -81,7 +81,7 @@ namespace Kitimar::CTSmarts {
     // ctse::match_bond<"SMARTS">(mol, bond) -> bool
 
     template<ctll::fixed_string SMARTS, typename Config = DefaultConfig, Molecule::Molecule Mol>
-    constexpr bool match_bond(Mol &mol, const auto &bond)
+    constexpr bool match_bond(const Mol &mol, const auto &bond)
     {
         auto smarts = Config::transformSmarts(Smarts<SMARTS>{});
         static_assert(smarts.numBonds, "There should at least be one bond in the SMARTS expression.");

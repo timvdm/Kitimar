@@ -196,9 +196,10 @@ namespace OpenBabel {
         return mol.NumAtoms();
     }
 
-    inline auto get_atoms(OpenBabel::OBMol &mol)
+    inline auto get_atoms(const OpenBabel::OBMol &mol)
     {
-        return std::ranges::subrange(mol.BeginAtoms(), mol.EndAtoms());
+        auto &m = const_cast<OpenBabel::OBMol&>(mol);
+        return std::ranges::subrange(m.BeginAtoms(), m.EndAtoms());
     }
 
     inline auto get_atom(const OpenBabel::OBMol &mol, auto index)
@@ -231,9 +232,10 @@ namespace OpenBabel {
         return mol.NumBonds();
     }
 
-    inline auto get_bonds(OpenBabel::OBMol &mol)
+    inline auto get_bonds(const OpenBabel::OBMol &mol)
     {
-        return std::ranges::subrange(mol.BeginBonds(), mol.EndBonds());
+        auto &m = const_cast<OpenBabel::OBMol&>(mol);
+        return std::ranges::subrange(m.BeginBonds(), m.EndBonds());
     }
 
     inline auto get_bond(const OpenBabel::OBMol &mol, auto index)
@@ -330,7 +332,12 @@ namespace OpenBabel {
 
     inline auto get_total_hydrogens(const OpenBabel::OBMol &mol, OpenBabel::OBAtom *atom)
     {
-        return atom->ExplicitHydrogenCount() + atom->GetImplicitHCount();
+        // Avoid function call overhead to slow atom->ExplicitHydrogenCount()
+        auto count = 0;
+        for (auto nbr : get_nbrs(mol, atom))
+            if (get_element(mol, nbr) == 1)
+                ++count;
+        return count + atom->GetImplicitHCount();
     }
 
     // RingLayer

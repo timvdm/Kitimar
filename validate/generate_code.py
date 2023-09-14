@@ -76,7 +76,8 @@ def generate_part_files(sqc_path):
 
 def generate_validate_file(part_names):
     with open('ValidateParts.cpp', 'w') as f:
-        f.write('#include <Kitimar/Molecule/Molecule.hpp>"\n')
+        f.write('#include <Kitimar/RDKit/RDKit.hpp>\n')
+        f.write('#include <Kitimar/OpenBabel/OpenBabel.hpp>\n')
         f.write('\n')
         f.write('using namespace Kitimar;\n')
         f.write('\n')
@@ -121,6 +122,7 @@ def generate_cmake(part_names):
         f.write('set(ValidateCTSmarts_PART_SRCS\n')
         for part_name in part_names:
             f.write('    {}.cpp\n'.format(part_name))
+        f.write('    ValidateParts.cpp\n'.format(part_name))
         f.write(')\n')
 
 

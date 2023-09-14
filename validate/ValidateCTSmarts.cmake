@@ -381,4 +381,5 @@ set(ValidateCTSmarts_PART_SRCS
     Rarey_smarts_part_245.cpp
     Rarey_smarts_part_246.cpp
     Rarey_smarts_part_247.cpp
+    ValidateParts.cpp
 )

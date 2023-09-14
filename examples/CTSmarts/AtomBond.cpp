@@ -5,18 +5,18 @@
 
 using namespace Kitimar;
 
-bool isCarbonOfDegree3(auto &mol, auto atom)
+bool isCarbonOfDegree3(const auto &mol, auto atom)
 {
     // Optimized case: single atom (requires no runtime memory)
     return CTSmarts::match_atom<"[CD3]">(mol, atom);
 }
 
-bool isCarboxylCarbon(auto &mol, auto atom)
+bool isCarboxylCarbon(const auto &mol, auto atom)
 {
     return CTSmarts::match_atom<"C(=O)O">(mol, atom); // atom matches first SMARTS atom
 }
 
-bool isCarboxylDoubleBond(auto &mol, auto bond)
+bool isCarboxylDoubleBond(const auto &mol, auto bond)
 {
     return CTSmarts::match_bond<"O=CO">(mol, bond); // bond matches first SMARTS bond
 }

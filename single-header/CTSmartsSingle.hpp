@@ -14,7 +14,7 @@ namespace Kitimar::CTSmarts {
         /**
          * @brief Convert atom index map to atom map using capture set.
          */
-        auto toCapture(Molecule::Molecule auto &mol, auto smarts,
+        auto toCapture(const auto &mol, auto smarts,
                        const auto &captureSet, bool found, const auto &map)
         {
             using Atom = decltype(get_atom(mol, 0));
@@ -38,7 +38,7 @@ namespace Kitimar::CTSmarts {
             }
         }
 
-        auto toCaptures(Molecule::Molecule auto &mol, const auto &iso,
+        auto toCaptures(const auto &mol, const auto &iso,
                         const auto &captureSet, const auto &maps) noexcept
         {
             using Atom = decltype(get_atom(mol, 0));
@@ -50,13 +50,13 @@ namespace Kitimar::CTSmarts {
             return std::vector<std::array<Atom, M>>{r.begin(), r.end()};
         }
 
-        auto captureMatchAtoms(Molecule::Molecule auto &mol, auto smarts,
+        auto captureMatchAtoms(const auto &mol, auto smarts,
                                const auto &captureSet, bool found, const auto &map)
         {
             return std::tuple_cat(std::make_tuple(found), toCapture(mol, smarts, captureSet, found, map));
         }
 
-        constexpr std::size_t captureHash(auto &mol, const auto &capture)
+        constexpr std::size_t captureHash(const auto &mol, const auto &capture)
         {
             auto atoms = std::vector<bool>(num_atoms(mol));
             for (const auto &atom : capture)
@@ -75,12 +75,12 @@ namespace Kitimar::CTSmarts {
             return n;
         }
 
-        constexpr bool singleAtomMatch(auto smarts, auto &mol, const auto &atom)
+        constexpr bool singleAtomMatch(auto smarts, const auto &mol, const auto &atom)
         {
             return matchAtomExpr(mol, atom, get<0>(smarts.atoms).expr);
         }
 
-        constexpr bool singleBondMatchHelper(auto smarts, auto &mol, const auto &bond, const auto &source, const auto &target)
+        constexpr bool singleBondMatchHelper(auto smarts, const auto &mol, const auto &bond, const auto &source, const auto &target)
         {
             return matchAtomExpr(mol, source, get<0>(smarts.atoms).expr) && matchAtomExpr(mol, target, get<1>(smarts.atoms).expr);
         }
@@ -88,7 +88,7 @@ namespace Kitimar::CTSmarts {
         // 0 -> no match
         // 1 -> source is SMARTS atom 0, target is SMARTS atom 1
         // 2 -> source is SMARTS atom 1, target is SMARTS atom 0
-        constexpr int singleBondMatch(auto smarts, auto &mol, const auto &bond)
+        constexpr int singleBondMatch(auto smarts, const auto &mol, const auto &bond)
         {
             auto source = get_source(mol, bond);
             auto target = get_target(mol, bond);
@@ -101,7 +101,7 @@ namespace Kitimar::CTSmarts {
             return 0;
         }
 
-        constexpr int singleBondCount(auto smarts, auto &mol, const auto &bond)
+        constexpr int singleBondCount(auto smarts, const auto &mol, const auto &bond)
         {
             auto source = get_source(mol, bond);
             auto target = get_target(mol, bond);
@@ -116,7 +116,7 @@ namespace Kitimar::CTSmarts {
         }
 
         template<typename Map>
-        constexpr auto singleBondMap(auto smarts, auto &mol, const auto &bond)
+        constexpr auto singleBondMap(auto smarts, const auto &mol, const auto &bond)
         {
             auto source = get_source(mol, bond);
             auto target = get_target(mol, bond);
@@ -134,7 +134,7 @@ namespace Kitimar::CTSmarts {
         }
 
         template<typename Map>
-        constexpr void singleBondMaps(auto smarts, auto &mol, const auto &bond, std::vector<Map> &maps)
+        constexpr void singleBondMaps(auto smarts, const auto &mol, const auto &bond, std::vector<Map> &maps)
         {
             auto source = get_source(mol, bond);
             auto target = get_target(mol, bond);
@@ -148,7 +148,7 @@ namespace Kitimar::CTSmarts {
                                 get_index(mol, get_source(mol, bond))});
         }
 
-        constexpr auto singleBondCapture(auto smarts, auto &mol, const auto &bond, int singleBondMatchType)
+        constexpr auto singleBondCapture(auto smarts, const auto &mol, const auto &bond, int singleBondMatchType)
         {
             constexpr auto cap = captureMapping(smarts);
             if constexpr (cap.size() == 1) {
@@ -179,7 +179,7 @@ namespace Kitimar::CTSmarts {
         }
 
         template<typename AtomMap>
-        constexpr void singleBondCaptures(auto smarts, auto &mol, const auto &bond, const auto &captureSet, std::vector<AtomMap> &maps, bool unique)
+        constexpr void singleBondCaptures(auto smarts, const auto &mol, const auto &bond, const auto &captureSet, std::vector<AtomMap> &maps, bool unique)
         {
             using IndexMap = std::array<decltype(get_index(mol, get_atom(mol, 0))), 2>;
             auto source = get_source(mol, bond);
@@ -202,7 +202,7 @@ namespace Kitimar::CTSmarts {
             }
         }
 
-        constexpr auto centralAtomMap(auto smarts, auto &mol, const auto &atom)
+        constexpr auto centralAtomMap(auto smarts, const auto &mol, const auto &atom)
         {
             std::array<int, smarts.numAtoms> map;
         }
@@ -213,7 +213,7 @@ namespace Kitimar::CTSmarts {
 
 #define CTSMARTS_API_SEARCH(function, Search, search) \
     template<ctll::fixed_string SMARTS, typename Config = DefaultConfig> \
-    constexpr auto function##_##search(Molecule::Molecule auto &mol) \
+    constexpr auto function##_##search(const Molecule::Molecule auto &mol) \
     { return function<SMARTS, SearchType::Search, Config>(mol); }
 
 #define CTSMARTS_API_UNIQUE(function) CTSMARTS_API_SEARCH(function, Unique, unique)
@@ -223,7 +223,7 @@ namespace Kitimar::CTSmarts {
 
 #define CTSMARTS_API_ARG_SEARCH(function, arg, Search, search) \
     template<ctll::fixed_string SMARTS, typename Config = DefaultConfig> \
-    constexpr auto function##_##arg##_##search(Molecule::Molecule auto &mol, const auto &arg) \
+    constexpr auto function##_##arg##_##search(const Molecule::Molecule auto &mol, const auto &arg) \
     { return function##_##arg<SMARTS, SearchType::Search, Config>(mol, arg); }
 
 #define CTSMARTS_API_ATOM_UNIQUE(function) CTSMARTS_API_ARG_SEARCH(function, atom, Unique, unique)
@@ -236,7 +236,7 @@ namespace Kitimar::CTSmarts {
 #define CTSMARTS_API_OVERLOAD_ARG(caller, callee, Arg, arg) \
     template<ctll::fixed_string SMARTS, typename Config = DefaultConfig, Molecule::Molecule Mol> \
     requires (!Molecule::MoleculeTraits<Mol>::SameAtomBondType) \
-    constexpr auto caller(Mol &mol, typename Molecule::MoleculeTraits<Mol>::Arg arg) \
+    constexpr auto caller(const Mol &mol, typename Molecule::MoleculeTraits<Mol>::Arg arg) \
     { return callee<SMARTS, Config>(mol, arg); }
 
 #define CTSMARTS_API_OVERLOAD_ATOM(function) CTSMARTS_API_OVERLOAD_ARG(function, function##_atom, Atom, atom)
@@ -252,7 +252,7 @@ namespace Kitimar::CTSmarts {
 #define CTSMARTS_API_OVERLOAD_ARG_SEARCH(function, Arg, arg) \
     template<ctll::fixed_string SMARTS, SearchType M = SearchType::Unique, typename Config = DefaultConfig, Molecule::Molecule Mol> \
     requires (!Molecule::MoleculeTraits<Mol>::SameAtomBondType) \
-    constexpr auto function(Mol &mol, typename Molecule::MoleculeTraits<Mol>::Arg arg, SearchTypeTag<M> searchType = {}) \
+    constexpr auto function(const Mol &mol, typename Molecule::MoleculeTraits<Mol>::Arg arg, SearchTypeTag<M> searchType = {}) \
     { return function##_##arg<SMARTS, M, Config>(mol, arg, searchType); }
 
 #define CTSMARTS_API_OVERLOAD_ATOM_SEARCH(function) CTSMARTS_API_OVERLOAD_ARG_SEARCH(function, Atom, atom)
@@ -801,42 +801,7 @@ namespace Kitimar::CTSmarts {
 
 } // namespace Kitimar::CTSmarts
 
-#include <ctll/list.hpp>
-
 namespace Kitimar::CTSmarts {
-
-    //
-    // Operators
-    //
-
-    template<typename Expr>
-    struct Not
-    {
-        static constexpr inline auto expr = Expr{};
-
-        constexpr Not() noexcept {}
-        constexpr Not(Expr) noexcept {}
-    };
-
-    template<typename ...Expr>
-    struct And
-    {
-        static constexpr inline auto expr = ctll::list<Expr...>{};
-
-        constexpr And() noexcept {}
-        constexpr And(Expr...) noexcept {}
-        constexpr And(ctll::list<Expr...>) noexcept {}
-    };
-
-    template<typename ...Expr>
-    struct Or
-    {
-        static constexpr inline auto expr = ctll::list<Expr...>{};
-
-        constexpr Or() noexcept {}
-        constexpr Or(Expr...) noexcept {}
-        constexpr Or(ctll::list<Expr...>) noexcept {}
-    };
 
     //
     // Atom primitives
@@ -882,6 +847,9 @@ namespace Kitimar::CTSmarts {
     // 'H' | 'H' DIGIT
     template<int N>
     struct TotalH {};
+
+    // 'h'
+    struct HasImplicitH {};
 
     // 'h' | 'h' DIGIT
     template<int N>
@@ -955,15 +923,55 @@ namespace Kitimar::CTSmarts {
     // '/?' | '\?'
     struct UpOrDownBond {};
 
-    //
-    // Graph
-    //
+} // namespace Kitimar::CTSmarts
+
+#include <ctll/list.hpp>
+
+namespace Kitimar::CTSmarts {
+
+    template<typename Expr>
+    struct Not
+    {
+        static constexpr inline auto expr = Expr{};
+
+        constexpr Not() noexcept {}
+        constexpr Not(Expr) noexcept {}
+    };
+
+    template<typename ...Expr>
+    struct And
+    {
+        static constexpr inline auto expr = ctll::list<Expr...>{};
+
+        constexpr And() noexcept {}
+        constexpr And(Expr...) noexcept {}
+        constexpr And(ctll::list<Expr...>) noexcept {}
+    };
+
+    template<typename ...Expr>
+    struct Or
+    {
+        static constexpr inline auto expr = ctll::list<Expr...>{};
+
+        constexpr Or() noexcept {}
+        constexpr Or(Expr...) noexcept {}
+        constexpr Or(ctll::list<Expr...>) noexcept {}
+    };
+
+} // namespace Kitimar::CTSmarts
+
+#include <ctll/list.hpp>
+
+namespace Kitimar::CTSmarts {
+
+    struct AtomExprTag {};
+    struct BondExprTag {};
 
     template<int Index, typename Expr>
     struct Atom
     {
         static constexpr inline auto index = Index;
-        static constexpr inline auto expr = Expr();
+        static constexpr inline auto expr = Expr{};
     };
 
     template<int Index, int Source, int Target, typename Expr>
@@ -972,25 +980,149 @@ namespace Kitimar::CTSmarts {
         static constexpr inline auto index = Index;
         static constexpr inline auto source = Source;
         static constexpr inline auto target = Target;
-        static constexpr inline auto expr = Expr();
+        static constexpr inline auto expr = Expr{};
     };
 
-    template<typename Atoms, typename Bonds = ctll::empty_list>
+    template<typename Atoms, typename Bonds, typename Classes>
     struct BasicSmarts
     {
         static constexpr inline auto atoms = Atoms{};
         static constexpr inline auto bonds = Bonds{};
+        static constexpr inline auto classes = Classes{};
         static constexpr inline auto numAtoms = ctll::size(atoms);
         static constexpr inline auto numBonds = ctll::size(bonds);
+        static constexpr inline auto numClasses = ctll::size(classes);
 
         static constexpr inline auto isSingleAtom = numAtoms == 1;
         static constexpr inline auto isSingleBond = numAtoms == 2 && numBonds == 1;
 
         consteval BasicSmarts() noexcept = default;
-        consteval BasicSmarts(Atoms, Bonds) noexcept {}
+        consteval BasicSmarts(Atoms, Bonds, Classes) noexcept {}
     };
 
-} // namespace ctsmarts
+} // namespace Kitimar::CTSmarts
+
+namespace Kitimar::CTSmarts {
+
+    namespace impl {
+
+        // Primitive
+        template<typename Query, typename Expr>
+        constexpr auto containsExprHelper(Query, Expr) noexcept
+        {
+            return std::is_same_v<Query, Expr>;
+        }
+
+        template<typename Query, typename ...Expr> constexpr auto containsExprHelper(Query, ctll::list<Expr...>) noexcept;
+        template<typename Query, typename ...Expr> constexpr auto containsExprHelper(Query, Or<Expr...> op) noexcept;
+        template<typename Query, typename ...Expr> constexpr auto containsExprHelper(Query, And<Expr...> op) noexcept;
+
+        // Not
+        template<typename Query, typename Expr>
+        constexpr auto containsExprHelper(Query, Not<Expr>) noexcept
+        {
+            return containsExprHelper(Query{}, Expr{});
+        }
+
+        // Or
+        template<typename Query, typename ...Expr>
+        constexpr auto containsExprHelper(Query, Or<Expr...> op) noexcept
+        {
+            return (containsExpr(Query{}, Expr{}) || ...);
+        }
+
+        // And
+        template<typename Query, typename ...Expr>
+        constexpr auto containsExprHelper(Query, And<Expr...> op) noexcept
+        {
+            return (containsExpr(Query{}, Expr{}) || ...);
+        }
+
+        // Atom
+        template<typename Query, int Index, typename Expr>
+        constexpr auto containsExprHelper(Query, Atom<Index, Expr>) noexcept
+        {
+            return containsExprHelper(Query{}, Expr{});
+        }
+
+        // ctll::list
+        template<typename Query, typename ...Expr>
+        constexpr auto containsExprHelper(Query, ctll::list<Expr...> l) noexcept
+        {
+            return (containsExpr(Query{}, Expr{}) || ...);
+        }
+
+    } // namespace impl
+
+    template<typename Query, typename Expr>
+    constexpr auto containsExpr(Query, Expr) noexcept
+    {
+        return impl::containsExprHelper(Query{}, Expr{});
+    }
+
+} // namespace Kitimar::CTSmarts
+
+namespace Kitimar::CTSmarts {
+
+    namespace impl {
+
+        // Primitive
+        template<typename OldExpr, typename NewExpr, typename Expr>
+        constexpr auto replaceExprHelper(OldExpr, NewExpr, Expr) noexcept
+        {
+            if constexpr (std::is_same_v<Expr, OldExpr>)
+                return NewExpr{};
+            else
+                return Expr{};
+        }
+
+        template<typename OldExpr, typename NewExpr, typename ...Expr>
+        constexpr auto replaceExprHelper(OldExpr, NewExpr, ctll::list<Expr...> l) noexcept;
+
+        // Not
+        template<typename OldExpr, typename NewExpr, typename Expr>
+        constexpr auto replaceExprHelper(OldExpr, NewExpr, Not<Expr>) noexcept
+        {
+            return Not{replaceExprHelper(OldExpr{}, NewExpr{}, Expr{})};
+        }
+
+        // Or
+        template<typename OldExpr, typename NewExpr, typename ...Expr>
+        constexpr auto replaceExprHelper(OldExpr, NewExpr, Or<Expr...> op) noexcept
+        {
+            return Or{replaceExprHelper(OldExpr{}, NewExpr{}, ctll::list<Expr...>{})};
+        }
+
+        // And
+        template<typename OldExpr, typename NewExpr, typename ...Expr>
+        constexpr auto replaceExprHelper(OldExpr, NewExpr, And<Expr...> op) noexcept
+        {
+            return And{replaceExprHelper(OldExpr{}, NewExpr{}, ctll::list<Expr...>{})};
+        }
+
+        // Atom
+        template<typename OldExpr, typename NewExpr, int Index, typename Expr>
+        constexpr auto replaceExprHelper(OldExpr, NewExpr, Atom<Index, Expr>) noexcept
+        {
+            return Atom<Index, decltype(replaceExprHelper(OldExpr{}, NewExpr{}, Expr{}))>{};
+        }
+
+        // ctll::list
+        template<typename OldExpr, typename NewExpr, typename ...Expr>
+        constexpr auto replaceExprHelper(OldExpr, NewExpr, ctll::list<Expr...> l) noexcept
+        {
+            return decltype(transform(l, [] (auto expr) { return replaceExprHelper(OldExpr{}, NewExpr{}, expr); })){};
+        }
+
+    } // namespace impl
+
+    template<typename OldExpr, typename NewExpr, typename Expr>
+    constexpr auto replaceExpr(OldExpr, NewExpr, Expr) noexcept
+    {
+        return impl::replaceExprHelper(OldExpr{}, NewExpr{}, Expr{});
+    }
+
+} // namespace Kitimar::CTSmarts
 
 namespace Kitimar::CTSmarts {
 
@@ -2027,6 +2159,7 @@ namespace Kitimar::CTSmarts {
         struct make_valence : ctll::action {};
         struct make_connectivity : ctll::action {};
         struct make_total_h : ctll::action {};
+        struct make_has_impl_h : ctll::action {};
         struct make_impl_h : ctll::action {};
         struct make_cyclic : ctll::action {};
         struct make_acyclic : ctll::action {};
@@ -2117,6 +2250,8 @@ namespace Kitimar::CTSmarts {
         // bracket atom: '[' atom_expression+ ']'
         template<typename P> static constexpr auto rule(atom<P>, ctll::term<'['>) -> ctll::push<ctll::anything, atom_expr<P>>;
 
+        template<typename P> static constexpr auto rule(atom<P>, ctll::neg_set<'B','C','N','O','P','S','F','I','b','c','n','o','p','s','*','a','A','['>) -> ctll::reject;
+
         //
         // Atom expressions (i.e. [ ... ] )
         //
@@ -2158,7 +2293,7 @@ namespace Kitimar::CTSmarts {
         // implicit hydrogens: 'h' | 'h' DIGIT
         template<typename P> static constexpr auto rule(atom_expr2<P>, ctll::term<'h'>) -> ctll::push<ctll::anything, atom_expr_impl_h<P>>;
         template<typename P> static constexpr auto rule(atom_expr_impl_h<P>, digit_chars) -> ctll::push<ctll::anything, make_impl_h, atom_expr2<P>>;
-        template<typename P> static constexpr auto rule(atom_expr_impl_h<P>, not_digit_chars) -> ctll::push<make_impl_h, atom_expr2<P>>;
+        template<typename P> static constexpr auto rule(atom_expr_impl_h<P>, not_digit_chars) -> ctll::push<make_has_impl_h, atom_expr2<P>>;
 
         // cyclic: 'r'
         // acyclic: 'r0'
@@ -2414,6 +2549,7 @@ namespace Kitimar::CTSmarts {
         return std::get<Index>(std::tuple<Ts...>());
     }
 
+    // resize list by adding T at front
     template<int Size, typename T, typename ...Ts>
     constexpr auto resize(ctll::list<Ts...> = {})
     {
@@ -3228,6 +3364,13 @@ namespace Kitimar::CTSmarts {
             return SmartsContext{ctll::list<Ts...>(), ctx.bonds, ctx.params.setClasses(cls), ctx.parent};
         }
 
+        // make_has_impl_h
+        template <auto V, typename Context>
+        static constexpr auto apply(SmartsGrammar::make_has_impl_h, ctll::term<V> term, Context ctx)
+        {
+            return pushAtomExpr(ctx, ctx.atoms, HasImplicitH{});
+        }
+
         // make_impl_h
         template <auto V, typename Context>
         static constexpr auto apply(SmartsGrammar::make_impl_h, ctll::term<V> term, Context ctx)
@@ -3457,7 +3600,7 @@ namespace Kitimar::CTSmarts {
         template <auto V, typename Context>
         static constexpr auto apply(SmartsGrammar::pop_recursive, ctll::term<V> term, Context ctx)
         {
-            auto expr = BasicSmarts{ctll::rotate(Context::atoms), ctll::rotate(Context::bonds)};
+            auto expr = BasicSmarts{ctll::rotate(Context::atoms), ctll::rotate(Context::bonds), Context::params.classes};
             return pushAtomExpr(ctx.parent, ctx.parent.atoms, expr);
         }
 
@@ -3618,7 +3761,7 @@ namespace Kitimar::CTSmarts {
 
     constexpr auto captureMapping(auto smarts)
     {
-        constexpr auto mapping = captureMappingHelper<1>(smarts.context.params.classes, ctll::empty_list());
+        constexpr auto mapping = captureMappingHelper<1>(smarts.classes, ctll::empty_list());
         return toArray(mapping);
     }
 
@@ -3686,10 +3829,10 @@ namespace Kitimar::CTSmarts {
     template <ctll::fixed_string SMARTS, bool IgnoreInvalid = false,
               typename Result = ctll::parser<SmartsGrammar, SMARTS, SmartsActions>::template output<SmartsContext<>>,
               typename Context = Result::output_type>
-    struct Smarts : BasicSmarts<decltype(ctll::rotate(Context::atoms)), decltype(ctll::rotate(Context::bonds))>
+    struct Smarts : BasicSmarts<decltype(ctll::rotate(Context::atoms)), decltype(ctll::rotate(Context::bonds)), std::remove_const_t<decltype(Context::params.classes)>>
     {
         static constexpr inline auto smarts = SMARTS;
-        static constexpr inline auto context = Context();
+        static constexpr inline auto context = Context{};
         static constexpr inline auto valid = Result::is_correct;
         static constexpr inline auto position = Result::position;
 
@@ -3714,7 +3857,7 @@ namespace Kitimar::CTSmarts {
 
         static constexpr inline auto error = getError(context.params.error);
 
-        //static_assert(IgnoreInvalid || valid);
+        static_assert(IgnoreInvalid || valid);
         static_assert(IgnoreInvalid || std::is_same_v<const NoError, decltype(error)>); // FIXME
         //static_assert(IgnoreInvalid || error); // FIXME
 
@@ -3912,25 +4055,53 @@ namespace Kitimar::CTSmarts {
 
 namespace Kitimar::CTSmarts {
 
-    template<bool Specialize, typename OptimizerT, template<std::integral, int N> class MapT>
+    enum class DefaultImplicitH
+    {
+        AtLeastOne, // Daylight, OpenSMARTS, RDKit
+        ExactlyOne // OpenBabel
+    };
+
+    enum class Specialize : int
+    {
+        None,
+        Atom  = 1,
+        Bond  = 2,
+        Chain = 4,
+        Star  = 8,
+        All = Atom | Bond | Chain | Star
+    };
+
+    inline constexpr bool operator&(Specialize lhs, Specialize rhs) noexcept
+    {
+        return static_cast<int>(lhs) & static_cast<int>(rhs);
+    }
+
+    template<DefaultImplicitH H, Specialize S, typename OptimizerT, template<std::integral, int N> class MapT>
     struct Config
     {
-        static constexpr inline auto specialize = Specialize;
+        // Matching behavior
+        static constexpr inline auto defaultImplicitH = H;
+
+        // Performance
+        static constexpr inline auto specialize = S;
 
         using Optimizer = OptimizerT;
 
         template<std::integral Index, int N>
         using Map = MapT<Index, N>;
+
+        static constexpr auto transformSmarts(auto smarts) noexcept
+        {
+            if constexpr (H == DefaultImplicitH::AtLeastOne)
+                return smarts;
+            else
+                return BasicSmarts<decltype(replaceExpr(HasImplicitH{}, ImplicitH<1>{}, smarts.atoms)), decltype(smarts.bonds), decltype(smarts.classes)>{};
+        }
     };
 
-    static constexpr inline auto Specialize = true;
-    static constexpr inline auto NoSpecialize = false;
+    using DefaultConfig = Config<DefaultImplicitH::AtLeastOne, Specialize::All, FullOptimizer, InverseMap>;
 
-    using DefaultConfig = Config<Specialize, FullOptimizer, InverseMap>;
-    //using DefaultConfig = Config<Specialize, FullOptimizer, LookupMap>;
-
-    using NoOptimizeConfig = Config<NoSpecialize, NoOptimizer, InverseMap>;
-    //using NoSpecializeConfig = Config<NoSpecialize, FullOptimizer, InverseMap>;
+    using NoOptimizeConfig = Config<DefaultImplicitH::AtLeastOne, Specialize::None, NoOptimizer, InverseMap>;
 
 } // namespace Kitimar::CTSmarts
 
@@ -3943,144 +4114,149 @@ namespace Kitimar::CTSmarts {
     //
 
     template<typename Expr>
-    constexpr bool matchAtomExpr(auto &mol, const auto &atom, Not<Expr>)
+    constexpr bool matchAtomExpr(const auto &mol, const auto &atom, Not<Expr>)
     {
-        return !matchAtomExpr(mol, atom, Expr());
+        return !matchAtomExpr(mol, atom, Expr{});
     }
 
     template<typename ...Expr>
-    constexpr bool matchAtomExpr(auto &mol, const auto &atom, Or<Expr...>)
+    constexpr bool matchAtomExpr(const auto &mol, const auto &atom, Or<Expr...>)
     {
-        return (matchAtomExpr(mol, atom, Expr()) || ...);
+        return (matchAtomExpr(mol, atom, Expr{}) || ...);
     }
 
     template<typename ...Expr>
-    constexpr bool matchAtomExpr(auto &mol, const auto &atom, And<Expr...>)
+    constexpr bool matchAtomExpr(const auto &mol, const auto &atom, And<Expr...>)
     {
-        return (matchAtomExpr(mol, atom, Expr()) && ...);
+        return (matchAtomExpr(mol, atom, Expr{}) && ...);
     }
 
     template<typename Expr>
-    constexpr bool matchBondExpr(auto &mol, const auto &bond, Not<Expr>)
+    constexpr bool matchBondExpr(const auto &mol, const auto &bond, Not<Expr>)
     {
-        return !matchBondExpr(mol, bond, Expr());
+        return !matchBondExpr(mol, bond, Expr{});
     }
 
     template<typename ...Expr>
-    constexpr bool matchBondExpr(auto &mol, const auto &bond, Or<Expr...>)
+    constexpr bool matchBondExpr(const auto &mol, const auto &bond, Or<Expr...>)
     {
-        return (matchBondExpr(mol, bond, Expr()) || ...);
+        return (matchBondExpr(mol, bond, Expr{}) || ...);
     }
 
     template<typename ...Expr>
-    constexpr bool matchBondExpr(auto &mol, const auto &bond, And<Expr...>)
+    constexpr bool matchBondExpr(const auto &mol, const auto &bond, And<Expr...>)
     {
-        return (matchBondExpr(mol, bond, Expr()) && ...);
+        return (matchBondExpr(mol, bond, Expr{}) && ...);
     }
 
     //
     // Atoms
     //
 
-    constexpr bool matchAtomExpr(auto &mol, const auto &atom, AnyAtom)
+    constexpr bool matchAtomExpr(const auto &mol, const auto &atom, AnyAtom)
     {
         return true;
     }
 
-    constexpr bool matchAtomExpr(auto &mol, const auto &atom, AnyAromatic)
+    constexpr bool matchAtomExpr(const auto &mol, const auto &atom, AnyAromatic)
     {
         return is_aromatic_atom(mol, atom);
     }
 
-    constexpr bool matchAtomExpr(auto &mol, const auto &atom, AnyAliphatic)
+    constexpr bool matchAtomExpr(const auto &mol, const auto &atom, AnyAliphatic)
     {
         return !is_aromatic_atom(mol, atom);
     }
 
     template<int Element>
-    constexpr bool matchAtomExpr(auto &mol, const auto &atom, AliphaticAtom<Element>)
+    constexpr bool matchAtomExpr(const auto &mol, const auto &atom, AliphaticAtom<Element>)
     {
         return get_element(mol, atom) == Element && !is_aromatic_atom(mol, atom);
     }
 
     template<int Element>
-    constexpr bool matchAtomExpr(auto &mol, const auto &atom, AromaticAtom<Element>)
+    constexpr bool matchAtomExpr(const auto &mol, const auto &atom, AromaticAtom<Element>)
     {
         return get_element(mol, atom) == Element && is_aromatic_atom(mol, atom);
     }
 
     template<int N>
-    constexpr bool matchAtomExpr(auto &mol, const auto &atom, Isotope<N>)
+    constexpr bool matchAtomExpr(const auto &mol, const auto &atom, Isotope<N>)
     {
         return get_isotope(mol, atom) == N;
     }
 
     template<int N>
-    constexpr bool matchAtomExpr(auto &mol, const auto &atom, Element<N>)
+    constexpr bool matchAtomExpr(const auto &mol, const auto &atom, Element<N>)
     {
         return get_element(mol, atom) == N;
     }
 
     template<int N>
-    constexpr bool matchAtomExpr(auto &mol, const auto &atom, Degree<N>)
+    constexpr bool matchAtomExpr(const auto &mol, const auto &atom, Degree<N>)
     {
         return get_degree(mol, atom) == N;
     }
 
     template<int N>
-    constexpr bool matchAtomExpr(auto &mol, const auto &atom, Valence<N>)
+    constexpr bool matchAtomExpr(const auto &mol, const auto &atom, Valence<N>)
     {
         return get_valence(mol, atom) == N;
     }
 
     template<int N>
-    constexpr bool matchAtomExpr(auto &mol, const auto &atom, Connectivity<N>)
+    constexpr bool matchAtomExpr(const auto &mol, const auto &atom, Connectivity<N>)
     {
         return get_degree(mol, atom) + get_implicit_hydrogens(mol, atom) == N;
     }
 
     template<int N>
-    constexpr bool matchAtomExpr(auto &mol, const auto &atom, TotalH<N>)
+    constexpr bool matchAtomExpr(const auto &mol, const auto &atom, TotalH<N>)
     {
         return get_total_hydrogens(mol, atom) == N;
     }
 
+    constexpr bool matchAtomExpr(const auto &mol, const auto &atom, HasImplicitH)
+    {
+        return get_implicit_hydrogens(mol, atom) > 0;
+    }
+
     template<int N>
-    constexpr bool matchAtomExpr(auto &mol, const auto &atom, ImplicitH<N>)
+    constexpr bool matchAtomExpr(const auto &mol, const auto &atom, ImplicitH<N>)
     {
         return get_implicit_hydrogens(mol, atom) == N;
     }
 
-    constexpr bool matchAtomExpr(auto &mol, const auto &atom, Cyclic)
+    constexpr bool matchAtomExpr(const auto &mol, const auto &atom, Cyclic)
     {
         return is_ring_atom(mol, atom);
     }
 
-    constexpr bool matchAtomExpr(auto &mol, const auto &atom, Acyclic)
+    constexpr bool matchAtomExpr(const auto &mol, const auto &atom, Acyclic)
     {
         return !is_ring_atom(mol, atom);
     }
 
     template<int N>
-    constexpr bool matchAtomExpr(auto &mol, const auto &atom, RingCount<N>)
+    constexpr bool matchAtomExpr(const auto &mol, const auto &atom, RingCount<N>)
     {
         return get_ring_count(mol, atom) == N;
     }
 
     template<int N>
-    constexpr bool matchAtomExpr(auto &mol, const auto &atom, RingSize<N>)
+    constexpr bool matchAtomExpr(const auto &mol, const auto &atom, RingSize<N>)
     {
         return is_in_ring_size(mol, atom, N);
     }
 
     template<int N>
-    constexpr bool matchAtomExpr(auto &mol, const auto &atom, RingConnectivity<N>)
+    constexpr bool matchAtomExpr(const auto &mol, const auto &atom, RingConnectivity<N>)
     {
         return get_ring_degree(mol, atom) == N;
     }
 
     template<int N>
-    constexpr bool matchAtomExpr(auto &mol, const auto &atom, Charge<N>)
+    constexpr bool matchAtomExpr(const auto &mol, const auto &atom, Charge<N>)
     {
         return get_charge(mol, atom) == N;
     }
@@ -4091,41 +4267,41 @@ namespace Kitimar::CTSmarts {
 
     namespace impl {
         template<typename SmartsT, typename Config, Molecule::Molecule Mol>
-        constexpr bool match_atom(Mol &mol, const auto &atom);
+        constexpr bool match_atom(const Mol &mol, const auto &atom);
     }
 
-    template<Molecule::Molecule Mol, typename Atoms, typename Bonds>
-    constexpr bool matchAtomExpr(Mol &mol, const auto &atom, BasicSmarts<Atoms, Bonds>)
+    template<Molecule::Molecule Mol, typename Atoms, typename Bonds, typename Classes>
+    constexpr bool matchAtomExpr(const Mol &mol, const auto &atom, BasicSmarts<Atoms, Bonds, Classes>)
     {
-        return impl::match_atom<BasicSmarts<Atoms, Bonds>, DefaultConfig, Mol>(mol, atom);
+        return impl::match_atom<BasicSmarts<Atoms, Bonds, Classes>, DefaultConfig, Mol>(mol, atom);
     }
 
     //
     // Bonds
     //
 
-    constexpr bool matchBondExpr(auto &mol, const auto &bond, ImplicitBond)
+    constexpr bool matchBondExpr(const auto &mol, const auto &bond, ImplicitBond)
     {
         return get_order(mol, bond) == 1 || is_aromatic_bond(mol, bond);
     }
 
-    constexpr bool matchBondExpr(auto &mol, const auto &bond, AnyBond)
+    constexpr bool matchBondExpr(const auto &mol, const auto &bond, AnyBond)
     {
         return true;
     }
 
     template<int Order>
-    constexpr bool matchBondExpr(auto &mol, const auto &bond, BondOrder<Order>)
+    constexpr bool matchBondExpr(const auto &mol, const auto &bond, BondOrder<Order>)
     {
         return get_order(mol, bond) == Order && !is_aromatic_bond(mol, bond);
     }
 
-    constexpr bool matchBondExpr(auto &mol, const auto &bond, AromaticBond)
+    constexpr bool matchBondExpr(const auto &mol, const auto &bond, AromaticBond)
     {
         return is_aromatic_bond(mol, bond);
     }
 
-    constexpr bool matchBondExpr(auto &mol, const auto &bond, RingBond)
+    constexpr bool matchBondExpr(const auto &mol, const auto &bond, RingBond)
     {
         return is_ring_bond(mol, bond);
     }
@@ -4426,6 +4602,12 @@ namespace Kitimar::CTSmarts {
     static constexpr auto Unique = SearchTypeTag<SearchType::Unique>{};
     static constexpr auto All    = SearchTypeTag<SearchType::All>{};
 
+    template<ctll::fixed_string SMARTS>
+    bool requiresExplicitHydrogens() noexcept
+    {
+        return containsExpr(AliphaticAtom<1>{}, Smarts<SMARTS>::atoms);
+    }
+
     struct NoFilterPolicy : FilterPolicy<> {};
 
     struct UnconditionalFilterPolicy : FilterPolicy<NumAtomBondFilter> {};
@@ -4455,20 +4637,20 @@ namespace Kitimar::CTSmarts {
 
             // match
 
-            bool match(Mol &mol)
+            bool match(const Mol &mol)
             {
                 matchDfs(mol, nullptr);
                 return isDone();
             }
 
-            bool matchAtom(Mol &mol, const auto &atom)
+            bool matchAtom(const Mol &mol, const auto &atom)
             {
                 static_assert(SeedT == SeedType::Atom);
                 matchDfs(mol, nullptr, get_index(mol, atom));
                 return isDone();
             }
 
-            bool matchBond(Mol &mol, const auto &bond)
+            bool matchBond(const Mol &mol, const auto &bond)
             {
                 static_assert(SeedT == SeedType::Bond);
                 reset(mol);
@@ -4495,7 +4677,7 @@ namespace Kitimar::CTSmarts {
 
             // count
 
-            auto count(Mol &mol, int startAtom = -1)
+            auto count(const Mol &mol, int startAtom = -1)
             {
                 auto n = 0;
                 auto cb = [&n] (const auto &array) { ++n; };
@@ -4503,13 +4685,13 @@ namespace Kitimar::CTSmarts {
                 return n;
             }
 
-            auto countAtom(Mol &mol, const auto &atom)
+            auto countAtom(const Mol &mol, const auto &atom)
             {
                 static_assert(SeedT == SeedType::Atom);
                 return count(mol, get_index(mol, atom));
             }
 
-            auto countBond(Mol &mol, const auto &bond)
+            auto countBond(const Mol &mol, const auto &bond)
             {
                 static_assert(SeedT == SeedType::Bond);
                 reset(mol);
@@ -4534,19 +4716,19 @@ namespace Kitimar::CTSmarts {
 
             // single
 
-            auto single(Mol &mol, int startAtom = -1)
+            auto single(const Mol &mol, int startAtom = -1)
             {
                 matchDfs(mol, nullptr, startAtom);
                 return std::make_tuple(isDone(), m_map.map());
             }
 
-            auto singleAtom(Mol &mol, const auto &atom)
+            auto singleAtom(const Mol &mol, const auto &atom)
             {
                 static_assert(SeedT == SeedType::Atom);
                 return single(mol, get_index(mol, atom));
             }
 
-            auto singleBond(Mol &mol, const auto &bond)
+            auto singleBond(const Mol &mol, const auto &bond)
             {
                 static_assert(SeedT == SeedType::Bond);
                 reset(mol);
@@ -4576,7 +4758,7 @@ namespace Kitimar::CTSmarts {
 
             // all
 
-            Maps all(Mol &mol, int startAtom = -1)
+            Maps all(const Mol &mol, int startAtom = -1)
             {
                 Maps maps;
                 auto cb = [&maps] (const auto &map) {
@@ -4586,13 +4768,13 @@ namespace Kitimar::CTSmarts {
                 return maps;
             }
 
-            auto allAtom(Mol &mol, const auto &atom)
+            auto allAtom(const Mol &mol, const auto &atom)
             {
                 static_assert(SeedT == SeedType::Atom);
                 return all(mol, get_index(mol, atom));
             }
 
-            auto allBond(Mol &mol, const auto &bond)
+            auto allBond(const Mol &mol, const auto &bond)
             {
                 static_assert(SeedT == SeedType::Bond);
                 reset(mol);
@@ -4629,7 +4811,7 @@ namespace Kitimar::CTSmarts {
                 #endif // KITIMAR_WITH_IOSTREAM
             }
 
-            bool matchAtom(Mol &mol, const auto &atom, auto queryAtom) const noexcept
+            bool matchAtom(const Mol &mol, const auto &atom, auto queryAtom) const noexcept
             {
                 if (get_degree(mol, atom) < query.degrees[queryAtom.index])
                     return false;
@@ -4637,7 +4819,7 @@ namespace Kitimar::CTSmarts {
                 return matchAtomExpr(mol, atom, queryAtom.expr);
             }
 
-            bool matchBond(Mol &mol, const auto &bond, int queryBondIndex, auto queryBond) const noexcept
+            bool matchBond(const Mol &mol, const auto &bond, int queryBondIndex, auto queryBond) const noexcept
             {
                 if constexpr (queryBond.isCyclic)
                     if (!is_ring_bond(mol, bond))
@@ -4717,7 +4899,7 @@ namespace Kitimar::CTSmarts {
             #endif // KITIMAR_WITH_IOSTREAM
 
             template<typename Bonds = decltype(query.bonds)>
-            void matchDfs(Mol &mol, auto callback, int startAtom = -1, Bonds bonds = query.bonds)
+            void matchDfs(const Mol &mol, auto callback, int startAtom = -1, Bonds bonds = query.bonds)
             {
                 if (isDone())
                     return;
@@ -4828,7 +5010,7 @@ namespace Kitimar::CTSmarts {
                 }
             }
 
-            constexpr auto reset(Mol &mol) noexcept
+            constexpr auto reset(const Mol &mol) noexcept
             {
                 //debug("reset()");
                 setDone(false);
@@ -4846,7 +5028,7 @@ namespace Kitimar::CTSmarts {
             }
 
             template<typename Callback>
-            constexpr auto addMapping(Molecule::Molecule auto &mol, Callback callback) noexcept
+            constexpr auto addMapping(const Mol &mol, Callback callback) noexcept
             {
                 if constexpr (SearchT == SearchType::Single)
                     setDone(true);
@@ -4887,7 +5069,7 @@ namespace Kitimar::CTSmarts {
                 m_map.fill(-1);
             }
 
-            auto count(Mol &mol, int startAtom = - 1)
+            auto count(const Mol &mol, int startAtom = - 1)
             {
                 auto n = 0;
                 auto cb = [&n] (const auto &array) { ++n; };
@@ -4899,7 +5081,7 @@ namespace Kitimar::CTSmarts {
 
         private:
             template<typename Bonds = decltype(smarts.bonds)>
-            void matchCentralAtom(Mol &mol, auto callback, int startAtom = -1, Bonds bonds = smarts.bonds)
+            void matchCentralAtom(const Mol &mol, auto callback, int startAtom = -1, Bonds bonds = smarts.bonds)
             {
                 auto queryBond = ctll::front(bonds);
                 auto querySource = queryBond.source;
@@ -4938,16 +5120,16 @@ namespace Kitimar::CTSmarts {
     // ctse::match<"SMARTS">(mol) -> bool
 
     template<ctll::fixed_string SMARTS, typename Config = DefaultConfig, Molecule::Molecule Mol>
-    constexpr bool match(Mol &mol)
+    constexpr bool match(const Mol &mol)
     {
-        auto smarts = Smarts<SMARTS>{};
+        auto smarts = Config::transformSmarts(Smarts<SMARTS>{});
         if constexpr (smarts.isSingleAtom) {
             // Optimize single atom SMARTS
             for (auto atom : get_atoms(mol)) // FIXME: use std::ranges::find_if -> check assembly?
                 if (impl::singleAtomMatch(smarts, mol, atom))
                     return true;
             return false;
-        } else if constexpr (Config::specialize && smarts.isSingleBond) {
+        } else if constexpr ((Config::specialize & Specialize::Bond) && smarts.isSingleBond) {
             // Optimize single bond SMARTS
             for (auto bond : get_bonds(mol))
                 if (impl::singleBondMatch(smarts, mol, bond))
@@ -4968,13 +5150,13 @@ namespace Kitimar::CTSmarts {
     namespace impl {
 
         template<typename SmartsT, typename Config, Molecule::Molecule Mol>
-        constexpr bool match_atom(Mol &mol, const auto &atom)
+        constexpr bool match_atom(const Mol &mol, const auto &atom)
         {
-            auto smarts = SmartsT{};
+            auto smarts = Config::transformSmarts(SmartsT{}); // FIXME: replaceExpr(BasicSmarts<...>)
             if constexpr (smarts.isSingleAtom) {
                 // Optimize single atom SMARTS
                 return impl::singleAtomMatch(smarts, mol, atom);
-            } else if constexpr (Config::specialize && smarts.isSingleBond) {
+            } else if constexpr ((Config::specialize & Specialize::Bond) && smarts.isSingleBond) {
                 // Optimize single bond SMARTS
                 if (!matchAtomExpr(mol, atom, get<0>(smarts.atoms).expr))
                     return false;
@@ -4994,7 +5176,7 @@ namespace Kitimar::CTSmarts {
     } // namespace impl
 
     template<ctll::fixed_string SMARTS, typename Config = DefaultConfig, Molecule::Molecule Mol>
-    constexpr bool match_atom(Mol &mol, const auto &atom)
+    constexpr bool match_atom(const Mol &mol, const auto &atom)
     {
         return impl::match_atom<Smarts<SMARTS>, Config, Mol>(mol, atom);
 
@@ -5007,11 +5189,11 @@ namespace Kitimar::CTSmarts {
     // ctse::match_bond<"SMARTS">(mol, bond) -> bool
 
     template<ctll::fixed_string SMARTS, typename Config = DefaultConfig, Molecule::Molecule Mol>
-    constexpr bool match_bond(Mol &mol, const auto &bond)
+    constexpr bool match_bond(const Mol &mol, const auto &bond)
     {
-        auto smarts = Smarts<SMARTS>{};
+        auto smarts = Config::transformSmarts(Smarts<SMARTS>{});
         static_assert(smarts.numBonds, "There should at least be one bond in the SMARTS expression.");
-        if constexpr (Config::specialize && smarts.isSingleBond) {
+        if constexpr ((Config::specialize & Specialize::Bond) && smarts.isSingleBond) {
             // Optimize single bond SMARTS
             return impl::singleBondMatch(smarts, mol, bond);
         } else {
@@ -5043,10 +5225,10 @@ namespace Kitimar::CTSmarts {
     // ctse::count<"SMARTS">(mol, ctse::[Unique, All]) -> std::integeral
 
     template<ctll::fixed_string SMARTS, SearchType M = SearchType::Unique, typename Config = DefaultConfig, Molecule::Molecule Mol>
-    constexpr auto count(Mol &mol, SearchTypeTag<M> = {})
+    constexpr auto count(const Mol &mol, SearchTypeTag<M> = {})
     {
         static_assert(M != SearchType::Single, "Use CTSmarts::contains<\"SMARTS\">(mol) to check for a single match.");
-        auto smarts = Smarts<SMARTS>{};
+        auto smarts = Config::transformSmarts(Smarts<SMARTS>{});
         if constexpr (smarts.isSingleAtom) {
             // Optimize single atom SMARTS
             auto n = 0;
@@ -5054,7 +5236,7 @@ namespace Kitimar::CTSmarts {
                 if (impl::singleAtomMatch(smarts, mol, atom))
                     ++n;
             return n;
-        } else if constexpr (Config::specialize && smarts.isSingleBond) {
+        } else if constexpr ((Config::specialize & Specialize::Bond) && smarts.isSingleBond) {
             // Optimize single bond SMARTS
             auto n = 0;
             for (auto bond : get_bonds(mol)) {
@@ -5087,9 +5269,9 @@ namespace Kitimar::CTSmarts {
     // ctse::count_atom<"SMARTS">(mol, atom, ctse::[Unique, All]) -> std::integeral
 
     template<ctll::fixed_string SMARTS, SearchType M = SearchType::Unique, typename Config = DefaultConfig, Molecule::Molecule Mol>
-    constexpr auto count_atom(Mol &mol, const auto &atom, SearchTypeTag<M> = {})
+    constexpr auto count_atom(const Mol &mol, const auto &atom, SearchTypeTag<M> = {})
     {
-        auto smarts = Smarts<SMARTS>{};
+        auto smarts = Config::transformSmarts(Smarts<SMARTS>{});
         if constexpr (smarts.isSingleAtom)
             return match_atom<SMARTS, Config>(mol, atom) ? 1 : 0;
         else {
@@ -5113,11 +5295,11 @@ namespace Kitimar::CTSmarts {
     // ctse::count_bond<"SMARTS">(mol, bond, ctse::[Unique, All]) -> std::integeral
 
     template<ctll::fixed_string SMARTS, SearchType M = SearchType::Unique, typename Config = DefaultConfig, Molecule::Molecule Mol>
-    constexpr auto count_bond(Mol &mol, const auto &bond, SearchTypeTag<M> = {})
+    constexpr auto count_bond(const Mol &mol, const auto &bond, SearchTypeTag<M> = {})
     {
-        auto smarts = Smarts<SMARTS>{};
+        auto smarts = Config::transformSmarts(Smarts<SMARTS>{});
         static_assert(smarts.numBonds, "There should at least be one bond in the SMARTS expression.");
-        if constexpr (Config::specialize && smarts.isSingleBond) {
+        if constexpr ((Config::specialize & Specialize::Bond) && smarts.isSingleBond) {
             // Optimize single bond SMARTS
             if constexpr (M == SearchType::Unique) {
                 if (impl::singleBondMatch(smarts, mol, bond))
@@ -5178,9 +5360,9 @@ namespace Kitimar::CTSmarts {
     // ctse::map<"SMARTS">(mol) -> std::tuple<bool, std::array<int, N>>
 
     template<ctll::fixed_string SMARTS, typename Config = DefaultConfig, Molecule::Molecule Mol>
-        constexpr auto map(Mol &mol)
+    constexpr auto map(const Mol &mol)
     {
-        auto smarts = Smarts<SMARTS>{};
+        auto smarts = Config::transformSmarts(Smarts<SMARTS>{});
         using Map = IsomorphismMap<decltype(get_index(mol, get_atom(mol, 0))), smarts.numAtoms>;
         if constexpr (smarts.isSingleAtom) {
             // Optimize single atom SMARTS
@@ -5188,7 +5370,7 @@ namespace Kitimar::CTSmarts {
                 if (impl::singleAtomMatch(smarts, mol, atom))
                     return std::make_tuple(true, Map{get_index(mol, atom)});
             return std::make_tuple(false, Map{});
-        } else if constexpr (Config::specialize && smarts.isSingleBond) {
+        } else if constexpr ((Config::specialize & Specialize::Bond) && smarts.isSingleBond) {
             // Optimize single bond SMARTS
             for (auto bond : get_bonds(mol)) {
                 auto m = impl::singleBondMap<Map>(smarts, mol, bond);
@@ -5209,9 +5391,9 @@ namespace Kitimar::CTSmarts {
     // ctse::map_atom<"SMARTS">(mol, atom) -> std::tuple<bool, std::array<int, N>>
 
     template<ctll::fixed_string SMARTS, typename Config = DefaultConfig, Molecule::Molecule Mol>
-    constexpr auto map_atom(Mol &mol, const auto &atom)
+    constexpr auto map_atom(const Mol &mol, const auto &atom)
     {
-        auto smarts = Smarts<SMARTS>{};
+        auto smarts = Config::transformSmarts(Smarts<SMARTS>{});
         static_assert(!smarts.isSingleAtom, "Use CTSmarts::match_atom<\"SMARTS\">(mol, atom) to check for a single match.");
         auto iso = Isomorphism<Mol, decltype(smarts), SearchType::Single, SeedType::Atom, Config>{};
         return iso.singleAtom(mol, atom);
@@ -5224,9 +5406,9 @@ namespace Kitimar::CTSmarts {
     // ctse::map_bond<"SMARTS">(mol, bond) -> std::tuple<bool, std::array<int, N>>
 
     template<ctll::fixed_string SMARTS, typename Config = DefaultConfig, Molecule::Molecule Mol>
-    constexpr auto map_bond(Mol &mol, const auto &bond)
+    constexpr auto map_bond(const Mol &mol, const auto &bond)
     {
-        auto smarts = Smarts<SMARTS>{};
+        auto smarts = Config::transformSmarts(Smarts<SMARTS>{});
         static_assert(smarts.numBonds, "There should at least be one bond in the SMARTS expression.");
         auto iso = Isomorphism<Mol, decltype(smarts), SearchType::Single, SeedType::Bond, Config>{};
         return iso.singleBond(mol, bond);
@@ -5255,10 +5437,10 @@ namespace Kitimar::CTSmarts {
     // ctse::maps<"SMARTS">(mol, ctse::[Unique, All]) -> std::vector<std::array<int, N>>
 
     template<ctll::fixed_string SMARTS, SearchType M = SearchType::Unique, typename Config = DefaultConfig, Molecule::Molecule Mol>
-    constexpr auto maps(Mol &mol, SearchTypeTag<M> = {})
+    constexpr auto maps(const Mol &mol, SearchTypeTag<M> = {})
     {
         static_assert(M != SearchType::Single, "Use CTSmarts::map<\"SMARTS\">(mol) to check for a single match.");
-        auto smarts = Smarts<SMARTS>{};
+        auto smarts = Config::transformSmarts(Smarts<SMARTS>{});
         using Maps = IsomorphismMaps<decltype(get_index(mol, get_atom(mol, 0))), smarts.numAtoms>;
         using Map = Maps::value_type;
 
@@ -5270,7 +5452,7 @@ namespace Kitimar::CTSmarts {
                 if (impl::singleAtomMatch(smarts, mol, atom))
                     maps.push_back(Map{get_index(mol, atom)});
             return maps;
-        } else if constexpr (Config::specialize && smarts.isSingleBond) {
+        } else if constexpr ((Config::specialize & Specialize::Bond) && smarts.isSingleBond) {
             // Optimize single bond SMARTS
             Maps maps;
             maps.reserve(num_bonds(mol));
@@ -5307,9 +5489,9 @@ namespace Kitimar::CTSmarts {
     // ctse::maps_atom<"SMARTS">(mol, atom, ctse::[Unique, All]) -> std::vector<std::array<int, N>>
 
     template<ctll::fixed_string SMARTS, SearchType M = SearchType::Unique, typename Config = DefaultConfig, Molecule::Molecule Mol>
-    constexpr auto maps_atom(Mol &mol, const auto &atom, SearchTypeTag<M> SearchType = {})
+    constexpr auto maps_atom(const Mol &mol, const auto &atom, SearchTypeTag<M> SearchType = {})
     {
-        auto smarts = Smarts<SMARTS>{};
+        auto smarts = Config::transformSmarts(Smarts<SMARTS>{});
         static_assert(M != SearchType::Single && !smarts.isSingleAtom,
                     "Use CTSmarts::map_atom<\"SMARTS\">(mol, atom) to check for a single match.");
         auto iso = Isomorphism<Mol, decltype(smarts), M, SeedType::Atom, Config>{};
@@ -5331,9 +5513,9 @@ namespace Kitimar::CTSmarts {
     // ctse::maps_bond<"SMARTS">(mol, bond, ctse::[Unique, All]) -> std::vector<std::array<int, N>>
 
     template<ctll::fixed_string SMARTS, SearchType M = SearchType::Unique, typename Config = DefaultConfig, Molecule::Molecule Mol>
-    constexpr auto maps_bond(Mol &mol, const auto &bond, SearchTypeTag<M> SearchType = {})
+    constexpr auto maps_bond(const Mol &mol, const auto &bond, SearchTypeTag<M> SearchType = {})
     {
-        auto smarts = Smarts<SMARTS>{};
+        auto smarts = Config::transformSmarts(Smarts<SMARTS>{});
         static_assert(M != SearchType::Single && !smarts.isSingleAtom /*&& !smarts.isSingleBond*/,
                 "Use CTSmarts::map_bond<\"SMARTS\">(mol, bond) to check for a single match.");
         auto iso = Isomorphism<Mol, decltype(smarts), M, SeedType::Bond, Config>{};
@@ -5387,16 +5569,16 @@ namespace Kitimar::CTSmarts {
     // ctse::capture<"SMARTS">(mol) -> std::tuple<bool, Atom...>
 
     template <ctll::fixed_string SMARTS, typename Config = DefaultConfig, Molecule::Molecule Mol>
-    auto capture(Mol &mol)
+    auto capture(const Mol &mol)
     {
-        auto smarts = Smarts<SMARTS>{};
+        auto smarts = Config::transformSmarts(Smarts<SMARTS>{});
         if constexpr (smarts.isSingleAtom) {
             // Optimize single atom SMARTS
             for (auto atom : get_atoms(mol))
                 if (impl::singleAtomMatch(smarts, mol, atom))
                     return std::make_tuple(true, atom);
             return std::make_tuple(false, null_atom(mol));
-        } else if constexpr (Config::specialize && smarts.isSingleBond) {
+        } else if constexpr ((Config::specialize & Specialize::Bond) && smarts.isSingleBond) {
             // Optimize single bond SMARTS
             for (auto bond : get_bonds(mol)) {
                 auto matchType = impl::singleBondMatch(smarts, mol, bond);
@@ -5419,9 +5601,9 @@ namespace Kitimar::CTSmarts {
     // ctse::capture_atom<"SMARTS">(mol, atom) -> std::tuple<bool, Atom...>
 
     template <ctll::fixed_string SMARTS, typename Config = DefaultConfig, Molecule::Molecule Mol>
-    auto capture_atom(Mol &mol, const auto &atom)
+    auto capture_atom(const Mol &mol, const auto &atom)
     {
-        auto smarts = Smarts<SMARTS>{};
+        auto smarts = Config::transformSmarts(Smarts<SMARTS>{});
         static_assert(!smarts.isSingleAtom, "Use CTSmarts::match_atom<\"SMARTS\">(mol, atom) to check for a single match.");
         auto iso = Isomorphism<Mol, decltype(smarts), SearchType::Single, SeedType::Atom, Config>{};
         constexpr auto captureSet = captureMapping(smarts);
@@ -5436,9 +5618,9 @@ namespace Kitimar::CTSmarts {
     // ctse::capture_bond<"SMARTS">(mol, bond) -> std::tuple<bool, Atom...>
 
     template <ctll::fixed_string SMARTS, typename Config = DefaultConfig, Molecule::Molecule Mol>
-    auto capture_bond(Mol &mol, const auto &atom)
+    auto capture_bond(const Mol &mol, const auto &atom)
     {
-        auto smarts = Smarts<SMARTS>{};
+        auto smarts = Config::transformSmarts(Smarts<SMARTS>{});
         static_assert(!smarts.isSingleAtom, "Use CTSmarts::match_atom<\"SMARTS\">(mol, atom) to check for a single match.");
         auto iso = Isomorphism<Mol, decltype(smarts), SearchType::Single, SeedType::Bond, Config>{};
         constexpr auto captureSet = captureMapping(smarts);
@@ -5469,10 +5651,10 @@ namespace Kitimar::CTSmarts {
     // ctse::captures<"SMARTS">(mol, CTSmarts::[Unique, All]) -> std::vector<std::array<Atom, N>>
 
     template <ctll::fixed_string SMARTS, SearchType M = SearchType::Unique, typename Config = DefaultConfig, Molecule::Molecule Mol>
-    auto captures(Mol &mol, SearchTypeTag<M> = {})
+    auto captures(const Mol &mol, SearchTypeTag<M> = {})
     {
         static_assert(M != SearchType::Single, "Use CTSmarts::capture<\"SMARTS\">(mol) to check for a single match.");
-        auto smarts = Smarts<SMARTS>{};
+        auto smarts = Config::transformSmarts(Smarts<SMARTS>{});
         static constexpr auto captureSet = captureMapping(smarts);
         using IndexMap = std::array<decltype(get_index(mol, get_atom(mol, 0))), captureSet.size() ? captureSet.size() : smarts.numAtoms>;
         using AtomMap = std::array<decltype(get_atom(mol, 0)), captureSet.size() ? captureSet.size() : smarts.numAtoms>;
@@ -5486,7 +5668,7 @@ namespace Kitimar::CTSmarts {
                 if (impl::singleAtomMatch(smarts, mol, atom))
                     maps.push_back(impl::toCapture(mol, smarts, captureSet, true, IndexMap{get_index(mol, atom)}));
             return maps;
-        } else if constexpr (Config::specialize && smarts.isSingleBond) {
+        } else if constexpr ((Config::specialize & Specialize::Bond) && smarts.isSingleBond) {
             // Optimize single bond SMARTS
             AtomMaps maps;
             maps.reserve(num_bonds(mol));
@@ -5548,9 +5730,9 @@ namespace Kitimar::CTSmarts {
     // ctse::captures_atom<"SMARTS">(mol, atom, CTSmarts::[Unique, All]) -> std::vector<std::array<Atom, N>>
 
     template <ctll::fixed_string SMARTS, SearchType M = SearchType::Unique, typename Config = DefaultConfig, Molecule::Molecule Mol>
-    auto captures_atom(Mol &mol, const auto &atom, SearchTypeTag<M> searchType = {})
+    auto captures_atom(const Mol &mol, const auto &atom, SearchTypeTag<M> searchType = {})
     {
-        auto smarts = Smarts<SMARTS>{};
+        auto smarts = Config::transformSmarts(Smarts<SMARTS>{});
         static_assert(M != SearchType::Single && !smarts.isSingleAtom,
                     "Use CTSmarts::capture_atom<\"SMARTS\">(mol, atom) to check for a single match.");
         auto iso = Isomorphism<Mol, decltype(smarts), M, SeedType::Atom, Config>{};
@@ -5579,9 +5761,9 @@ namespace Kitimar::CTSmarts {
     // ctse::captures_bond<"SMARTS">(mol, bond, CTSmarts::[Unique, All]) -> std::vector<std::array<Atom, N>>
 
     template <ctll::fixed_string SMARTS, SearchType M = SearchType::Unique, typename Config = DefaultConfig, Molecule::Molecule Mol>
-    auto captures_bond(Mol &mol, const auto &bond, SearchTypeTag<M> searchType = {})
+    auto captures_bond(const Mol &mol, const auto &bond, SearchTypeTag<M> searchType = {})
     {
-        auto smarts = Smarts<SMARTS>{};
+        auto smarts = Config::transformSmarts(Smarts<SMARTS>{});
         static_assert(M != SearchType::Single && !smarts.isSingleAtom,
                     "Use CTSmarts::capture_bond<\"SMARTS\">(mol, bond) to check for a single match.");
         auto iso = Isomorphism<Mol, decltype(smarts), M, SeedType::Bond, Config>{};
@@ -5642,7 +5824,7 @@ namespace Kitimar::CTSmarts {
     // ctse::find<"SMARTS">(mol) -> Atom (null atom if there is no match)
 
     template <ctll::fixed_string SMARTS, typename Config = DefaultConfig>
-    auto find(Molecule::Molecule auto &mol)
+    auto find(const Molecule::Molecule auto &mol)
     {
         auto caps = capture<SMARTS, Config>(mol);
         static_assert(std::tuple_size<decltype(caps)>{} >= 2); // FIXME: better validation 2 or # SMARTS atoms
@@ -5652,7 +5834,7 @@ namespace Kitimar::CTSmarts {
     // ctse::find_unique<"SMARTS">(mol) -> Atom (null atom if there is no match)
 
     template <ctll::fixed_string SMARTS, typename Config = DefaultConfig>
-    auto find_unique(Molecule::Molecule auto &mol)
+    auto find_unique(const Molecule::Molecule auto &mol)
     {
         return captures_unique<SMARTS, Config>(mol) | std::views::transform([] (const auto &capture) {
             return capture[0];
@@ -5666,7 +5848,7 @@ namespace Kitimar::CTSmarts {
     // ctse::find_atom<"SMARTS">(mol, atom) -> Atom (null atom if there is no match)
 
     template <ctll::fixed_string SMARTS, typename Config = DefaultConfig>
-    auto find_atom(Molecule::Molecule auto &mol, const auto &atom)
+    auto find_atom(const Molecule::Molecule auto &mol, const auto &atom)
     {
         auto caps = capture_atom<SMARTS, Config>(mol, atom);
         static_assert(std::tuple_size<decltype(caps)>{} >= 2); // FIXME: better validation 2 or # SMARTS atoms
@@ -5680,7 +5862,7 @@ namespace Kitimar::CTSmarts {
     // ctse::find_bond<"SMARTS">(mol, bond) -> Atom (null atom if there is no match)
 
     template <ctll::fixed_string SMARTS, typename Config = DefaultConfig>
-    auto find_bond(Molecule::Molecule auto &mol, const auto &bond)
+    auto find_bond(const Molecule::Molecule auto &mol, const auto &bond)
     {
         auto caps = capture_bond<SMARTS, Config>(mol, bond);
         static_assert(std::tuple_size<decltype(caps)>{} >= 2); // FIXME: better validation 2 or # SMARTS atoms

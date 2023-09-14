@@ -300,7 +300,7 @@ TEST_CASE("ImplicitH")
 template<typename Expr, typename Expected>
 void test_default_implicit_h()
 {
-    auto atoms = impl::replaceExpr(HasImplicitH{}, ImplicitH<1>{}, Expr{});
+    auto atoms = replaceExpr(HasImplicitH{}, ImplicitH<1>{}, Expr{});
     static_assert(std::is_same_v<decltype(atoms), Expected>);
 }
 
@@ -324,7 +324,7 @@ template<typename Expr, typename Query, bool expected>
 void test_contains_atom_expr()
 {
     //constexpr auto found = impl::containsExpr(Expr{}, Query{}, AtomExprTag{});
-    constexpr auto found = impl::containsExpr(Query{}, Expr{});
+    constexpr auto found = containsExpr(Query{}, Expr{});
     static_assert(found == expected);
 }
 

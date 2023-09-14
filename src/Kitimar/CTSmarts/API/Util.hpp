@@ -14,7 +14,7 @@ namespace Kitimar::CTSmarts {
         /**
          * @brief Convert atom index map to atom map using capture set.
          */
-        auto toCapture(Molecule::Molecule auto &mol, auto smarts,
+        auto toCapture(const auto &mol, auto smarts,
                        const auto &captureSet, bool found, const auto &map)
         {
             using Atom = decltype(get_atom(mol, 0));
@@ -38,7 +38,7 @@ namespace Kitimar::CTSmarts {
             }
         }
 
-        auto toCaptures(Molecule::Molecule auto &mol, const auto &iso,
+        auto toCaptures(const auto &mol, const auto &iso,
                         const auto &captureSet, const auto &maps) noexcept
         {
             using Atom = decltype(get_atom(mol, 0));
@@ -50,13 +50,13 @@ namespace Kitimar::CTSmarts {
             return std::vector<std::array<Atom, M>>{r.begin(), r.end()};
         }
 
-        auto captureMatchAtoms(Molecule::Molecule auto &mol, auto smarts,
+        auto captureMatchAtoms(const auto &mol, auto smarts,
                                const auto &captureSet, bool found, const auto &map)
         {
             return std::tuple_cat(std::make_tuple(found), toCapture(mol, smarts, captureSet, found, map));
         }
 
-        constexpr std::size_t captureHash(auto &mol, const auto &capture)
+        constexpr std::size_t captureHash(const auto &mol, const auto &capture)
         {
             auto atoms = std::vector<bool>(num_atoms(mol));
             for (const auto &atom : capture)
@@ -75,12 +75,12 @@ namespace Kitimar::CTSmarts {
             return n;
         }
 
-        constexpr bool singleAtomMatch(auto smarts, auto &mol, const auto &atom)
+        constexpr bool singleAtomMatch(auto smarts, const auto &mol, const auto &atom)
         {
             return matchAtomExpr(mol, atom, get<0>(smarts.atoms).expr);
         }
 
-        constexpr bool singleBondMatchHelper(auto smarts, auto &mol, const auto &bond, const auto &source, const auto &target)
+        constexpr bool singleBondMatchHelper(auto smarts, const auto &mol, const auto &bond, const auto &source, const auto &target)
         {
             return matchAtomExpr(mol, source, get<0>(smarts.atoms).expr) && matchAtomExpr(mol, target, get<1>(smarts.atoms).expr);
         }
@@ -88,7 +88,7 @@ namespace Kitimar::CTSmarts {
         // 0 -> no match
         // 1 -> source is SMARTS atom 0, target is SMARTS atom 1
         // 2 -> source is SMARTS atom 1, target is SMARTS atom 0
-        constexpr int singleBondMatch(auto smarts, auto &mol, const auto &bond)
+        constexpr int singleBondMatch(auto smarts, const auto &mol, const auto &bond)
         {
             auto source = get_source(mol, bond);
             auto target = get_target(mol, bond);
@@ -101,7 +101,7 @@ namespace Kitimar::CTSmarts {
             return 0;
         }
 
-        constexpr int singleBondCount(auto smarts, auto &mol, const auto &bond)
+        constexpr int singleBondCount(auto smarts, const auto &mol, const auto &bond)
         {
             auto source = get_source(mol, bond);
             auto target = get_target(mol, bond);
@@ -116,7 +116,7 @@ namespace Kitimar::CTSmarts {
         }
 
         template<typename Map>
-        constexpr auto singleBondMap(auto smarts, auto &mol, const auto &bond)
+        constexpr auto singleBondMap(auto smarts, const auto &mol, const auto &bond)
         {
             auto source = get_source(mol, bond);
             auto target = get_target(mol, bond);
@@ -134,7 +134,7 @@ namespace Kitimar::CTSmarts {
         }
 
         template<typename Map>
-        constexpr void singleBondMaps(auto smarts, auto &mol, const auto &bond, std::vector<Map> &maps)
+        constexpr void singleBondMaps(auto smarts, const auto &mol, const auto &bond, std::vector<Map> &maps)
         {
             auto source = get_source(mol, bond);
             auto target = get_target(mol, bond);
@@ -148,7 +148,7 @@ namespace Kitimar::CTSmarts {
                                 get_index(mol, get_source(mol, bond))});
         }
 
-        constexpr auto singleBondCapture(auto smarts, auto &mol, const auto &bond, int singleBondMatchType)
+        constexpr auto singleBondCapture(auto smarts, const auto &mol, const auto &bond, int singleBondMatchType)
         {
             constexpr auto cap = captureMapping(smarts);
             if constexpr (cap.size() == 1) {
@@ -179,7 +179,7 @@ namespace Kitimar::CTSmarts {
         }
 
         template<typename AtomMap>
-        constexpr void singleBondCaptures(auto smarts, auto &mol, const auto &bond, const auto &captureSet, std::vector<AtomMap> &maps, bool unique)
+        constexpr void singleBondCaptures(auto smarts, const auto &mol, const auto &bond, const auto &captureSet, std::vector<AtomMap> &maps, bool unique)
         {
             using IndexMap = std::array<decltype(get_index(mol, get_atom(mol, 0))), 2>;
             auto source = get_source(mol, bond);
@@ -202,7 +202,7 @@ namespace Kitimar::CTSmarts {
             }
         }
 
-        constexpr auto centralAtomMap(auto smarts, auto &mol, const auto &atom)
+        constexpr auto centralAtomMap(auto smarts, const auto &mol, const auto &atom)
         {
             std::array<int, smarts.numAtoms> map;
         }
@@ -214,7 +214,7 @@ namespace Kitimar::CTSmarts {
 
 #define CTSMARTS_API_SEARCH(function, Search, search) \
     template<ctll::fixed_string SMARTS, typename Config = DefaultConfig> \
-    constexpr auto function##_##search(Molecule::Molecule auto &mol) \
+    constexpr auto function##_##search(const Molecule::Molecule auto &mol) \
     { return function<SMARTS, SearchType::Search, Config>(mol); }
 
 #define CTSMARTS_API_UNIQUE(function) CTSMARTS_API_SEARCH(function, Unique, unique)
@@ -224,7 +224,7 @@ namespace Kitimar::CTSmarts {
 
 #define CTSMARTS_API_ARG_SEARCH(function, arg, Search, search) \
     template<ctll::fixed_string SMARTS, typename Config = DefaultConfig> \
-    constexpr auto function##_##arg##_##search(Molecule::Molecule auto &mol, const auto &arg) \
+    constexpr auto function##_##arg##_##search(const Molecule::Molecule auto &mol, const auto &arg) \
     { return function##_##arg<SMARTS, SearchType::Search, Config>(mol, arg); }
 
 #define CTSMARTS_API_ATOM_UNIQUE(function) CTSMARTS_API_ARG_SEARCH(function, atom, Unique, unique)
@@ -237,7 +237,7 @@ namespace Kitimar::CTSmarts {
 #define CTSMARTS_API_OVERLOAD_ARG(caller, callee, Arg, arg) \
     template<ctll::fixed_string SMARTS, typename Config = DefaultConfig, Molecule::Molecule Mol> \
     requires (!Molecule::MoleculeTraits<Mol>::SameAtomBondType) \
-    constexpr auto caller(Mol &mol, typename Molecule::MoleculeTraits<Mol>::Arg arg) \
+    constexpr auto caller(const Mol &mol, typename Molecule::MoleculeTraits<Mol>::Arg arg) \
     { return callee<SMARTS, Config>(mol, arg); }
 
 #define CTSMARTS_API_OVERLOAD_ATOM(function) CTSMARTS_API_OVERLOAD_ARG(function, function##_atom, Atom, atom)
@@ -253,7 +253,7 @@ namespace Kitimar::CTSmarts {
 #define CTSMARTS_API_OVERLOAD_ARG_SEARCH(function, Arg, arg) \
     template<ctll::fixed_string SMARTS, SearchType M = SearchType::Unique, typename Config = DefaultConfig, Molecule::Molecule Mol> \
     requires (!Molecule::MoleculeTraits<Mol>::SameAtomBondType) \
-    constexpr auto function(Mol &mol, typename Molecule::MoleculeTraits<Mol>::Arg arg, SearchTypeTag<M> searchType = {}) \
+    constexpr auto function(const Mol &mol, typename Molecule::MoleculeTraits<Mol>::Arg arg, SearchTypeTag<M> searchType = {}) \
     { return function##_##arg<SMARTS, M, Config>(mol, arg, searchType); }
 
 #define CTSMARTS_API_OVERLOAD_ATOM_SEARCH(function) CTSMARTS_API_OVERLOAD_ARG_SEARCH(function, Atom, atom)

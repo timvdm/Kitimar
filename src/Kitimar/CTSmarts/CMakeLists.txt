@@ -7,7 +7,12 @@ set(CTSmarts_HDRS
     Mapping.hpp
     Config.hpp
     Isomorphism.hpp
-    AST.hpp
+    AST/AST.hpp
+    AST/Primitives.hpp
+    AST/Operations.hpp
+    AST/BasicSmarts.hpp
+    AST/ContainsExpr.hpp
+    AST/ReplaceExpr.hpp
     Util/Util.hpp
     Util/Ctll.hpp
     Util/CtllSort.hpp

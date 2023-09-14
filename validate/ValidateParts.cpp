@@ -1,4 +1,5 @@
-#include <Kitimar/Molecule/Molecule.hpp>"
+#include <Kitimar/RDKit/RDKit.hpp>
+#include <Kitimar/OpenBabel/OpenBabel.hpp>
 
 using namespace Kitimar;
 
