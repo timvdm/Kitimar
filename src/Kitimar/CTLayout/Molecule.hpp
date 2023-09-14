@@ -7,6 +7,9 @@
 #include <Kitimar/CTLayout/Vector.hpp>
 #include <Kitimar/CTLayout/Sink.hpp>
 
+#define FMT_HEADER_ONLY
+#include <fmt/core.h>
+
 namespace Kitimar::CTLayout {
 
     /*

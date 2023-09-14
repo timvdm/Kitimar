@@ -2,6 +2,9 @@
 #include <Kitimar/OpenBabel/OpenBabel.hpp>
 #include <Kitimar/Util/Util.hpp>
 
+#define FMT_HEADER_ONLY
+#include <fmt/core.h>
+
 using namespace Kitimar;
 
 int main(int argc, char **argv)

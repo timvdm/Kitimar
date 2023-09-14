@@ -1,8 +1,5 @@
 #pragma once
 
-#define FMT_HEADER_ONLY
-#include <fmt/core.h>
-
 #include <ctll/fixed_string.hpp>
 
 #include <any>
@@ -15,6 +12,7 @@
 #include <fstream>
 #include <cassert>
 #include <filesystem>
+#include <algorithm>
 
 #include <cxxabi.h> // FIXME
 
