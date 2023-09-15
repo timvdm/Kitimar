@@ -58,24 +58,29 @@ if(Kitimar_WITH_IOSTREAM)
     target_compile_definitions(KitimarOptions INTERFACE -DKITIMAR_WITH_IOSTREAM)
 endif()
 
-target_compile_options(KitimarOptions INTERFACE
-    -march=native
-    -mtune=native
-)
 
-target_compile_options(KitimarWarnings INTERFACE
-    -Wno-unused-parameter
-    #-Wno-sign-compare
-    #-Wno-unused-but-set-variable
-    #-Wno-missing-field-initializers
-)
+if(UNIX)
 
-if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-    target_compile_options(KitimarOptions INTERFACE -ftemplate-depth=1024)
-else()
-    target_compile_options(KitimarOptions INTERFACE -fbracket-depth=1024)
-    #-fconcepts-diagnostics-depth=5
-endif()
+    target_compile_options(KitimarOptions INTERFACE
+        -march=native
+        -mtune=native
+    )
+
+    target_compile_options(KitimarWarnings INTERFACE
+        -Wno-unused-parameter
+        #-Wno-sign-compare
+        #-Wno-unused-but-set-variable
+        #-Wno-missing-field-initializers
+    )
+
+    if(NOT CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        target_compile_options(KitimarOptions INTERFACE -ftemplate-depth=1024)
+    else()
+        target_compile_options(KitimarOptions INTERFACE -fbracket-depth=1024)
+        #-fconcepts-diagnostics-depth=5
+    endif()
+
+endif() # UNIX
 
 
 install(TARGETS KitimarOptions
@@ -162,3 +167,9 @@ install(FILES
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/Kitimar
 )
 
+# Packaging
+
+set(CPACK_SOURCE_PACKAGE_FILE_NAME "kitimar-${Kitimar_VERSION}")
+set(CPACK_SOURCE_IGNORE_FILES "/build")
+
+include(CPack)
