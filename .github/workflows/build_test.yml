@@ -34,6 +34,12 @@ jobs:
             cc: "gcc-12", cxx: "g++-12",
             cmake_args: "-DKitimar_WITH_RDKIT=ON -DKitimar_WITH_OPENBABEL=ON",
           }
+        - {
+            name: "Windows Latest MSVC x86", artifact: "Windows-MSVC.tar.xz",
+            os: windows-latest,
+            cc: "cl", cxx: "cl",
+            environment_script: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars64.bat",
+          }
 
     steps:
     - name: Check variables
@@ -50,6 +56,12 @@ jobs:
         sudo ./llvm.sh 16
         sudo apt-get -qq install ninja-build
         sudo apt-get -qq install libopenbabel-dev librdkit-dev libboost-iostreams-dev libboost-filesystem-dev
+
+    - name: Install Dependencies (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        choco install ninja
+        echo "DEPS=msvc-dependencies-master" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
     - name: Run CMake
       run: |
