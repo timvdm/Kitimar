@@ -57,6 +57,12 @@ jobs:
         sudo apt-get -qq install ninja-build
         sudo apt-get -qq install libopenbabel-dev librdkit-dev libboost-iostreams-dev libboost-filesystem-dev
 
+    - name: Install MSVC Command Prompt
+      if: runner.os == 'Windows'
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x86
+
     - name: Install Dependencies (Windows)
       if: runner.os == 'Windows'
       run: |
