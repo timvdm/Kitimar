@@ -11,6 +11,7 @@ namespace Kitimar::Molecule {
     concept AtomBondRange = std::ranges::input_range<R> &&
                         std::convertible_to<std::remove_cvref_t<std::ranges::range_value_t<R>>, AtomBond>;
 
+    // FIXME atom != atom
 
     template<typename Mol>
     concept AtomList = requires (Mol &mol)

@@ -10,6 +10,8 @@ namespace Kitimar::Molecule {
     struct NoInlineBond {};
     struct NoInlineMolecule {};
 
+    bool operator!=(const NoInlineAtom &a, const NoInlineAtom &b);
+
     // AtomList
     int num_atoms(const NoInlineMolecule&);
     NoInlineAtom get_atom(const NoInlineMolecule&, int);

@@ -1,6 +1,161 @@
 #pragma once
 
-#include <Kitimar/Molecule/Molecule.hpp>
+#include <concepts>
+#include <ranges>
+
+namespace Kitimar::Molecule {
+
+    template<typename R, typename AtomBond>
+    concept AtomBondRange = std::ranges::input_range<R> &&
+                        std::convertible_to<std::remove_cvref_t<std::ranges::range_value_t<R>>, AtomBond>;
+
+    template<typename Mol>
+    concept AtomList = requires (Mol &mol)
+    {
+        { num_atoms(mol) } -> std::convertible_to<std::size_t>;
+        { get_atom(mol, 0) };
+        { get_atoms(mol) } -> AtomBondRange<std::remove_cvref_t<decltype(get_atom(mol, 0))>>;
+        { get_index(mol, get_atom(mol, 0)) } -> std::convertible_to<std::size_t>;
+        { null_atom(mol) };
+    };
+
+    template<typename Mol>
+    concept BondList = requires (Mol &mol)
+    {
+        { num_bonds(mol) } -> std::convertible_to<std::size_t>;
+        { get_bond(mol, 0) };
+        { get_bonds(mol) } -> AtomBondRange<std::remove_cvref_t<decltype(get_bond(mol, 0))>>;
+        { get_index(mol, get_bond(mol, 0)) } -> std::convertible_to<std::size_t>;
+        { get_source(mol, get_bond(mol, 0)) } -> std::convertible_to<decltype(get_atom(mol, 0))>;
+        { get_target(mol, get_bond(mol, 0)) } -> std::convertible_to<decltype(get_atom(mol, 0))>;
+        { null_bond(mol) };
+    };
+
+    template<typename Mol>
+    concept MoleculeGraph = AtomList<Mol> &&
+                            BondList<Mol>;
+
+    template<typename Mol>
+    concept IncidentBondList = requires (Mol &mol)
+    {
+        { get_degree(mol, get_atom(mol, 0)) } -> std::integral;
+        { get_bonds(mol, get_atom(mol, 0)) } -> AtomBondRange<std::remove_cvref_t<decltype(get_bond(mol, 0))>>;
+    };
+
+    template<typename Mol>
+    concept AdjacentAtomList = requires (Mol &mol)
+    {
+        { get_degree(mol, get_atom(mol, 0)) } -> std::integral;
+        { get_nbrs(mol, get_atom(mol, 0)) } -> AtomBondRange<std::remove_cvref_t<decltype(get_atom(mol, 0))>>;
+    };
+
+    template<typename Mol>
+    concept ElementLayer = requires (Mol &mol)
+    {
+        { get_element(mol, get_atom(mol, 0)) } -> std::integral;
+    };
+
+    template<typename Mol>
+    concept IsotopeLayer = requires (Mol &mol)
+    {
+        { get_isotope(mol, get_atom(mol, 0)) } -> std::integral;
+    };
+
+    template<typename Mol>
+    concept ChargeLayer = requires (Mol &mol)
+    {
+        { get_charge(mol, get_atom(mol, 0)) } -> std::signed_integral;
+    };
+
+    // bond order sum (including implicit hydrogens)
+    template<typename Mol>
+    concept ValenceLayer = requires (Mol &mol)
+    {
+        { get_valence(mol, get_atom(mol, 0)) } -> std::integral;
+    };
+
+    template<typename Mol>
+    concept BondOrderLayer = requires (Mol &mol)
+    {
+        { get_order(mol, get_bond(mol, 0)) } -> std::integral;
+    };
+
+    template<typename Mol>
+    concept ImplicitHydrogensLayer = requires (Mol &mol)
+    {
+        { get_implicit_hydrogens(mol, get_atom(mol, 0)) } -> std::integral;
+        { get_total_hydrogens(mol, get_atom(mol, 0)) } -> std::integral;
+    };
+
+    template<typename Mol>
+    concept MobileHydrogensLayer = requires (Mol &mol)
+    {
+        { get_mobile_hydrogens(mol, get_atom(mol, 0)) } -> std::integral;
+    };
+
+    template<typename Mol>
+    concept RingLayer = requires (Mol &mol)
+    {
+        { is_ring_atom(mol, get_atom(mol, 0)) } -> std::same_as<bool>;
+        { is_ring_bond(mol, get_bond(mol, 0)) } -> std::same_as<bool>;
+    };
+
+    template<typename Mol>
+    concept RingSetLayer = requires (Mol &mol)
+    {
+        { is_in_ring_size(mol, get_atom(mol, 0), 6) } -> std::same_as<bool>;
+        { get_ring_count(mol, get_atom(mol, 0), 6) } -> std::integral;
+        { get_ring_degree(mol, get_atom(mol, 0), 6) } -> std::integral;
+
+    };
+
+    template<typename Mol>
+    concept AromaticLayer = requires (Mol &mol)
+    {
+        { is_aromatic_atom(mol, get_atom(mol, 0)) } -> std::same_as<bool>;
+        { is_aromatic_bond(mol, get_bond(mol, 0)) } -> std::same_as<bool>;
+    };
+
+    template<typename Mol>
+    concept Molecule = MoleculeGraph<Mol> &&
+                       IncidentBondList<Mol> &&
+                       AdjacentAtomList<Mol> &&
+                       ElementLayer<Mol> &&
+                       IsotopeLayer<Mol> &&
+                       ChargeLayer<Mol> &&
+                       BondOrderLayer<Mol> &&
+                       //ImplicitHydrogensLayer<Mol> &&
+                       AromaticLayer<Mol>;
+
+    template<Molecule Mol>
+    struct MoleculeTraits
+    {
+        using Atom = decltype(get_atom(std::declval<Mol>(), 0));
+        using Bond = decltype(get_bond(std::declval<Mol>(), 0));
+        constexpr static inline bool SameAtomBondType = std::is_same_v<Atom, Bond>;
+    };
+
+    constexpr auto get_nbr(const auto &mol, const auto &bond, const auto &atom) noexcept -> decltype(get_atom(mol, 0))
+    {
+        auto source = get_source(mol, bond);
+        return source != atom ? source : get_target(mol, bond);
+    }
+
+    constexpr auto get_bond(const auto &mol, auto source, auto target) noexcept -> decltype(get_bond(mol, 0))
+    {
+        auto sourceIndex1 = get_index(mol, source);
+        auto targetIndex1 = get_index(mol, target);
+        for (auto bond : get_bonds(mol, source)) {
+            auto sourceIndex2 = get_index(mol, get_source(mol, bond));
+            auto targetIndex2 = get_index(mol, get_target(mol, bond));
+            if ((sourceIndex1 == sourceIndex2 && targetIndex1 == targetIndex2) ||
+                (sourceIndex1 == targetIndex2 && targetIndex1 == sourceIndex2))
+                return bond;
+        }
+        return null_bond(mol);
+    }
+
+} // namespace Kitimar::Molecule
 
 #include <vector>
 #include <algorithm>
@@ -214,7 +369,7 @@ namespace Kitimar::CTSmarts {
 #define CTSMARTS_API_SEARCH(function, Search, search) \
     template<ctll::fixed_string SMARTS, typename Config = DefaultConfig> \
     constexpr auto function##_##search(const Molecule::Molecule auto &mol) \
-    { return function<SMARTS, SearchType::Search, Config>(mol); }
+    { return function<SMARTS, Config, SearchType::Search>(mol); }
 
 #define CTSMARTS_API_UNIQUE(function) CTSMARTS_API_SEARCH(function, Unique, unique)
 #define CTSMARTS_API_ALL(function) CTSMARTS_API_SEARCH(function, All, all)
@@ -224,7 +379,7 @@ namespace Kitimar::CTSmarts {
 #define CTSMARTS_API_ARG_SEARCH(function, arg, Search, search) \
     template<ctll::fixed_string SMARTS, typename Config = DefaultConfig> \
     constexpr auto function##_##arg##_##search(const Molecule::Molecule auto &mol, const auto &arg) \
-    { return function##_##arg<SMARTS, SearchType::Search, Config>(mol, arg); }
+    { return function##_##arg<SMARTS, Config, SearchType::Search>(mol, arg); }
 
 #define CTSMARTS_API_ATOM_UNIQUE(function) CTSMARTS_API_ARG_SEARCH(function, atom, Unique, unique)
 #define CTSMARTS_API_BOND_UNIQUE(function) CTSMARTS_API_ARG_SEARCH(function, bond, Unique, unique)
@@ -250,10 +405,10 @@ namespace Kitimar::CTSmarts {
 // function(mol, arg, search) -> function_atom(mol, arg, search)
 
 #define CTSMARTS_API_OVERLOAD_ARG_SEARCH(function, Arg, arg) \
-    template<ctll::fixed_string SMARTS, SearchType M = SearchType::Unique, typename Config = DefaultConfig, Molecule::Molecule Mol> \
+    template<ctll::fixed_string SMARTS, typename Config = DefaultConfig, SearchType M = SearchType::Unique, Molecule::Molecule Mol> \
     requires (!Molecule::MoleculeTraits<Mol>::SameAtomBondType) \
     constexpr auto function(const Mol &mol, typename Molecule::MoleculeTraits<Mol>::Arg arg, SearchTypeTag<M> searchType = {}) \
-    { return function##_##arg<SMARTS, M, Config>(mol, arg, searchType); }
+    { return function##_##arg<SMARTS, Config, M>(mol, arg, searchType); }
 
 #define CTSMARTS_API_OVERLOAD_ATOM_SEARCH(function) CTSMARTS_API_OVERLOAD_ARG_SEARCH(function, Atom, atom)
 #define CTSMARTS_API_OVERLOAD_BOND_SEARCH(function) CTSMARTS_API_OVERLOAD_ARG_SEARCH(function, Bond, bond)
@@ -4105,8 +4260,6 @@ namespace Kitimar::CTSmarts {
 
 } // namespace Kitimar::CTSmarts
 
-#include <Kitimar/Molecule/Molecule.hpp>
-
 namespace Kitimar::CTSmarts {
 
     //
@@ -4320,8 +4473,6 @@ namespace Kitimar::CTSmarts {
 
 } // namespace Kitimar::CTSmarts
 
-#include <Kitimar/Molecule/Molecule.hpp>
-
 namespace Kitimar::CTSmarts {
 
     struct NumAtomBondFilter : UnconditionalFilter
@@ -4333,8 +4484,6 @@ namespace Kitimar::CTSmarts {
     };
 
 } // namespace Kitimar::CTSmarts
-
-#include <Kitimar/Molecule/Molecule.hpp>
 
 namespace Kitimar::CTSmarts {
 
@@ -4523,8 +4672,6 @@ namespace Kitimar::CTSmarts {
 
 } // namespace Kitimar::CTSmarts
 
-#include <Kitimar/Molecule/Molecule.hpp>
-
 #include <ctll/list.hpp>
 
 namespace Kitimar::CTSmarts {
@@ -4572,8 +4719,6 @@ namespace Kitimar::CTSmarts {
     };
 
 } // namespace Kitimar::CTSmarts
-
-#include <Kitimar/Molecule/Molecule.hpp>
 
 #include <set>
 #include <vector>
@@ -4971,7 +5116,8 @@ namespace Kitimar::CTSmarts {
 
                     } else { // No mapped atoms
 
-                        if (num_atoms(mol) < smarts.numAtoms || num_bonds(mol) < smarts.numBonds)
+                        const auto numAtoms = num_atoms(mol);
+                        if (numAtoms < smarts.numAtoms || num_bonds(mol) < smarts.numBonds)
                             return;
 
                         assert(!isDone());
@@ -4980,7 +5126,7 @@ namespace Kitimar::CTSmarts {
                         //if constexpr (std::is_same_v<MappedPolicy<void>, MappedVector<void>>)
                         //    assert(std::ranges::count(m_mapped, true) == 0);
 
-                        m_map.reset(num_atoms(mol));
+                        m_map.reset(numAtoms);
 
                         auto queryBond = ctll::front(query.bonds);
                         auto queryAtom = queryBond.source;
@@ -5224,7 +5370,7 @@ namespace Kitimar::CTSmarts {
 
     // ctse::count<"SMARTS">(mol, ctse::[Unique, All]) -> std::integeral
 
-    template<ctll::fixed_string SMARTS, SearchType M = SearchType::Unique, typename Config = DefaultConfig, Molecule::Molecule Mol>
+    template<ctll::fixed_string SMARTS, typename Config = DefaultConfig, SearchType M = SearchType::Unique, Molecule::Molecule Mol>
     constexpr auto count(const Mol &mol, SearchTypeTag<M> = {})
     {
         static_assert(M != SearchType::Single, "Use CTSmarts::contains<\"SMARTS\">(mol) to check for a single match.");
@@ -5268,7 +5414,7 @@ namespace Kitimar::CTSmarts {
 
     // ctse::count_atom<"SMARTS">(mol, atom, ctse::[Unique, All]) -> std::integeral
 
-    template<ctll::fixed_string SMARTS, SearchType M = SearchType::Unique, typename Config = DefaultConfig, Molecule::Molecule Mol>
+    template<ctll::fixed_string SMARTS, typename Config = DefaultConfig, SearchType M = SearchType::Unique, Molecule::Molecule Mol>
     constexpr auto count_atom(const Mol &mol, const auto &atom, SearchTypeTag<M> = {})
     {
         auto smarts = Config::transformSmarts(Smarts<SMARTS>{});
@@ -5294,7 +5440,7 @@ namespace Kitimar::CTSmarts {
 
     // ctse::count_bond<"SMARTS">(mol, bond, ctse::[Unique, All]) -> std::integeral
 
-    template<ctll::fixed_string SMARTS, SearchType M = SearchType::Unique, typename Config = DefaultConfig, Molecule::Molecule Mol>
+    template<ctll::fixed_string SMARTS, typename Config = DefaultConfig, SearchType M = SearchType::Unique, Molecule::Molecule Mol>
     constexpr auto count_bond(const Mol &mol, const auto &bond, SearchTypeTag<M> = {})
     {
         auto smarts = Config::transformSmarts(Smarts<SMARTS>{});
@@ -5436,7 +5582,7 @@ namespace Kitimar::CTSmarts {
 
     // ctse::maps<"SMARTS">(mol, ctse::[Unique, All]) -> std::vector<std::array<int, N>>
 
-    template<ctll::fixed_string SMARTS, SearchType M = SearchType::Unique, typename Config = DefaultConfig, Molecule::Molecule Mol>
+    template<ctll::fixed_string SMARTS, typename Config = DefaultConfig, SearchType M = SearchType::Unique, Molecule::Molecule Mol>
     constexpr auto maps(const Mol &mol, SearchTypeTag<M> = {})
     {
         static_assert(M != SearchType::Single, "Use CTSmarts::map<\"SMARTS\">(mol) to check for a single match.");
@@ -5488,7 +5634,7 @@ namespace Kitimar::CTSmarts {
 
     // ctse::maps_atom<"SMARTS">(mol, atom, ctse::[Unique, All]) -> std::vector<std::array<int, N>>
 
-    template<ctll::fixed_string SMARTS, SearchType M = SearchType::Unique, typename Config = DefaultConfig, Molecule::Molecule Mol>
+    template<ctll::fixed_string SMARTS, typename Config = DefaultConfig, SearchType M = SearchType::Unique, Molecule::Molecule Mol>
     constexpr auto maps_atom(const Mol &mol, const auto &atom, SearchTypeTag<M> SearchType = {})
     {
         auto smarts = Config::transformSmarts(Smarts<SMARTS>{});
@@ -5512,7 +5658,7 @@ namespace Kitimar::CTSmarts {
 
     // ctse::maps_bond<"SMARTS">(mol, bond, ctse::[Unique, All]) -> std::vector<std::array<int, N>>
 
-    template<ctll::fixed_string SMARTS, SearchType M = SearchType::Unique, typename Config = DefaultConfig, Molecule::Molecule Mol>
+    template<ctll::fixed_string SMARTS, typename Config = DefaultConfig, SearchType M = SearchType::Unique, Molecule::Molecule Mol>
     constexpr auto maps_bond(const Mol &mol, const auto &bond, SearchTypeTag<M> SearchType = {})
     {
         auto smarts = Config::transformSmarts(Smarts<SMARTS>{});
@@ -5650,7 +5796,7 @@ namespace Kitimar::CTSmarts {
 
     // ctse::captures<"SMARTS">(mol, CTSmarts::[Unique, All]) -> std::vector<std::array<Atom, N>>
 
-    template <ctll::fixed_string SMARTS, SearchType M = SearchType::Unique, typename Config = DefaultConfig, Molecule::Molecule Mol>
+    template <ctll::fixed_string SMARTS, typename Config = DefaultConfig, SearchType M = SearchType::Unique, Molecule::Molecule Mol>
     auto captures(const Mol &mol, SearchTypeTag<M> = {})
     {
         static_assert(M != SearchType::Single, "Use CTSmarts::capture<\"SMARTS\">(mol) to check for a single match.");
@@ -5729,7 +5875,7 @@ namespace Kitimar::CTSmarts {
 
     // ctse::captures_atom<"SMARTS">(mol, atom, CTSmarts::[Unique, All]) -> std::vector<std::array<Atom, N>>
 
-    template <ctll::fixed_string SMARTS, SearchType M = SearchType::Unique, typename Config = DefaultConfig, Molecule::Molecule Mol>
+    template <ctll::fixed_string SMARTS, typename Config = DefaultConfig, SearchType M = SearchType::Unique, Molecule::Molecule Mol>
     auto captures_atom(const Mol &mol, const auto &atom, SearchTypeTag<M> searchType = {})
     {
         auto smarts = Config::transformSmarts(Smarts<SMARTS>{});
@@ -5760,7 +5906,7 @@ namespace Kitimar::CTSmarts {
 
     // ctse::captures_bond<"SMARTS">(mol, bond, CTSmarts::[Unique, All]) -> std::vector<std::array<Atom, N>>
 
-    template <ctll::fixed_string SMARTS, SearchType M = SearchType::Unique, typename Config = DefaultConfig, Molecule::Molecule Mol>
+    template <ctll::fixed_string SMARTS, typename Config = DefaultConfig, SearchType M = SearchType::Unique, Molecule::Molecule Mol>
     auto captures_bond(const Mol &mol, const auto &bond, SearchTypeTag<M> searchType = {})
     {
         auto smarts = Config::transformSmarts(Smarts<SMARTS>{});
@@ -5883,86 +6029,132 @@ namespace Kitimar::CTSmarts {
 
 } // mamespace Kitimar::CTSmarts
 
-namespace Kitimar::CTSmarts {
+/*
 
-    /*
-     * Match
-     *
-     * bool match(mol)
-     * bool match_atom(mol, atom)
-     * bool match_bond(mol, bond)
-     * bool match(mol, atom/bond)
-     *
-     * Count
-     *
-     * int count(mol, type = Unique)
-     * int count_unique(mol)
-     * int count_all(mol)
-     *
-     * int count_atom(mol, atom, type = Unique)
-     * int count_atom_unique(mol, atom)
-     * int count_atom_all(mol, atom)
-     *
-     * int count_bond(mol, bond, type = Unique)
-     * int count_bond_unique_bond(mol, bond)
-     * int count_bond_all(mol, bond)
-     *
-     * int count(mol, atom/bond, type = Unique)
-     * int count_unique(mol, atom/bond)
-     * int count_all(mol, atom/bond)
-     *
-     * Map
-     *
-     * (bool, Map) map(mol)
-     * (bool, Map) Map map_atom(mol, atom)
-     * (bool, Map) Map map_bond(mol, bond)
-     * (bool, Map) Map map(mol, atom/bond)
-     *
-     * Maps
-     *
-     * Maps maps(mol, type = Unique)
-     * Maps maps_unique(mol)
-     * Maps maps_all(mol)
-     *
-     * Maps maps_atom(mol, atom, type = Unqiue)
-     * Maps maps_atom_unique(mol, atom)
-     * Maps maps_atom_all(mol, atom)
-     *
-     * Maps maps_bond(mol, bond, type = Unique)
-     * Maps maps_bond_unique(mol, bond)
-     * Maps maps_bond_all(mol, bond)
-     *
-     * Maps maps(mol, atom/bond, type = Unique)
-     * Maps maps_unique(mol, atom/bond)
-     * Maps maps_all(mol, atom/bond)
-     *
-     * Capture
-     *
-     * (bool, Atom...) capture(mol)
-     * (bool, Atom...) capture_atom(mol, atom)
-     * (bool, Atom...) capture_bond(mol, bond)
-     * (bool, Atom...) capture(mol, atom/bond)
-     *
-     * Captures
-     *
-     * Maps captures(mol, type = Unique)
-     * Maps captures_unique(mol)
-     * Maps captures_all(mol)
-     *
-     * Maps captures_atom(mol, atom, type = Unique)
-     * Maps captures_atom_unique(mol, atom)
-     * Maps captures_atom_all(mol, atom)
-     *
-     * Maps captures_bond(mol, bond, type = Unique)
-     * Maps captures_bond_unique(mol)
-     * Maps captures_bond_all(mol)
-     *
-     * Maps captures(mol, atom/bond, type = Unique)
-     * Maps captures_unique(mol, atom/bond)
-     * Maps captures_all(mol, atom/bond)
-     *
-     */
+API
+===
 
-} // namespace Kitimar::CTSmarts
+Match
+-----
+
+    match(mol)
+    match_atom(mol, atom)
+    match_bond(mol, bond)
+    match(mol, atom/bond)
+
+    Return type: bool
+
+Count
+-----
+
+    count(mol, type = Unique)
+    count_unique(mol)
+    count_all(mol)
+
+    count_atom(mol, atom, type = Unique)
+    count_atom_unique(mol, atom)
+    count_atom_all(mol, atom)
+
+    count_bond(mol, bond, type = Unique)
+    count_bond_unique_bond(mol, bond)
+    count_bond_all(mol, bond)
+
+    count(mol, atom/bond, type = Unique)
+    count_unique(mol, atom/bond)
+    count_all(mol, atom/bond)
+
+    Return type: int
+
+Map
+---
+
+    map(mol)
+    map_atom(mol, atom)
+    map_bond(mol, bond)
+    map(mol, atom/bond)
+
+    Return type: std::tuple<bool, std::array<int, N>>
+
+    Example
+    ~~~~~~~
+
+        auto [found, map] = ctse::map<"C=O">(mol);
+        if (found) {
+            // Use map...
+        }
+
+Maps
+----
+
+    maps(mol, type = Unique)
+    maps_unique(mol)
+    maps_all(mol)
+
+    maps_atom(mol, atom, type = Unqiue)
+    maps_atom_unique(mol, atom)
+    maps_atom_all(mol, atom)
+
+    maps_bond(mol, bond, type = Unique)
+    maps_bond_unique(mol, bond)
+    maps_bond_all(mol, bond)
+
+    maps(mol, atom/bond, type = Unique)
+    maps_unique(mol, atom/bond)
+    maps_all(mol, atom/bond)
+
+    Return type: std::vector<std::array<int, N>>
+
+Capture
+-------
+
+    capture(mol)
+    capture_atom(mol, atom)
+    capture_bond(mol, bond)
+    capture(mol, atom/bond)
+
+    Return type: std::tuple<bool, Atom...>
+
+    Examples
+    ~~~~~~~~
+
+        auto [found, C, O] = ctse::capture<"C=O">
+        if (found) {
+            // Use atoms C and O...
+        }
+
+        auto [found, C, O] = ctse::capture<"N[C:1]=[O:2]">
+        if (found) {
+            // Use atoms C and O...
+        }
+
+Captures
+--------
+
+    captures(mol, type = Unique)
+    captures_unique(mol)
+    captures_all(mol)
+
+    captures_atom(mol, atom, type = Unique)
+    captures_atom_unique(mol, atom)
+    captures_atom_all(mol, atom)
+
+    captures_bond(mol, bond, type = Unique)
+    captures_bond_unique(mol)
+    captures_bond_all(mol)
+
+    captures(mol, atom/bond, type = Unique)
+    captures_unique(mol, atom/bond)
+    captures_all(mol, atom/bond)
+
+    Return type: std::vector<std::tuple<Atom...>>
+
+    Example
+    ~~~~~~~
+
+        for (auto [C, N] : ctse::captures<"C-N">(mol)) {
+            // Use atoms C and N
+        }
+
+*/
 
 namespace ctse = Kitimar::CTSmarts;

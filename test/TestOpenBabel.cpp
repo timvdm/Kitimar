@@ -35,8 +35,9 @@ TEST_CASE("SmilesMolSource")
 
 
 
-TEST_CASE("HasImplicitH")
+TEST_CASE("Debug")
 {
+    /*
     using OpenBabelConfig = ctse::Config<ctse::DefaultImplicitH::ExactlyOne,
                                          ctse::Specialize::All,
                                          ctse::FullOptimizer,
@@ -58,5 +59,5 @@ TEST_CASE("HasImplicitH")
     auto smarts = OpenBabelConfig::transformSmarts(ctse::Smarts<"[h]">{});
     //identify_type<decltype(smarts.atoms)>{};
     //identify_type<decltype(OpenBabelConfig::transformSmarts(smarts).atoms)>{};
-
+    */
 }

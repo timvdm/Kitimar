@@ -49,7 +49,7 @@ void validate_parts(Mol &mol);
 template<Toolkit::Id ToolkitId>
 void toolkit_validate_parts()
 {
-    auto source = Toolkit::smilesMolSource<ToolkitId>(chembl_smi_filename("100K"));
+    auto source = Toolkit::smilesMolSource<ToolkitId>(chembl_smi_filename());
     auto i = 0;
     for (auto mol : source.molecules()) {
         std::cout << "Molecule: " << ++i << " -- " << Toolkit::writeSmiles<ToolkitId>(*mol) << '\n';

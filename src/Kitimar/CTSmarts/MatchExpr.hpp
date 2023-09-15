@@ -3,7 +3,7 @@
 #include "AST/AST.hpp"
 #include "Config.hpp"
 
-#include <Kitimar/Molecule/Molecule.hpp>
+#include "../Molecule/Molecule.hpp"
 
 namespace Kitimar::CTSmarts {
 

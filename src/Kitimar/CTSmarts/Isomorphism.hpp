@@ -8,7 +8,7 @@
 #include "Filter/ElementFilter.hpp"
 #include "Filter/FilterPolicy.hpp"
 
-#include <Kitimar/Molecule/Molecule.hpp>
+#include "../Molecule/Molecule.hpp"
 
 #include <set>
 #include <vector>
@@ -20,13 +20,6 @@
 #include <cassert>
 
 #define ISOMORPHISM_DEBUG 0
-
-
-
-
-
-
-
 
 namespace Kitimar::CTSmarts {
 
@@ -425,7 +418,8 @@ namespace Kitimar::CTSmarts {
 
                     } else { // No mapped atoms
 
-                        if (num_atoms(mol) < smarts.numAtoms || num_bonds(mol) < smarts.numBonds)
+                        const auto numAtoms = num_atoms(mol);
+                        if (numAtoms < smarts.numAtoms || num_bonds(mol) < smarts.numBonds)
                             return;
 
                         assert(!isDone());
@@ -434,7 +428,7 @@ namespace Kitimar::CTSmarts {
                         //if constexpr (std::is_same_v<MappedPolicy<void>, MappedVector<void>>)
                         //    assert(std::ranges::count(m_mapped, true) == 0);
 
-                        m_map.reset(num_atoms(mol));
+                        m_map.reset(numAtoms);
 
                         auto queryBond = ctll::front(query.bonds);
                         auto queryAtom = queryBond.source;

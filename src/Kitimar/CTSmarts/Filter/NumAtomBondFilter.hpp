@@ -2,7 +2,7 @@
 
 #include "UnconditionalFilter.hpp"
 
-#include <Kitimar/Molecule/Molecule.hpp>
+#include "../../Molecule/Molecule.hpp"
 
 namespace Kitimar::CTSmarts {
 
