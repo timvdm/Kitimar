@@ -1,8 +1,8 @@
 #pragma once
 
-#include <Kitimar/Molecule/Molecule.hpp>
-#include <Kitimar/Molecule/Toolkit.hpp>
-#include <Kitimar/Util/Util.hpp>
+#include "../Molecule/Molecule.hpp"
+#include "../Molecule/Toolkit.hpp"
+#include "../Util/Util.hpp"
 
 #include <openbabel/mol.h>
 #include <openbabel/atom.h>
@@ -101,12 +101,18 @@ namespace Kitimar {
         static constexpr inline auto openbabel = toolkitId("OpenBabel");
 
         template<>
+        inline auto name<openbabel>()
+        {
+            return "OpenBabel";
+        }
+
+        template<>
         inline auto readSmiles<openbabel>(std::string_view smiles)
         {
-            OpenBabel::OBMol mol;
+            auto mol = std::make_shared<OpenBabel::OBMol >();
             OpenBabel::OBConversion conv;
             conv.SetInFormat("smi");
-            conv.ReadString(&mol, smiles.data());
+            conv.ReadString(mol.get(), smiles.data());
             return mol;
         }
 

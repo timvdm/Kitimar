@@ -29,6 +29,9 @@ namespace Kitimar::Toolkit {
     }
 
     template<Id ToolkitId>
+    auto name();
+
+    template<Id ToolkitId>
     auto readSmiles(std::string_view smiles);
 
     template<Id ToolkitId, typename Mol>

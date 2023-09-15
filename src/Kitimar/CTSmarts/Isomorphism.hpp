@@ -39,9 +39,12 @@ namespace Kitimar::CTSmarts {
 
 
     template<ctll::fixed_string SMARTS>
-    bool requiresExplicitHydrogens() noexcept
+    consteval bool requiresExplicitHydrogens() noexcept
     {
-        return containsExpr(AliphaticAtom<1>{}, Smarts<SMARTS>::atoms);
+        using H = AliphaticAtom<1>;
+        // Handle [!H]
+        constexpr auto atoms = replaceExpr(Not<H>{}, AnyAtom{}, Smarts<SMARTS>::atoms);
+        return containsExpr(H{}, atoms);
     }
 
 

@@ -1,11 +1,11 @@
 #pragma once
 
-#include <Kitimar/Util/Util.hpp>
-#include <Kitimar/Molecule/Molecule.hpp>
-#include <Kitimar/CTLayout/Value.hpp>
-#include <Kitimar/CTLayout/Struct.hpp>
-#include <Kitimar/CTLayout/Vector.hpp>
-#include <Kitimar/CTLayout/Sink.hpp>
+#include "../Util/Util.hpp"
+#include "../Molecule/Molecule.hpp"
+#include "Value.hpp"
+#include "Struct.hpp"
+#include "Vector.hpp"
+#include "Sink.hpp"
 
 #define FMT_HEADER_ONLY
 #include <fmt/core.h>

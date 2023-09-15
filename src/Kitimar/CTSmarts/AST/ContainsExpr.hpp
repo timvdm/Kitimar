@@ -16,28 +16,37 @@ namespace Kitimar::CTSmarts {
         }
 
         template<typename Query, typename ...Expr> constexpr auto containsExprHelper(Query, ctll::list<Expr...>) noexcept;
-        template<typename Query, typename ...Expr> constexpr auto containsExprHelper(Query, Or<Expr...> op) noexcept;
-        template<typename Query, typename ...Expr> constexpr auto containsExprHelper(Query, And<Expr...> op) noexcept;
+        template<typename Query, typename ...Expr> constexpr auto containsExprHelper(Query, Or<Expr...>) noexcept;
+        template<typename Query, typename ...Expr> constexpr auto containsExprHelper(Query, And<Expr...>) noexcept;
 
         // Not
         template<typename Query, typename Expr>
         constexpr auto containsExprHelper(Query, Not<Expr>) noexcept
         {
-            return containsExprHelper(Query{}, Expr{});
+            if constexpr (std::is_same_v<Query, Not<Expr>>)
+                return true;
+            else
+                return containsExprHelper(Query{}, Expr{});
         }
 
         // Or
         template<typename Query, typename ...Expr>
-        constexpr auto containsExprHelper(Query, Or<Expr...> op) noexcept
+        constexpr auto containsExprHelper(Query, Or<Expr...>) noexcept
         {
-            return (containsExpr(Query{}, Expr{}) || ...);
+            if constexpr (std::is_same_v<Query, Or<Expr...>>)
+                return true;
+            else
+                return (containsExpr(Query{}, Expr{}) || ...);
         }
 
         // And
         template<typename Query, typename ...Expr>
-        constexpr auto containsExprHelper(Query, And<Expr...> op) noexcept
+        constexpr auto containsExprHelper(Query, And<Expr...>) noexcept
         {
-            return (containsExpr(Query{}, Expr{}) || ...);
+            if constexpr (std::is_same_v<Query, And<Expr...>>)
+                return true;
+            else
+                return (containsExpr(Query{}, Expr{}) || ...);
         }
 
         // Atom
@@ -49,7 +58,7 @@ namespace Kitimar::CTSmarts {
 
         // ctll::list
         template<typename Query, typename ...Expr>
-        constexpr auto containsExprHelper(Query, ctll::list<Expr...> l) noexcept
+        constexpr auto containsExprHelper(Query, ctll::list<Expr...>) noexcept
         {
             return (containsExpr(Query{}, Expr{}) || ...);
         }

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef KITIMAR_MOLECULE_HPP
+#define KITIMAR_MOLECULE_HPP
 
 #include <concepts>
 #include <ranges>
@@ -167,3 +168,5 @@ namespace Kitimar::Molecule {
 
 
 } // namespace Kitimar::Molecule
+
+#endif // KITIMAR_MOLECULE_HPP

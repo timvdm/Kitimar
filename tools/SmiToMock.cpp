@@ -16,7 +16,8 @@ int main(int argc, char **argv)
 
     auto SMILES = argv[1];
     //auto SMILES = "OCC(O)CO";
-    auto mol = Toolkit::readSmiles<Toolkit::openbabel>(SMILES);
+    auto molPtr = Toolkit::readSmiles<Toolkit::openbabel>(SMILES);
+    auto &mol = *molPtr;
 
 
     fmt::println("// SMILES: {}", SMILES);

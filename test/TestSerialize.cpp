@@ -125,12 +125,12 @@ void test_serialize(const std::string &smiles)
 
     std::vector<std::byte> data;
     StlVectorSink sink{data};
-    serialize<Layout>(obmol, sink);
+    serialize<Layout>(*obmol, sink);
 
     auto source = PtrSource{data.data()};
     auto mol = toObject(Layout{}, source);
 
-    compare(mol, obmol);
+    compare(mol, *obmol);
 }
 
 TEST_CASE("Serialize")
@@ -152,7 +152,7 @@ auto serializeSmilesStlVectorSink(const std::string &SMILES, const std::string &
     // Serialize SMILES
     std::vector<std::byte> data;
     StlVectorSink sink{data};
-    serialize<Layout>(obmol, sink);
+    serialize<Layout>(*obmol, sink);
     // Write to file
     Util::writeFileData(filename, data);
 
@@ -166,7 +166,7 @@ auto serializeSmilesFileStreamSink(const std::string &SMILES, const std::string 
     auto obmol = Toolkit::readSmiles<Toolkit::openbabel>(SMILES);
     // Serialize SMILES
     FileStreamSink sink{filename};
-    serialize<Layout>(obmol, sink);
+    serialize<Layout>(*obmol, sink);
 
     return obmol;
 }
@@ -182,7 +182,7 @@ TEST_CASE("StlVectorSinkInMemorySource")
     InMemorySource source{filename};
     auto mol = toObject(Layout{}, source);
     // Compare
-    compare(mol, ref);
+    compare(mol, *ref);
 }
 
 TEST_CASE("StlVectorSinkMemoryMappedSource")
@@ -195,7 +195,7 @@ TEST_CASE("StlVectorSinkMemoryMappedSource")
     MemoryMappedSource source{filename};
     auto mol = toObject(Layout{}, source);
     // Compare
-    compare(mol, ref);
+    compare(mol, *ref);
 }
 
 TEST_CASE("FileStreamSinkMemoryMappedSource")
@@ -208,7 +208,7 @@ TEST_CASE("FileStreamSinkMemoryMappedSource")
     InMemorySource source{filename};
     auto mol = toObject(Layout{}, source);
     // Compare
-    compare(mol, ref);
+    compare(mol, *ref);
 }
 
 template<typename Layout>

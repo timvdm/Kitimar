@@ -8,7 +8,7 @@ void Rarey_smarts_part_45(Mol &mol)
     validate<"[!H0;#7,#8,#9]">(mol);
     validate<"[!H0;F,Cl,Br,I,N+,$([OH]-*=[!#6]),+]">(mol);
     validate<"[!H1]">(mol);
-    validate<"[!H]">(mol);
+    //validate<"[!H]">(mol); // implementation defined
 }
 
 template void Rarey_smarts_part_45<OpenBabel::OBMol>(OpenBabel::OBMol &mol);

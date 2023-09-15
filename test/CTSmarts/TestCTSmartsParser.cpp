@@ -289,6 +289,17 @@ TEST_CASE("TotalH")
     test_atom_expr<"[NH,NH2]", Or<And<AliphaticAtom<7>, TotalH<1>>, And<AliphaticAtom<7>, TotalH<2>>> >();
 }
 
+TEST_CASE("requiresExplicitHydrogens")
+{
+    static_assert(ctse::requiresExplicitHydrogens<"[H]">());
+    static_assert(!ctse::requiresExplicitHydrogens<"[*H]">());
+    static_assert(!ctse::requiresExplicitHydrogens<"[CH]">());
+    static_assert(!ctse::requiresExplicitHydrogens<"[CH3]">());
+
+    static_assert(!ctse::requiresExplicitHydrogens<"[!H]">());
+    static_assert(ctse::requiresExplicitHydrogens<"[!H]C[H]">());
+}
+
 TEST_CASE("ImplicitH")
 {
     test_atom_expr<"[h]",  HasImplicitH >();

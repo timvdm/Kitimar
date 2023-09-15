@@ -1,7 +1,7 @@
 #pragma once
 
-#include <Kitimar/Molecule/Molecule.hpp>
-#include <Kitimar/Molecule/Toolkit.hpp>
+#include "../Molecule/Molecule.hpp"
+#include "../Molecule/Toolkit.hpp"
 
 #include <GraphMol/GraphMol.h>
 #include <GraphMol/SmilesParse/SmilesParse.h>
@@ -135,6 +135,12 @@ namespace Kitimar {
     namespace Toolkit {
 
         static constexpr inline auto rdkit = toolkitId("RDKit");
+
+        template<>
+        inline auto name<rdkit>()
+        {
+            return "RDKit";
+        }
 
         template<>
         inline auto readSmiles<rdkit>(std::string_view smiles)
@@ -420,7 +426,14 @@ namespace RDKit {
 
     inline auto is_aromatic_bond(const RDKit::ROMol &mol, const RDKit::Bond *bond)
     {
-        return bond->getIsAromatic();
+        switch (bond->getBondType()) {
+            case RDKit::Bond::SINGLE:
+            case RDKit::Bond::DOUBLE:
+            case RDKit::Bond::AROMATIC:
+                return bond->getIsAromatic();
+            default:
+                return false;
+        }
     }
 
     // RingSetLayer

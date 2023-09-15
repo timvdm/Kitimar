@@ -19,27 +19,40 @@ namespace Kitimar::CTSmarts {
         }
 
         template<typename OldExpr, typename NewExpr, typename ...Expr>
-        constexpr auto replaceExprHelper(OldExpr, NewExpr, ctll::list<Expr...> l) noexcept;
+        constexpr auto replaceExprHelper(OldExpr, NewExpr, ctll::list<Expr...>) noexcept;
+        template<typename OldExpr, typename NewExpr, typename ...Expr>
+        constexpr auto replaceExprHelper(OldExpr, NewExpr, Or<Expr...>) noexcept;
+        template<typename OldExpr, typename NewExpr, typename ...Expr>
+        constexpr auto replaceExprHelper(OldExpr, NewExpr, And<Expr...>) noexcept;
 
         // Not
         template<typename OldExpr, typename NewExpr, typename Expr>
         constexpr auto replaceExprHelper(OldExpr, NewExpr, Not<Expr>) noexcept
         {
-            return Not{replaceExprHelper(OldExpr{}, NewExpr{}, Expr{})};
+            if constexpr (std::is_same_v<Not<Expr>, OldExpr>)
+                return NewExpr{};
+            else
+                return Not{replaceExprHelper(OldExpr{}, NewExpr{}, Expr{})};
         }
 
         // Or
         template<typename OldExpr, typename NewExpr, typename ...Expr>
-        constexpr auto replaceExprHelper(OldExpr, NewExpr, Or<Expr...> op) noexcept
+        constexpr auto replaceExprHelper(OldExpr, NewExpr, Or<Expr...>) noexcept
         {
-            return Or{replaceExprHelper(OldExpr{}, NewExpr{}, ctll::list<Expr...>{})};
+            if constexpr (std::is_same_v<Or<Expr...>, OldExpr>)
+                return NewExpr{};
+            else
+                return Or{replaceExprHelper(OldExpr{}, NewExpr{}, ctll::list<Expr...>{})};
         }
 
         // And
         template<typename OldExpr, typename NewExpr, typename ...Expr>
-        constexpr auto replaceExprHelper(OldExpr, NewExpr, And<Expr...> op) noexcept
+        constexpr auto replaceExprHelper(OldExpr, NewExpr, And<Expr...>) noexcept
         {
-            return And{replaceExprHelper(OldExpr{}, NewExpr{}, ctll::list<Expr...>{})};
+            if constexpr (std::is_same_v<And<Expr...>, OldExpr>)
+                return NewExpr{};
+            else
+                return And{replaceExprHelper(OldExpr{}, NewExpr{}, ctll::list<Expr...>{})};
         }
 
         // Atom
