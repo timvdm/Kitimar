@@ -7,15 +7,16 @@ namespace Kitimar::CTSmarts {
 
     namespace impl {
 
-        consteval auto makeIncidentList(auto smarts, auto edgeList, auto degrees) noexcept
+        template<typename SmartsT, typename EdgeListT, typename VertexDegreeT>
+        consteval auto makeIncidentList(SmartsT, EdgeListT, VertexDegreeT) noexcept
         {
-            constexpr auto stride = *std::ranges::max_element(degrees.data);
-            std::array<int, smarts.numAtoms * stride> incident = {};
+            constexpr auto stride = *std::ranges::max_element(VertexDegreeT::data);
+            std::array<int, SmartsT::numAtoms * stride> incident = {};
             std::ranges::fill(incident, -1);
 
-            std::array<int, smarts.numAtoms> sizes = {};
-            for (auto i = 0UL; i < smarts.numBonds; ++i) {
-                auto edge = edgeList.data[i];
+            std::array<int, SmartsT::numAtoms> sizes = {};
+            for (auto i = 0UL; i < SmartsT::numBonds; ++i) {
+                auto edge = EdgeListT::data[i];
                 auto source = edge.source;
                 auto target = edge.target;
                 incident[stride * source + sizes[source]] = i;
