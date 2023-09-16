@@ -20,9 +20,9 @@ Kitimar is a container project for CTSmarts providing utilities for development,
 
 ## CTSmarts: C++ compile-time SMARTS expressions
 
-`CTSmarts` provides fast compile-time SMARTS expressions with support for matching, mapping and capturing.
+`CTSmarts` provides fast compile-time SMARTS expressions with support for matching, counting, mapping and capturing.
 
-The SMARTS expressions are parsed at compile-time resulting in a minimal amount of assembly code and need for dynamic data structures at run-time.
+The SMARTS expressions are parsed at compile-time resulting in a minimal amount of assembly code and need for dynamically alocated data structures at run-time.
 
 It is implemented as a C++20 header-only library and inspired by the [Compile time regular expressions](https://github.com/hanickadot/compile-time-regular-expressions) and uses it's `ctll` compile-time LL(1) parser.
 
@@ -34,19 +34,17 @@ Many features are still missing and/or untested.
 #### Known limitations
 
 - Multiple connected components
-- Recursive SMARTS
 - Stereochemistry
 - Invalid SMARTS
     - Compile errors need to be improved using `static_assert` and easy to understand messages.
     - Workaround: validate SMARTS expressions using other tools first
 - Performance
-    - Finding multiple matches still keeps a list of all matches ([Coroutines](https://en.cppreference.com/w/cpp/language/coroutines)?)
-    - C++11 has no `std::ranges::owning_view` &rarr; maps are copied before returning ([range-v3](https://github.com/ericniebler/range-v3)?)
+    - gcc++11 has no `std::ranges::owning_view` &rarr; maps are copied before returning ([range-v3](https://github.com/ericniebler/range-v3)?)
 
 ### Features
 
 - No parsing/optimization overhead
-- Performance nearly identical to handwritten code
+- Performance same or better than to handwritten code
 - Capture atoms using SMARTS atom classes
 - No need for global state &rarr; no threading issues
 - No need for external SMARTS to C++ conversion tool and build system setup

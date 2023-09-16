@@ -106,7 +106,7 @@ namespace Kitimar::CTSmarts {
         template<typename PrevIndexT>
         constexpr auto nextAtomHelper(PrevIndexT) const
         {
-            return SmartsParams<Number<nextIndex() + 1>, PrevIndexT, AtomExpr, ctll::empty_list, RingBonds, Classes, Error>{};
+            return SmartsParams<Number<nextIndex.value + 1>, PrevIndexT, AtomExpr, ctll::empty_list, RingBonds, Classes, Error>{};
         }
 
         constexpr auto nextAtom() const
