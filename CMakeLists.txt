@@ -169,7 +169,7 @@ install(FILES
 
 # Packaging
 
-set(CPACK_SOURCE_PACKAGE_FILE_NAME "kitimar-${Kitimar_VERSION}")
+set(CPACK_SOURCE_PACKAGE_FILE_NAME "Kitimar-${Kitimar_VERSION}")
 set(CPACK_SOURCE_IGNORE_FILES "/build")
 
 include(CPack)
