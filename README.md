@@ -220,7 +220,7 @@ The optimized cases are currently:
 ##### Example of single atom SMARTS
 
 The two functions generate the same assembly code. More complex examples can be found here
-together with a link to compiler exlorer to try out your own SMARTS expressions.
+together with a [link to compiler exlorer](https://godbolt.org/z/cYYjnY4Me) to try out your own SMARTS expressions.
 
 ```c++
 bool isCarbonDegree3_v1(auto &mol, auto atom)
