@@ -9,6 +9,8 @@ namespace Kitimar::Molecule {
     concept AtomBondRange = std::ranges::input_range<R> &&
                         std::convertible_to<std::remove_cvref_t<std::ranges::range_value_t<R>>, AtomBond>;
 
+    // FIXME atom != atom
+
     template<typename Mol>
     concept AtomList = requires (Mol &mol)
     {
@@ -429,7 +431,7 @@ namespace Kitimar::CTSmarts {
         int source = -1;
         int target = -1;
 
-        constexpr bool operator<=>(const Edge&) const noexcept = default;
+        constexpr auto operator<=>(const Edge&) const noexcept = default;
     };
 
     namespace impl {
@@ -495,15 +497,16 @@ namespace Kitimar::CTSmarts {
 
     namespace impl {
 
-        consteval auto makeIncidentList(auto smarts, auto edgeList, auto degrees) noexcept
+        template<typename SmartsT, typename EdgeListT, typename VertexDegreeT>
+        consteval auto makeIncidentList(SmartsT, EdgeListT, VertexDegreeT) noexcept
         {
-            constexpr auto stride = *std::ranges::max_element(degrees.data);
-            std::array<int, smarts.numAtoms * stride> incident = {};
+            constexpr std::size_t stride = *std::ranges::max_element(VertexDegreeT::data);
+            std::array<int, SmartsT::numAtoms * stride> incident = {};
             std::ranges::fill(incident, -1);
 
-            std::array<int, smarts.numAtoms> sizes = {};
-            for (auto i = 0UL; i < smarts.numBonds; ++i) {
-                auto edge = edgeList.data[i];
+            std::array<int, SmartsT::numAtoms> sizes = {};
+            for (auto i = 0UL; i < SmartsT::numBonds; ++i) {
+                auto edge = EdgeListT::data[i];
                 auto source = edge.source;
                 auto target = edge.target;
                 incident[stride * source + sizes[source]] = i;
@@ -1169,28 +1172,37 @@ namespace Kitimar::CTSmarts {
         }
 
         template<typename Query, typename ...Expr> constexpr auto containsExprHelper(Query, ctll::list<Expr...>) noexcept;
-        template<typename Query, typename ...Expr> constexpr auto containsExprHelper(Query, Or<Expr...> op) noexcept;
-        template<typename Query, typename ...Expr> constexpr auto containsExprHelper(Query, And<Expr...> op) noexcept;
+        template<typename Query, typename ...Expr> constexpr auto containsExprHelper(Query, Or<Expr...>) noexcept;
+        template<typename Query, typename ...Expr> constexpr auto containsExprHelper(Query, And<Expr...>) noexcept;
 
         // Not
         template<typename Query, typename Expr>
         constexpr auto containsExprHelper(Query, Not<Expr>) noexcept
         {
-            return containsExprHelper(Query{}, Expr{});
+            if constexpr (std::is_same_v<Query, Not<Expr>>)
+                return true;
+            else
+                return containsExprHelper(Query{}, Expr{});
         }
 
         // Or
         template<typename Query, typename ...Expr>
-        constexpr auto containsExprHelper(Query, Or<Expr...> op) noexcept
+        constexpr auto containsExprHelper(Query, Or<Expr...>) noexcept
         {
-            return (containsExpr(Query{}, Expr{}) || ...);
+            if constexpr (std::is_same_v<Query, Or<Expr...>>)
+                return true;
+            else
+                return (containsExpr(Query{}, Expr{}) || ...);
         }
 
         // And
         template<typename Query, typename ...Expr>
-        constexpr auto containsExprHelper(Query, And<Expr...> op) noexcept
+        constexpr auto containsExprHelper(Query, And<Expr...>) noexcept
         {
-            return (containsExpr(Query{}, Expr{}) || ...);
+            if constexpr (std::is_same_v<Query, And<Expr...>>)
+                return true;
+            else
+                return (containsExpr(Query{}, Expr{}) || ...);
         }
 
         // Atom
@@ -1202,7 +1214,7 @@ namespace Kitimar::CTSmarts {
 
         // ctll::list
         template<typename Query, typename ...Expr>
-        constexpr auto containsExprHelper(Query, ctll::list<Expr...> l) noexcept
+        constexpr auto containsExprHelper(Query, ctll::list<Expr...>) noexcept
         {
             return (containsExpr(Query{}, Expr{}) || ...);
         }
@@ -1232,27 +1244,40 @@ namespace Kitimar::CTSmarts {
         }
 
         template<typename OldExpr, typename NewExpr, typename ...Expr>
-        constexpr auto replaceExprHelper(OldExpr, NewExpr, ctll::list<Expr...> l) noexcept;
+        constexpr auto replaceExprHelper(OldExpr, NewExpr, ctll::list<Expr...>) noexcept;
+        template<typename OldExpr, typename NewExpr, typename ...Expr>
+        constexpr auto replaceExprHelper(OldExpr, NewExpr, Or<Expr...>) noexcept;
+        template<typename OldExpr, typename NewExpr, typename ...Expr>
+        constexpr auto replaceExprHelper(OldExpr, NewExpr, And<Expr...>) noexcept;
 
         // Not
         template<typename OldExpr, typename NewExpr, typename Expr>
         constexpr auto replaceExprHelper(OldExpr, NewExpr, Not<Expr>) noexcept
         {
-            return Not{replaceExprHelper(OldExpr{}, NewExpr{}, Expr{})};
+            if constexpr (std::is_same_v<Not<Expr>, OldExpr>)
+                return NewExpr{};
+            else
+                return Not{replaceExprHelper(OldExpr{}, NewExpr{}, Expr{})};
         }
 
         // Or
         template<typename OldExpr, typename NewExpr, typename ...Expr>
-        constexpr auto replaceExprHelper(OldExpr, NewExpr, Or<Expr...> op) noexcept
+        constexpr auto replaceExprHelper(OldExpr, NewExpr, Or<Expr...>) noexcept
         {
-            return Or{replaceExprHelper(OldExpr{}, NewExpr{}, ctll::list<Expr...>{})};
+            if constexpr (std::is_same_v<Or<Expr...>, OldExpr>)
+                return NewExpr{};
+            else
+                return Or{replaceExprHelper(OldExpr{}, NewExpr{}, ctll::list<Expr...>{})};
         }
 
         // And
         template<typename OldExpr, typename NewExpr, typename ...Expr>
-        constexpr auto replaceExprHelper(OldExpr, NewExpr, And<Expr...> op) noexcept
+        constexpr auto replaceExprHelper(OldExpr, NewExpr, And<Expr...>) noexcept
         {
-            return And{replaceExprHelper(OldExpr{}, NewExpr{}, ctll::list<Expr...>{})};
+            if constexpr (std::is_same_v<And<Expr...>, OldExpr>)
+                return NewExpr{};
+            else
+                return And{replaceExprHelper(OldExpr{}, NewExpr{}, ctll::list<Expr...>{})};
         }
 
         // Atom
@@ -2812,6 +2837,7 @@ namespace Kitimar::CTSmarts {
 
 } // namespace Kitimar::CTSmarts
 
+#include <type_traits>
 #include <cctype>
 
 namespace Kitimar::CTSmarts {
@@ -2910,7 +2936,7 @@ namespace Kitimar::CTSmarts {
         template<typename PrevIndexT>
         constexpr auto nextAtomHelper(PrevIndexT) const
         {
-            return SmartsParams<Number<nextIndex() + 1>, PrevIndexT, AtomExpr, ctll::empty_list, RingBonds, Classes, Error>{};
+            return SmartsParams<Number<nextIndex.value + 1>, PrevIndexT, AtomExpr, ctll::empty_list, RingBonds, Classes, Error>{};
         }
 
         constexpr auto nextAtom() const
@@ -4748,9 +4774,12 @@ namespace Kitimar::CTSmarts {
     static constexpr auto All    = SearchTypeTag<SearchType::All>{};
 
     template<ctll::fixed_string SMARTS>
-    bool requiresExplicitHydrogens() noexcept
+    consteval bool requiresExplicitHydrogens() noexcept
     {
-        return containsExpr(AliphaticAtom<1>{}, Smarts<SMARTS>::atoms);
+        using H = AliphaticAtom<1>;
+        // Handle [!H]
+        constexpr auto atoms = replaceExpr(Not<H>{}, AnyAtom{}, Smarts<SMARTS>::atoms);
+        return containsExpr(H{}, atoms);
     }
 
     struct NoFilterPolicy : FilterPolicy<> {};
