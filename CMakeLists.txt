@@ -172,7 +172,7 @@ install(FILES
 set(CPACK_SOURCE_PACKAGE_FILE_NAME "Kitimar-${Kitimar_VERSION}")
 set(CPACK_SOURCE_IGNORE_FILES
     "/build"
-    "/\\\\.git"
+    ".git"
 )
 
 include(CPack)
