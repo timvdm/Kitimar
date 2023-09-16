@@ -1,7 +1,5 @@
 #pragma once
 
-#include <ctll/fixed_string.hpp>
-
 #include <any>
 #include <string>
 #include <sstream>
@@ -65,12 +63,6 @@ namespace Kitimar::Util {
         if (detail::anyToStringMap.contains(std::type_index(value.type())))
             return detail::anyToStringMap[std::type_index(value.type())](value);
         return "???";
-    }
-
-    template<auto N>
-    std::string toString(ctll::fixed_string<N> str)
-    {
-        return std::string{str.begin(), str.end()};
     }
 
     inline std::string pad(const std::string &str, std::size_t width = 30)

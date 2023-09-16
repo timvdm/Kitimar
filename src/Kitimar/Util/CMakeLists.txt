@@ -16,7 +16,7 @@ target_include_directories(KitimarUtil INTERFACE
     "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDE_DIR}>"
 )
 
-target_link_libraries(KitimarUtil INTERFACE fmt::fmt ctre::ctre)
+target_link_libraries(KitimarUtil INTERFACE fmt::fmt)
 
 # Install
 

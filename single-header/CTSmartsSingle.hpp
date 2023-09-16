@@ -2720,8 +2720,15 @@ namespace Kitimar::CTSmarts {
 } // namespace ctsmarts
 
 #include <ctll/list.hpp>
+#include <ctll/fixed_string.hpp>
 
 namespace Kitimar::CTSmarts {
+
+    template<auto N>
+    std::string toString(ctll::fixed_string<N> str)
+    {
+        return std::string{str.begin(), str.end()};
+    }
 
     template<int Index, typename ...Ts>
     constexpr auto get(ctll::list<Ts...>)

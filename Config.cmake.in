@@ -1,24 +1,67 @@
 @PACKAGE_INIT@
 
-#include("${CMAKE_CURRENT_LIST_DIR}/CTSmartsTargets.cmake")
-#check_required_components(CTSmarts)
+set(_Kitimar_COMPONENTS Options Warnings Molecule CTSmarts Util CTLayout OpenBabel RDKit)
 
-
-@PACKAGE_INIT@
-
-set(_Kitimar_COMPONENTS Options Warnings Molecule CTSmarts CTLayout OpenBabel RDKit)
-
+# Print required components
 message(STATUS "Required Kitimar components: ${Kitimar_FIND_COMPONENTS}")
 
+# Set Kitimar_FOUND to False if there are no components
 if(NOT Kitimar_FIND_COMPONENTS)
       set(Kitimar_FOUND False)
       set(Kitimar_NOT_FOUND_MESSAGE "No components specified")
 endif()
 
-foreach(_comp ${Kitimar_FIND_COMPONENTS})
-  if(NOT _comp IN_LIST _Kitimar_COMPONENTS)
-      set(Kitimar_FOUND False)
-      set(Kitimar_NOT_FOUND_MESSAGE "Unsupported component: ${_comp}")
-  endif() 
-  include("${CMAKE_CURRENT_LIST_DIR}/Kitimar${_comp}Targets.cmake")
+# Add component dependencies
+set(_components Options Warnings)
+foreach(_component ${Kitimar_FIND_COMPONENTS})
+
+    # Component must exist
+    if(NOT _component IN_LIST _Kitimar_COMPONENTS)
+        set(Kitimar_FOUND False)
+        set(Kitimar_NOT_FOUND_MESSAGE "Unsupported component: ${_component}")
+    endif()
+
+    # CTSmarts
+    if(_component STREQUAL CTSmarts)
+        find_package(ctre REQUIRED)
+        list(APPEND _components Molecule CTSmarts)
+    endif()
+
+    # Util
+    if(_component STREQUAL Util)
+        find_package(fmt REQUIRED)
+        list(APPEND _components Util)
+    endif()
+
+    # CTLayout
+    if(_component STREQUAL CTLayout)
+        find_package(mio REQUIRED)
+        list(APPEND _components Molecule Util)
+    endif()
+
+    # OpenBabel
+    if(_component STREQUAL OpenBabel)
+        find_package(OpenBabel3 REQUIRED)
+        list(APPEND _components Molecule OpenBabel)
+    endif()
+
+    # RDKit
+    if(_component STREQUAL RDKit)
+        set(Boost_USE_MULTITHREADED OFF)
+        find_package(Boost REQUIRED COMPONENTS iostreams filesystem system)
+        find_package(RDKit REQUIRED)
+        list(APPEND _components Molecule RDKit)
+    endif()
+
+endforeach()
+
+# Remove duplicates
+list(REMOVE_DUPLICATES _components)
+
+# Print components including dependencies
+message(STATUS "Found Kitimar components: ${_components}")
+
+# Include component Target.cmake files
+foreach(_component ${_components})
+  include("${CMAKE_CURRENT_LIST_DIR}/Kitimar${_component}Targets.cmake")
 endforeach()

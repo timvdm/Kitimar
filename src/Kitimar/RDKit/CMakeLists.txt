@@ -1,6 +1,4 @@
-#set(Boost_USE_STATIC_LIBS ON)
 set(Boost_USE_MULTITHREADED OFF)
-#set(Boost_USE_STATIC_RUNTIME ON)
 find_package(Boost REQUIRED COMPONENTS iostreams filesystem system)
 find_package(RDKit REQUIRED)
 

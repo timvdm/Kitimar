@@ -219,8 +219,8 @@ The optimized cases are currently:
 
 ##### Example of single atom SMARTS
 
-The two functions generate the same assembly code. More complex examples can be found here
-together with a [link to compiler exlorer](https://godbolt.org/z/cYYjnY4Me) to try out your own SMARTS expressions.
+The two functions generate the same assembly code. More complex examples can be tested on the
+[compiler exlorer website](https://godbolt.org/z/cYYjnY4Me).
 
 ```c++
 bool isCarbonDegree3_v1(auto &mol, auto atom)
@@ -449,7 +449,7 @@ null_bond(mol)              -> Bond;  // e.g. nullptr, -1, ...
 |---------------|-------------------------------------------|---------------------|
 | Molecule      | Generic molecule interface                | -                   |
 | CTSmarts      | Compile time SMARTS expressions           | Molecule, ctre      |
-| Util          | Utility functions                         | fmt, ctre           |
+| Util          | Utility functions                         | fmt                 |
 | CTLayout      | Compile time serialized data structures   | Util, Molecule, mio |
 | OpenBabel     | Molecule interface for OpenBabel          | Molecule, OpenBabel |
 | RDKit         | Molecule interface for OpenBabel          | Molecule, RDKit     |
