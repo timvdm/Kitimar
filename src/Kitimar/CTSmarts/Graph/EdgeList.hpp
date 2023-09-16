@@ -12,7 +12,7 @@ namespace Kitimar::CTSmarts {
         int source = -1;
         int target = -1;
 
-        constexpr bool operator<=>(const Edge&) const noexcept = default;
+        constexpr auto operator<=>(const Edge&) const noexcept = default;
     };
 
     namespace impl {
