@@ -85,68 +85,104 @@ Matching SMARTS "C[O-]" in SMILES "CC(=O)[O-]": 1
 The code below is a simplified version of the real API which makes it easier to read form a users perspective. Examples of how to use the API can be found in the `examples/CTSmarts` directory.
 
 ```c++
-//
 // Context
-//
-#include <Kitimar/CTSmarts/CTSmarts.hpp>
 
-using namespace Kitimar;
+#include <Kitimar/CTSmarts/CTSmarts.hpp>
 
 auto mol = ...; // Molecule that satifies the Molecule::Molecule concept.
 
-//
-// API 
-//
-// <MapType> = CTSmarts::Unique or CTSmarts::All
-// - Two mappings are considered unique if their atom set if different.
-// - CTSmarts::Unique is always the default.
+// ctse::match -> bool
 
-// Check if molecule contains SMARTS.
+ctse::match(mol)
+ctse::match_atom(mol, atom)
+ctse::match_bond(mol, bond)
+ctse::match(mol, atom/bond)
 
-CTSmarts::contains<"SMARTS">(mol) -> bool;
+// ctse::count -> int
 
-// Check if an atom matches the first SMARTS atom
+ctse::count(mol, type = Unique)
+ctse::count_unique(mol)
+ctse::count_all(mol)
 
-CTSmarts::atom<"SMARTS">(mol, atom) -> bool;
+ctse::count_atom(mol, atom, type = Unique)
+ctse::count_atom_unique(mol, atom)
+ctse::count_atom_all(mol, atom)
 
-// Check if a bond matches the first SMARTS bond
+ctse::count_bond(mol, bond, type = Unique)
+ctse::count_bond_unique_bond(mol, bond)
+ctse::count_bond_all(mol, bond)
 
-CTSmarts::bond<"SMARTS">(mol, bond) -> bool;
+ctse::count(mol, atom/bond, type = Unique)
+ctse::count_unique(mol, atom/bond)
+ctse::count_all(mol, atom/bond)
 
-// Find the first mapping or an empty vector if there is no mapping.
+// ctse::map -> std::tuple<bool, std::array<int, N>>
 
-CTSmarts::single<"SMARTS">(mol) -> std::vector<int>;
+ctse::map(mol)
+ctse::map_atom(mol, atom)
+ctse::map_bond(mol, bond)
+ctse::map(mol, atom/bond)
 
-// Find the first mapping starting from a specified atom or an empty vector if there is no mapping.
+auto [found, map] = ctse::map<"C=O">(mol);
+if (found) {
+    // Use map...
+}
 
-CTSmarts::single<"SMARTS">(mol, atom) -> std::vector<int>;
+// ctse::maps -> std::vector<std::array<int, N>>
 
-// Count the number of mappings.
+ctse::maps(mol, type = Unique)
+ctse::maps_unique(mol)
+ctse::maps_all(mol)
 
-CTSmarts::count<"SMARTS">(mol, <MapType>) -> std::integral;
+ctse::maps_atom(mol, atom, type = Unqiue)
+ctse::maps_atom_unique(mol, atom)
+ctse::maps_atom_all(mol, atom)
 
-// Find multiple mappings.
+ctse::maps_bond(mol, bond, type = Unique)
+ctse::maps_bond_unique(mol, bond)
+ctse::maps_bond_all(mol, bond)
 
-CTSmarts::multi<"SMARTS">(mol, <MapType>) -> std::vector<std::vector<int>>;
+ctse::maps(mol, atom/bond, type = Unique)
+ctse::maps_unique(mol, atom/bond)
+ctse::maps_all(mol, atom/bond)
 
-// Capture the mapped atoms from a single mapping (starting from aspecified atom).
+// ctse::capture -> std::tuple<bool, Atom...>
 
-CTSmarts::capture<"SMARTS">(mol) -> std::tuple<bool, Atom...>;
-CTSmarts::capture<"SMARTS">(mol, atom) -> tuple<bool, Atom...>;
+cst::capture(mol)
+cst::capture_atom(mol, atom)
+cst::capture_bond(mol, bond)
+cst::capture(mol, atom/bond)
 
-// Capture the mapped atoms from multiple mappings (starting from aspecified atom).
+// ctse::captures -> std::vector<std::tuple<Atom...>>
 
-CTSmarts::captures<"SMARTS">(mol, <MapType>) -> std::range<std::array<Atom, N>>;
-CTSmarts::captures<"SMARTS">(mol, atom, <MapType>) -> std::range<std::array<Atom, N>>;
+cst::captures(mol, type = Unique)
+cst::captures_unique(mol)
+cst::captures_all(mol)
+
+cst::captures_atom(mol, atom, type = Unique)
+cst::captures_atom_unique(mol, atom)
+cst::captures_atom_all(mol, atom)
+
+cst::captures_bond(mol, bond, type = Unique)
+cst::captures_bond_unique(mol)
+cst::captures_bond_all(mol)
+
+cst::captures(mol, atom/bond, type = Unique)
+cst::captures_unique(mol, atom/bond)
+cst::captures_all(mol, atom/bond)
+
+for (auto [C, N] : ctse::captures<"C-N">(mol)) {
+    // Use atoms C and N
+}
 ```
 
 #### Capture
 
-The `CTSmarts::capture(s)` API is meant to be used with [structured bindings](https://en.cppreference.com/w/cpp/language/structured_binding) and [range-based for loops](https://en.cppreference.com/w/cpp/language/range-for).
+The `ctse::capture(s)` API is meant to be used with [structured bindings](https://en.cppreference.com/w/cpp/language/structured_binding) and [range-based for loops](https://en.cppreference.com/w/cpp/language/range-for).
 
 ```c++
 // Capture all atoms
-auto [match, C, O, N] = CTSmarts::capture<"C(=O)N">(mol);
+auto [match, C, O, N] = ctse::capture<"C(=O)N">(mol);
 if (match) {
    // Use C, O, N atoms...
 }
@@ -154,7 +190,7 @@ if (match) {
 
 ```c++
 // Capture atoms specified using SMARTS atom classes
-auto [match, O, N] = CTSmarts::capture<"C(=[O:1])[N:2]">(mol);
+auto [match, O, N] = ctse::capture<"C(=[O:1])[N:2]">(mol);
 if (match) {
    // Use O, N atoms...
 }
@@ -162,7 +198,7 @@ if (match) {
 
 ```c++
 // Capture all atoms for every unique mapping
-for (auto [C, O] : CTSmarts::captures<"C=O">(mol)) {
+for (auto [C, O] : ctse::captures<"C=O">(mol)) {
    // Use C, O atoms...
 }
 ```
@@ -171,14 +207,15 @@ for (auto [C, O] : CTSmarts::captures<"C=O">(mol)) {
 
 #### Optimized cases
 
-Simple cases are optimized to match the perormance of handwritten code. In most of these cases the generated assembly is actually the same.
+Simple cases are optimized to match the perormance of handwritten code.
+In most of these cases the generated assembly is actually the same.
 
 The optimized cases are currently:
-- A single SMARTS atom (e.g. `C`, `[O-]`, `[CD2,CD3;R]`)
-- A single SMARTS bond (e.g. `*=*`, `C=O`, `C-,=N`)
-- SMARTS with central atom (e.g. `CC=O`, `CC(=O)O`, `C(C)([O-])=O`)
-    - The are SMARTS with a [graph radius](https://en.wikipedia.org/wiki/Distance_(graph_theory)) of 1
-    - ***Not implemented yet***
+- A single atom (e.g. `C`, `[O-]`, `[CD2,CD3;R]`)
+- A single bond (e.g. `*=*`, `C=O`, `C-,=N`)
+- ***Not yet implemented***
+    - Chains (e.g. `CCCCCO`)
+    - Star graphs (e.g. `CC=O`, `CC(=O)O`, `C(C)([O-])=O`)
 
 ##### Example of single atom SMARTS
 
@@ -186,11 +223,9 @@ The two functions generate the same assembly code. More complex examples can be 
 together with a link to compiler exlorer to try out your own SMARTS expressions.
 
 ```c++
-namespace ctse = Kitimar::CTSmarts;
-
 bool isCarbonDegree3_v1(auto &mol, auto atom)
 {
-    return get_element(mol, atom) == 6 && get_degree(mol, atom) == 3;    
+    return get_element(mol, atom) == 6 && get_degree(mol, atom) == 3;
 }
 
 bool isCarbonDegree3_v2(auto &mol, auto atom)
@@ -200,7 +235,7 @@ bool isCarbonDegree3_v2(auto &mol, auto atom)
 ```
 
 ```assembly
-isCarbonDegree3_v1<Kitimar::Molecule::MockMolecule, unsigned int>(Kitimar::Molecule::MockMolecule&, unsigned int)::
+isCarbonDegree3_v1
  xor    eax,eax
  cmp    BYTE PTR [rdx+0x7],0x6
  jne    4010f6 <main+0x16>
@@ -208,16 +243,15 @@ isCarbonDegree3_v1<Kitimar::Molecule::MockMolecule, unsigned int>(Kitimar::Molec
  sete   al
  movzx  eax,al
  ret
- 
-# isCarbonDegree3_v2
-Kitimar::CTSmarts::matchAtomExpr<Kitimar::CTSmarts::Element<6>, Kitimar::CTSmarts::Degree<3>, Kitimar::Molecule::MockMolecule, unsigned int>(Kitimar::Molecule::MockMolecule const&, unsigned int const&, Kitimar::CTSmarts::And<Kitimar::CTSmarts::Element<6>, Kitimar::CTSmarts::Degree<3> >)::
+
+isCarbonDegree3_v2
  xor    eax,eax
  cmp    BYTE PTR [rdx+0x7],0x6
  jne    4010f6 <main+0x16>
  cmp    BYTE PTR [rdx+0xa],0x3
  sete   al
  movzx  eax,al
- ret 
+ ret
 ```
 
 #### General case
@@ -259,12 +293,12 @@ Known **unsupported** compilers:
 ### Planned features
 
 - More compile-time optimizations
-  - Match less common atoms first
-  - Optimize atom and bond expressions
-  - API for custom optimizers
+  - Match less common atoms first ( DONE )
+  - Optimize atom and bond expressions ( WIP )
+  - API for custom optimizers ( DONE )
 - API for custom SMARTS extensions
 - Improved error reporting
-- Optimize special cases (match single atom/bond, central atom with bonds, ...)
+- Optimize special cases (match single atom/bond, central atom with bonds, ...) ( WIP )
     - No need for dynamic memory allocations
 - ...
 
@@ -283,11 +317,11 @@ However, writing this hypothetical *"MTL"* in C++98 is no easy task. A replaceme
 [Helium](https://github.com/timvdm/Helium/) was my first attempt to implement this *"MTL"*.
 
 The **container** was the easy part. While molecules are labeled graphs and no iterator pairs over a range of values,
-a replacement for this was already available. The [Boost Graph Library (BGL)](boost.org/doc/libs/1_78_0/libs/graph/doc/index.html), 
-which is also used by [RDKit](https://www.rdkit.org/), solved this by defining a graph concept (in documentation) and a set of free functions. 
+a replacement for this was already available. The [Boost Graph Library (BGL)](boost.org/doc/libs/1_78_0/libs/graph/doc/index.html),
+which is also used by [RDKit](https://www.rdkit.org/), solved this by defining a graph concept (in documentation) and a set of free functions.
 Developers could implement these functions for their own custom graph data structure and use all of the algorithms provided by the BGL.
-**Iterators** are still iterators, but these iterate over the atoms/bonds of a molecule or incident/adjacent to another atom. Dereferencing an iterator no longer returns a value but an atom or a bond. 
-These atoms/bonds have a vertex/edge label containing their properties (element, charge, bond order, ...) which can also be retrieved using a free function. 
+**Iterators** are still iterators, but these iterate over the atoms/bonds of a molecule or incident/adjacent to another atom. Dereferencing an iterator no longer returns a value but an atom or a bond.
+These atoms/bonds have a vertex/edge label containing their properties (element, charge, bond order, ...) which can also be retrieved using a free function.
 
 The **Molecule concept** was now defined. In the documentation at least, C++98 did not have concepts. Older compilers would also print errors hundreds of lines long when you tried to call std::sort on an std::list.
 Template meta-programming which was required to implement this was also a time consuming task.
@@ -297,8 +331,8 @@ The developer using the *"MTL"* should be able to write compact, readable, perfo
 Nevertheless, I started working on what would become Helium to see how far I would get. Work on the new C++0x standard was in progress and seemed to contain many features that would make all of this easier.
 The new [Clang](https://en.wikipedia.org/wiki/Clang) compiler was a major advancement regarding the compiler errors.
 It produced colored error messages which were easier to read, less verbose and better than GCC at the time.
-Progress was initially slow, the C++0x standard was delayed and became C++11. 
-Compiler support for the new standard would still have to catch on. 
+Progress was initially slow, the C++0x standard was delayed and became C++11.
+Compiler support for the new standard would still have to catch on.
 The first versions of Helium (2012-2014) still used C++98 with optional support C++11 `std:thread` to do similarity searches in parallel.
 A year later the project was updated to require C++11 and use range based for loops to replace the macros using `BOOST_TYPEOF` and associated boilerplate code.
 
@@ -313,7 +347,7 @@ A shared instance between threads which is only initialized once requires synchr
 Furthermore, this results in a graph representation and abstract syntax trees (AST) for the atom and bond expressions existing in memory. This layer of indirection will never be as fast as the handwritten code.
 
 For simple cases, Helium tried to provide predefined predicates which could be used and combined to do some of these tasks.
-This never resulted in an elegant syntax or provided any real advantage. More recently, I also tried to use the ranges library which is now part of the C++20 standard for this. 
+This never resulted in an elegant syntax or provided any real advantage. More recently, I also tried to use the ranges library which is now part of the C++20 standard for this.
 Again, the results were never what I was looking for. SMARTS expressions are just a very compact way of representing these queries.
 An equivalent way of expressing these **queries using valid C++** syntax will always be **more verbose** and requires a **new, unfamiliar syntax** to be learned.
 Existing SMARTS expressions would also have to be converted to this syntax.
@@ -363,7 +397,7 @@ Using this as a example and basis I quickly had a working prototype.
 
 ## Molecule: C++20 Molecule concept
 
-This module specifies the `Molecule` [C++20 concept](https://en.cppreference.com/w/cpp/language/constraints). 
+This module specifies the `Molecule` [C++20 concept](https://en.cppreference.com/w/cpp/language/constraints).
 The concept requires a simple API consisting of free functions to be implemented. This allows molecule
 data structures from different cheminformatics toolkits to be used.
 
@@ -390,16 +424,21 @@ get_degree(mol, atom)             -> std::integral;
 get_element(mol, atom)            -> std::integral;
 get_isotope(mol, atom)            -> std::integral;
 get_charge(mol, atom)             -> std::signed_integral;
+get_valence(mol, atom)            -> std::integral;
 get_implicit_hydrogens(mol, atom) -> std::integral;
-is_cyclic_atom(mol, atom)         -> bool;
+get_total_hydrogens(mol, atom)    -> std::integral;
+is_ring_atom(mol, atom)           -> bool;
 is_aromatic_atom(mol, atom)       -> bool;
+is_in_ring_size(mol, atom, size)  -> bool;
+get_ring_count(mol, atom)         -> std::integral;
+get_ring_degree(mol, atom)        -> std::integral;
 null_atom(mol)                    -> Atom; // e.g. nullptr, -1, ...
 
 get_index(mol, bond)        -> std::integral;
 get_source(mol, bond)       -> Atom;
 get_target(mol, bond)       -> Atom;
 get_order(mol, bond)        -> std::integral;
-is_cyclic_bond(mol, bond)   -> bool;
+is_ring_bond(mol, bond)     -> bool;
 is_aromatic_bond(mol, bond) -> bool;
 null_bond(mol)              -> Bond;  // e.g. nullptr, -1, ...
 ```
