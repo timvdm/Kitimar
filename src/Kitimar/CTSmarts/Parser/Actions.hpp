@@ -4,6 +4,7 @@
 #include "../AST/AST.hpp"
 #include "../Util/Ctll.hpp"
 
+#include <type_traits>
 #include <cctype>
 
 namespace Kitimar::CTSmarts {
