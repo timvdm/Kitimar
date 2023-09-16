@@ -10,7 +10,7 @@ namespace Kitimar::CTSmarts {
         template<typename SmartsT, typename EdgeListT, typename VertexDegreeT>
         consteval auto makeIncidentList(SmartsT, EdgeListT, VertexDegreeT) noexcept
         {
-            constexpr auto stride = *std::ranges::max_element(VertexDegreeT::data);
+            constexpr std::size_t stride = *std::ranges::max_element(VertexDegreeT::data);
             std::array<int, SmartsT::numAtoms * stride> incident = {};
             std::ranges::fill(incident, -1);
 
