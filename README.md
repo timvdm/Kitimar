@@ -153,7 +153,7 @@ ctse::maps_all(mol, atom/bond);
 
 // ctse::capture -> std::tuple<bool, Atom...>
 
-cst::capture(mol)
+cst::capture(mol);
 cst::capture_atom(mol, atom);
 cst::capture_bond(mol, bond);
 cst::capture(mol, atom/bond);
