@@ -56,6 +56,8 @@ See [planned features](#planned-features) below.
 
 ### Build instructions
 
+Build without any external toolkit support:
+
 ```shell
 ~$ git clone https://github.com/timvdm/Kitimar.git
 ~$ cd Kitimar
@@ -65,6 +67,9 @@ See [planned features](#planned-features) below.
 ~/Kitimar/build$ make
 ~/Kitimar/build$ make test
 ```
+
+Add `-DKitimar_WITH_OPENBABEL=ON -DOpenBabel3_DIR=/path/to/lib/cmake/openbabel3` to build with OpenBabel3 support
+or with `-DKitimar_WITH_RDKIT=ON -DRDKit_DIR=/path/to/lib/cmake/rdkit` for RDKit support.
 
 
 ### Examples

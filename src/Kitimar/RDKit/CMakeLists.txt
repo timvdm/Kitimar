@@ -1,5 +1,5 @@
 set(Boost_USE_MULTITHREADED OFF)
-find_package(Boost REQUIRED COMPONENTS iostreams filesystem system)
+find_package(Boost REQUIRED COMPONENTS iostreams filesystem system serialization)
 find_package(RDKit REQUIRED)
 
 # Headers
@@ -19,7 +19,10 @@ target_include_directories(KitimarRDKit INTERFACE
 )
 
 target_compile_definitions(KitimarRDKit INTERFACE -DKITIMAR_WITH_RDKIT)
-target_link_libraries(KitimarRDKit INTERFACE Kitimar::Molecule ${RDKIT_LIBRARIES})
+target_include_directories(KitimarRDKit INTERFACE ${RDKit_INCLUDE_DIRS})
+target_link_libraries(KitimarRDKit INTERFACE Kitimar::Molecule
+    RDKit::GraphMol_static RDKit::SmilesParse_static RDKit::FileParsers_static)
+
 
 # Install
 

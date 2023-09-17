@@ -19,9 +19,6 @@ option(Kitimar_WITH_VALIDATION_SQC "Build substructure query collection validati
 # Without this, generated assembly code is easier to implement.
 option(Kitimar_WITH_IOSTREAM "Use STL iostream" ON)
 
-# CMake module path
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules")
-
 # Only set the cxx_standard if it is not set by someone else
 if (NOT DEFINED CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 20)
