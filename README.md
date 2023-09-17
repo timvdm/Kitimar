@@ -98,35 +98,35 @@ auto mol = ...; // Molecule that satifies the Molecule::Molecule concept.
 
 // ctse::match -> bool
 
-ctse::match(mol)
-ctse::match_atom(mol, atom)
-ctse::match_bond(mol, bond)
-ctse::match(mol, atom/bond)
+ctse::match(mol);
+ctse::match_atom(mol, atom);
+ctse::match_bond(mol, bond);
+ctse::match(mol, atom/bond);
 
 // ctse::count -> int
 
-ctse::count(mol, type = Unique)
-ctse::count_unique(mol)
-ctse::count_all(mol)
+ctse::count(mol, type = Unique);
+ctse::count_unique(mol);
+ctse::count_all(mol);
 
-ctse::count_atom(mol, atom, type = Unique)
-ctse::count_atom_unique(mol, atom)
-ctse::count_atom_all(mol, atom)
+ctse::count_atom(mol, atom, type = Unique);
+ctse::count_atom_unique(mol, atom);
+ctse::count_atom_all(mol, atom);
 
-ctse::count_bond(mol, bond, type = Unique)
-ctse::count_bond_unique_bond(mol, bond)
-ctse::count_bond_all(mol, bond)
+ctse::count_bond(mol, bond, type = Unique);
+ctse::count_bond_unique_bond(mol, bond);
+ctse::count_bond_all(mol, bond);
 
-ctse::count(mol, atom/bond, type = Unique)
-ctse::count_unique(mol, atom/bond)
-ctse::count_all(mol, atom/bond)
+ctse::count(mol, atom/bond, type = Unique);
+ctse::count_unique(mol, atom/bond);
+ctse::count_all(mol, atom/bond);
 
 // ctse::map -> std::tuple<bool, std::array<int, N>>
 
-ctse::map(mol)
-ctse::map_atom(mol, atom)
-ctse::map_bond(mol, bond)
-ctse::map(mol, atom/bond)
+ctse::map(mol);
+ctse::map_atom(mol, atom);
+ctse::map_bond(mol, bond);
+ctse::map(mol, atom/bond);
 
 auto [found, map] = ctse::map<"C=O">(mol);
 if (found) {
@@ -135,46 +135,46 @@ if (found) {
 
 // ctse::maps -> std::vector<std::array<int, N>>
 
-ctse::maps(mol, type = Unique)
-ctse::maps_unique(mol)
-ctse::maps_all(mol)
+ctse::maps(mol, type = Unique);
+ctse::maps_unique(mol);
+ctse::maps_all(mol);
 
-ctse::maps_atom(mol, atom, type = Unqiue)
-ctse::maps_atom_unique(mol, atom)
-ctse::maps_atom_all(mol, atom)
+ctse::maps_atom(mol, atom, type = Unqiue);
+ctse::maps_atom_unique(mol, atom);
+ctse::maps_atom_all(mol, atom);
 
-ctse::maps_bond(mol, bond, type = Unique)
-ctse::maps_bond_unique(mol, bond)
-ctse::maps_bond_all(mol, bond)
+ctse::maps_bond(mol, bond, type = Unique);
+ctse::maps_bond_unique(mol, bond);
+ctse::maps_bond_all(mol, bond);
 
-ctse::maps(mol, atom/bond, type = Unique)
-ctse::maps_unique(mol, atom/bond)
-ctse::maps_all(mol, atom/bond)
+ctse::maps(mol, atom/bond, type = Unique);
+ctse::maps_unique(mol, atom/bond);
+ctse::maps_all(mol, atom/bond);
 
 // ctse::capture -> std::tuple<bool, Atom...>
 
 cst::capture(mol)
-cst::capture_atom(mol, atom)
-cst::capture_bond(mol, bond)
-cst::capture(mol, atom/bond)
+cst::capture_atom(mol, atom);
+cst::capture_bond(mol, bond);
+cst::capture(mol, atom/bond);
 
 // ctse::captures -> std::vector<std::tuple<Atom...>>
 
-cst::captures(mol, type = Unique)
-cst::captures_unique(mol)
-cst::captures_all(mol)
+cst::captures(mol, type = Unique);
+cst::captures_unique(mol);
+cst::captures_all(mol);
 
-cst::captures_atom(mol, atom, type = Unique)
-cst::captures_atom_unique(mol, atom)
-cst::captures_atom_all(mol, atom)
+cst::captures_atom(mol, atom, type = Unique);
+cst::captures_atom_unique(mol, atom);
+cst::captures_atom_all(mol, atom);
 
-cst::captures_bond(mol, bond, type = Unique)
-cst::captures_bond_unique(mol)
-cst::captures_bond_all(mol)
+cst::captures_bond(mol, bond, type = Unique);
+cst::captures_bond_unique(mol);
+cst::captures_bond_all(mol);
 
-cst::captures(mol, atom/bond, type = Unique)
-cst::captures_unique(mol, atom/bond)
-cst::captures_all(mol, atom/bond)
+cst::captures(mol, atom/bond, type = Unique);
+cst::captures_unique(mol, atom/bond);
+cst::captures_all(mol, atom/bond);
 
 for (auto [C, N] : ctse::captures<"C-N">(mol)) {
     // Use atoms C and N
