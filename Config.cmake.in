@@ -48,7 +48,7 @@ foreach(_component ${Kitimar_FIND_COMPONENTS})
     # RDKit
     if(_component STREQUAL RDKit)
         set(Boost_USE_MULTITHREADED OFF)
-        find_package(Boost REQUIRED COMPONENTS iostreams filesystem system)
+        find_package(Boost REQUIRED COMPONENTS iostreams filesystem system serialization)
         find_package(RDKit REQUIRED)
         list(APPEND _components Molecule RDKit)
     endif()
