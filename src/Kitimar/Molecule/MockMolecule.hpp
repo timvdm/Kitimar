@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <vector>
 #include <cassert>
+#include <limits>
 
 namespace Kitimar::Molecule {
 
