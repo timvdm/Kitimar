@@ -87,13 +87,14 @@ auto matchesKitimar(auto &source, Callback callback)
         callback(mol, CTSmarts::match<SMARTS>(mol));
 }
 
-
 template<ctll::fixed_string SMARTS, typename Layout, typename Callback>
 auto matchesKitimarFileStream(Callback callback)
 {
     FileStreamMolSource<Layout> source{chembl_serialized_filename(Layout{})};
     matchesKitimar<SMARTS>(source, std::forward<Callback>(callback));
 }
+
+#ifndef _MSC_VER
 
 template<ctll::fixed_string SMARTS, typename Layout, typename Callback>
 auto matchesKitimarMemoryMapped(Callback callback)
@@ -102,6 +103,8 @@ auto matchesKitimarMemoryMapped(Callback callback)
     BytePtrMolSource<Layout> molSource{source.toPtrSource()};
     matchesKitimar<SMARTS>(molSource, std::forward<Callback>(callback));
 }
+
+#endif // _MSC_VER
 
 //
 // Count of matching molecules
@@ -158,6 +161,8 @@ Benchmark countMatchesKitimarInMemory()
     return {"Kitimar InMemory", n, timer.elapsed()};
 }
 
+#ifndef _MSC_VER
+
 template<ctll::fixed_string SMARTS, typename Layout>
 Benchmark countMatchesKitimarMemoryMapped()
 {
@@ -167,6 +172,8 @@ Benchmark countMatchesKitimarMemoryMapped()
     return {"Kitimar MemoryMapped " + Util::typeName(Layout{}), n, timer.elapsed()};
 }
 
+#endif // _MSC_VER
+
 template<ctll::fixed_string SMARTS, ctll::fixed_string ...Tail>
 void countMatches(std::vector<BenchmarkGroup> &groups)
 {
@@ -174,16 +181,19 @@ void countMatches(std::vector<BenchmarkGroup> &groups)
     groups.push_back({ Util::toString(SMARTS), {
         //countMatchesOpenBabelSmiles<SMARTS>(),
         //Benchmark{"OpenBabel SMILES"},
-#ifdef KITIMAR_WITH_RDKIT
+        #ifdef KITIMAR_WITH_RDKIT
         //countMatchesRDKitSmiles<SMARTS>(),
         //countMatchesRDKitPickle<SMARTS>(),
         //Benchmark{"RDKit SMILES"},
         //Benchmark{"RDKit Pickle"},
-#endif // KITIMAR_WITH_RDKIT
+        #endif // KITIMAR_WITH_RDKIT
         //countMatchesKitimarFileStream<SMARTS, Vector<StructMoleculeIncident>>(),
+
+        #ifndef _MSC_VER
         countMatchesKitimarMemoryMapped<SMARTS, StructMolecules>(),
         countMatchesKitimarMemoryMapped<SMARTS, ListMolecules>(),
         countMatchesKitimarMemoryMapped<SMARTS, TypeMolecules>(),
+        #endif // _MSC_VER
         //countMatchesKitimarInMemory<SMARTS, Vector<StructMoleculeIncident>>()
     }});
     if constexpr (sizeof...(Tail))

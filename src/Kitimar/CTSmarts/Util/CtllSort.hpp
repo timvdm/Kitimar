@@ -19,7 +19,7 @@ namespace Kitimar::CTSmarts {
         else {
             auto [a, tail] = ctll::pop_and_get_front(input);
             auto b = selectLast<Project, Compare>(tail);
-            if constexpr (Compare{}(Project{}(a), Project{}(b)))
+            if constexpr (Compare{}(Project{}(decltype(a){}), Project{}(decltype(b){})))
                 return b;
             else
                 return a;

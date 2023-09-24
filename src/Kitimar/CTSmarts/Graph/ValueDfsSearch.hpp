@@ -8,15 +8,15 @@ namespace Kitimar::CTSmarts {
     namespace impl {
 
         template<int SourceIndex, int AdjIndex>
-        consteval void dfsSearch(auto smarts, auto incidentList, auto &visitor,
-                                 auto &visitedVertices, auto &visitedEdges) noexcept
+        consteval void valueDfsSearch(auto smarts, auto incidentList, auto &visitor,
+                                      auto &visitedVertices, auto &visitedEdges) noexcept
         {
             constexpr auto sourceDegree = incidentList.degrees.data[SourceIndex];
             if constexpr (AdjIndex < sourceDegree) {
                 constexpr auto edgeIndex = incidentList.get(SourceIndex, AdjIndex);
 
                 if (visitedEdges[edgeIndex]) {
-                    dfsSearch<SourceIndex, AdjIndex + 1>(smarts, incidentList, visitor, visitedVertices, visitedEdges);
+                    valueDfsSearch<SourceIndex, AdjIndex + 1>(smarts, incidentList, visitor, visitedVertices, visitedEdges);
                     return;
                 }
 
@@ -33,12 +33,12 @@ namespace Kitimar::CTSmarts {
 
                 // dfs
                 if (!isClosure)
-                    dfsSearch<targetIndex, 0>(smarts, incidentList, visitor, visitedVertices, visitedEdges);
+                    valueDfsSearch<targetIndex, 0>(smarts, incidentList, visitor, visitedVertices, visitedEdges);
 
                 visitor.backtrack(edgeIndex, targetIndex, isClosure);
 
                 // next incident bond
-                dfsSearch<SourceIndex, AdjIndex + 1>(smarts, incidentList, visitor, visitedVertices, visitedEdges);
+                valueDfsSearch<SourceIndex, AdjIndex + 1>(smarts, incidentList, visitor, visitedVertices, visitedEdges);
             } else if constexpr (SourceIndex == 0) {
                 visitor.backtrack(SourceIndex);
             }
@@ -46,7 +46,7 @@ namespace Kitimar::CTSmarts {
 
     } // namespace impl
 
-    struct DFSVisitorBase
+    struct ValueDFSVisitorBase
     {
         constexpr void visit(int edge, int source, int target, bool isNewComponent, bool isClosure) noexcept {}
         constexpr void backtrack(int edge, int target, bool isClosure) noexcept {}
@@ -54,11 +54,11 @@ namespace Kitimar::CTSmarts {
     };
 
     template<int SourceIndex = 0>
-    consteval void dfsSearch(auto smarts, auto incidentList, auto &visitor) noexcept
+    consteval void valueDfsSearch(auto smarts, auto incidentList, auto &visitor) noexcept
     {
         std::array<bool, smarts.numAtoms> visitedAtoms = {};
         std::array<bool, smarts.numBonds> visitedBonds = {};
-        impl::dfsSearch<SourceIndex, 0>(smarts, incidentList, visitor, visitedAtoms, visitedBonds);
+        impl::valueDfsSearch<SourceIndex, 0>(smarts, incidentList, visitor, visitedAtoms, visitedBonds);
     }
 
 } // namespace Kitimar::CTSmarts

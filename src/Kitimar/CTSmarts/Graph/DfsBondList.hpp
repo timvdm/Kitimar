@@ -9,7 +9,7 @@ namespace Kitimar::CTSmarts {
     {
         static constexpr inline auto source = Source{};
         static constexpr inline auto target = Target{};
-        static constexpr inline auto expr = Expr();
+        static constexpr inline auto expr = Expr{};
         static constexpr inline auto isCyclic = IsCyclic;
         static constexpr inline auto isRingClosure = IsRingClosure;
     };
@@ -28,7 +28,7 @@ namespace Kitimar::CTSmarts {
                 auto target = get<edge.target>(smarts.atoms);
                 constexpr auto isCyclic = cycleMembership.edges[edge.index];
 
-                auto dfsBond = DfsBond<decltype(source), decltype(target), decltype(expr), isCyclic, edge.closure>{};
+                auto dfsBond = DfsBond<decltype(source), decltype(target), std::remove_const_t<decltype(expr)>, isCyclic, edge.closure>{};
 
                 return ctll::push_front(dfsBond, makeDfsBondListHelper<DfsEdgeIndex + 1>(smarts, dfsEdgeList, cycleMembership));
             }

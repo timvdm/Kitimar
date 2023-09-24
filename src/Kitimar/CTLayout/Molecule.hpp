@@ -1169,12 +1169,16 @@ namespace Kitimar::CTLayout {
     using FileStreamMolSource = LayoutMolSource<Layout, FileStreamSource>;
 
     template<typename Layout>
-    using MemoryMappedMolSource = LayoutMolSource<Layout, MemoryMappedSource>;
-
-    template<typename Layout>
     using InMemoryMolSource = LayoutMolSource<Layout, InMemorySource>;
+
+    #ifndef _MSC_VER
+    template<typename Layout>
+    using MemoryMappedMolSource = LayoutMolSource<Layout, MemoryMappedSource>;
+    #endif // _MSC_VER
 
     template<typename Layout>
     using BytePtrMolSource = LayoutMolSource<Layout, PtrSource>;
+
+
 
 } // namespace Kitimar::CTLayout

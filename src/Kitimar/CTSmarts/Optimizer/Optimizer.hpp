@@ -28,10 +28,10 @@ namespace Kitimar::CTSmarts {
         static constexpr auto create(SmartsT, SeedTypeTag<SeedT>) noexcept
         {
             constexpr auto smarts = SmartsT{};
-            constexpr auto edgeList = EdgeList{smarts};
+            constexpr auto edgeList = ValueEdgeList{smarts};
             constexpr auto vertexDegree = VertexDegree{smarts, edgeList};
             constexpr auto incidentList = IncidentList{smarts, edgeList, vertexDegree};
-            constexpr auto dfsEdges = DfsEdgeList{smarts, incidentList};
+            constexpr auto dfsEdges = ValueDfsEdgeList{smarts, incidentList};
             constexpr auto cycleMembership = CycleMembership{smarts, incidentList};
             constexpr auto dfsBonds = DfsBondList{smarts, dfsEdges, cycleMembership};
             return SmartsQuery{vertexDegree, dfsBonds};
@@ -39,19 +39,20 @@ namespace Kitimar::CTSmarts {
     };
 
     // FIXME: optimize atom expressions...
+
     struct FullOptimizer
     {
         template<typename SmartsT, SeedType SeedT>
         static constexpr auto create(SmartsT, SeedTypeTag<SeedT>) noexcept
         {
             constexpr auto smarts = SmartsT{};
-            constexpr auto edgeList = EdgeList{smarts};
+            constexpr auto edgeList = ValueEdgeList{smarts};
             constexpr auto vertexDegree = VertexDegree{smarts, edgeList};
             constexpr auto incidentList = IncidentList{smarts, edgeList, vertexDegree};
             constexpr auto atomFreq = AtomFrequency{smarts};
             constexpr auto optimizedIncidentList = OptimizeIncidentList{smarts, incidentList, atomFreq, std::false_type{}};
             constexpr auto sourceIndex = (SeedT == SeedType::Molecule) ? std::ranges::min_element(atomFreq.data) - std::begin(atomFreq.data) : 0;
-            constexpr auto dfsEdges = DfsEdgeList{smarts, optimizedIncidentList, Number<sourceIndex>{}};
+            constexpr auto dfsEdges = ValueDfsEdgeList{smarts, optimizedIncidentList, Number<sourceIndex>{}};
             constexpr auto cycleMembership = CycleMembership{smarts, optimizedIncidentList};
             constexpr auto dfsBonds = DfsBondList{smarts, dfsEdges, cycleMembership};
             return SmartsQuery{vertexDegree, dfsBonds};

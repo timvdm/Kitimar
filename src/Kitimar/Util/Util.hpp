@@ -12,8 +12,9 @@
 #include <filesystem>
 #include <algorithm>
 
+#ifndef _MSC_VER
 #include <cxxabi.h> // FIXME
-
+#endif
 
 namespace Kitimar::Util {
 
@@ -42,7 +43,11 @@ namespace Kitimar::Util {
     template<typename T>
     std::string typeName(T, bool qualified = false)
     {
+        #ifndef _MSC_VER
         std::string_view name = abi::__cxa_demangle(typeid(T).name(), nullptr, nullptr, nullptr);
+        #else
+        std::string_view name = typeid(T).name();
+        #endif
         if (qualified)
             return name.data();
         auto pos = name.rfind("::");

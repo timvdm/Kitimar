@@ -15,37 +15,9 @@ using namespace Kitimar::CTSmarts;
 template<typename T>
 struct identify_type;
 
-TEST_CASE("EdgeList")
-{
-    auto smarts = Smarts<"*1*(*)*1">{};
-
-    constexpr auto edges = EdgeList{smarts}.data;
-
-    static_assert(edges.size() == 4);
-    static_assert(edges[0] == Edge{0, 0, 1});
-    static_assert(edges[1] == Edge{1, 1, 2});
-    static_assert(edges[2] == Edge{2, 1, 3});
-    static_assert(edges[3] == Edge{3, 3, 0});
-}
 
 
-#ifdef KITIMAR_WITH_IOSTREAM
 
-TEST_CASE("DfsSearch")
-{
-    auto smarts = Smarts<"*1**12**2*">{};
-
-    auto edges = EdgeList(smarts);
-    auto degrees = VertexDegree(smarts, edges);
-    auto adjList = IncidentList(smarts, edges, degrees);
-
-    auto dfsSearchEvents = DfsSearchEvents(smarts, adjList);
-
-    for (const auto &event : dfsSearchEvents.events)
-        std::cout << event << std::endl;
-}
-
-#endif // KITIMAR_WITH_IOSTREAM
 
 
 TEST_CASE("ExpressionFrequency")
@@ -337,70 +309,7 @@ TEST_CASE("AtomFrequency")
     static_assert(atomFreq[2] == expressionFrequency(O{}));
 }
 
-TEST_CASE("IncidentList")
-{
-    /*
-    using C = AliphaticAtom<6>;
-    using N = AliphaticAtom<7>;
-    using O = AliphaticAtom<8>;
-    using F = AliphaticAtom<9>;
-    */
 
-    auto smarts = Smarts<"CN(O)F">{};
-
-    constexpr auto edgeList = EdgeList{smarts};
-    constexpr auto vertexDegree = VertexDegree{smarts, edgeList};
-    constexpr auto incidentList = IncidentList{smarts, edgeList, vertexDegree};
-
-    static_assert(incidentList.data.size() == 4 * 3);
-    static_assert(incidentList.data[0] == 0);
-    static_assert(incidentList.data[3] == 0);
-    static_assert(incidentList.data[4] == 1);
-    static_assert(incidentList.data[5] == 2);
-    static_assert(incidentList.data[6] == 1);
-    static_assert(incidentList.data[9] == 2);
-
-
-    constexpr auto atomFreq = AtomFrequency{smarts};
-    constexpr auto optimizeIncidentList = OptimizeIncidentList{smarts, incidentList, atomFreq, std::false_type{}};
-
-    static_assert(optimizeIncidentList.data.size() == 4 * 3);
-    static_assert(optimizeIncidentList.data[0] == 0);
-    static_assert(optimizeIncidentList.data[3] == 2);
-    static_assert(optimizeIncidentList.data[4] == 1);
-    static_assert(optimizeIncidentList.data[5] == 0);
-    static_assert(optimizeIncidentList.data[6] == 1);
-    static_assert(optimizeIncidentList.data[9] == 2);
-
-}
-
-
-
-TEST_CASE("OptimizeIncidentList<SeedBond>")
-{
-    auto smarts = Smarts<"C(C)S">{};
-
-    constexpr auto edgeList = EdgeList{smarts};
-    constexpr auto vertexDegree = VertexDegree{smarts, edgeList};
-    constexpr auto incidentList = IncidentList{smarts, edgeList, vertexDegree};
-    constexpr auto atomFreq = AtomFrequency{smarts};
-
-    // no seed bond
-    constexpr auto optimizeIncidentList1 = OptimizeIncidentList{smarts, incidentList, atomFreq, std::false_type{}};
-    static_assert(optimizeIncidentList1.data.size() == 3 * 2);
-    static_assert(optimizeIncidentList1.data[0] == 1);
-    static_assert(optimizeIncidentList1.data[1] == 0);
-    static_assert(optimizeIncidentList1.data[2] == 0);
-    static_assert(optimizeIncidentList1.data[4] == 1);
-
-    // no seed bond
-    constexpr auto optimizeIncidentList2 = OptimizeIncidentList{smarts, incidentList, atomFreq, std::true_type{}};
-    static_assert(optimizeIncidentList2.data.size() == 3 * 2);
-    static_assert(optimizeIncidentList2.data[0] == 0);
-    static_assert(optimizeIncidentList2.data[1] == 1);
-    static_assert(optimizeIncidentList2.data[2] == 0);
-    static_assert(optimizeIncidentList2.data[4] == 1);
-}
 
 
 

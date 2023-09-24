@@ -49,7 +49,7 @@ namespace Kitimar::Molecule {
     struct MockProxyAtom
     {
         const MockProxyMolecule *molecule = nullptr;
-        uint32_t index = -1;
+        uint32_t index = std::numeric_limits<uint32_t>::max();
 
         bool operator==(const MockProxyAtom &other) const noexcept = default;
     };
@@ -57,7 +57,7 @@ namespace Kitimar::Molecule {
     struct MockProxyBond
     {
         const MockProxyMolecule *molecule = nullptr;
-        uint32_t index = -1;
+        uint32_t index = std::numeric_limits<uint32_t>::max();
     };
 
     struct MockProxyMolecule
@@ -260,7 +260,7 @@ namespace Kitimar::Molecule {
     inline Mol::Atom null_atom(const Mol &mol) noexcept
     {
         if constexpr (std::is_same_v<Mol, MockIndexMolecule>)
-            return -1;
+            return std::numeric_limits<uint32_t>::max();
         if constexpr (std::is_same_v<Mol, MockProxyMolecule>)
             return {};
     }
@@ -308,7 +308,7 @@ namespace Kitimar::Molecule {
     inline Mol::Bond null_bond(const Mol &mol) noexcept
     {
         if constexpr (std::is_same_v<Mol, MockIndexMolecule>)
-            return -1;
+            return std::numeric_limits<uint32_t>::max();
         if constexpr (std::is_same_v<Mol, MockProxyMolecule>)
             return {};
     }

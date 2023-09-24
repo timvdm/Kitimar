@@ -268,7 +268,7 @@ TEST_CASE("VariableSizeVector")
     auto V2_0 = sizeof(Length) + l1 * sizeof(std::size_t);
     auto V2_1 = V2_0 + sizeof(Length) + l2[0] * sizeOf(V2::type);
     auto V2_2 = V2_1 + sizeof(Length) + l2[1] * sizeOf(V2::type);
-    *reinterpret_cast<std::size_t*>(data.data() + sizeof(Length)                          ) = 48;
+    *reinterpret_cast<std::size_t*>(data.data() + sizeof(Length)) = sizeof(Length) + 3 * (sizeof(Length) + sizeof(std::size_t)) + 4 * sizeof(short);
     *reinterpret_cast<std::size_t*>(data.data() + sizeof(Length) +     sizeof(std::size_t)) = V2_1;
     *reinterpret_cast<std::size_t*>(data.data() + sizeof(Length) + 2 * sizeof(std::size_t)) = V2_2;
 
@@ -616,7 +616,9 @@ TEST_CASE("VariableSizeVectorWriter")
     CHECK(v.at(1).at(0).get() == 20);
     CHECK(v.at(1).at(1).get() == 30);
     CHECK(v.at(2).at(0).get() == 40);
-    CHECK(sizeOf(V{}, sink) == 56);
+
+    using Length = V::Length;
+    CHECK(sizeOf(V{}, sink) == sizeof(Length) + 3 * (sizeof(Length) + sizeof(std::size_t)) + 4 * sizeof(int));
 }
 
 

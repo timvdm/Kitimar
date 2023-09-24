@@ -47,7 +47,7 @@ namespace Kitimar::CTSmarts {
         consteval auto makeCycleMembership(auto smarts, auto incidentList) noexcept
         {
             CycleMembershipVisitor visitor{smarts, incidentList};
-            dfsSearch(smarts, incidentList, visitor);
+            valueDfsSearch(smarts, incidentList, visitor);
             return std::make_tuple(visitor.vertices, visitor.edges);
         }
 

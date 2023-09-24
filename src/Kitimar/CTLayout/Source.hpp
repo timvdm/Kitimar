@@ -183,6 +183,8 @@ namespace Kitimar::CTLayout {
             std::size_t m_offset = 0;
     };
 
+#ifndef _MSC_VER
+
     using MioMemMapSource = mio::basic_mmap_source<std::byte>;
 
     class MemoryMappedSource
@@ -237,5 +239,7 @@ namespace Kitimar::CTLayout {
             std::shared_ptr<MioMemMapSource> m_source;
             std::size_t m_offset = 0;
     };
+
+#endif // _MSC_VER
 
 } // namespace Kitimar::CTLayout
