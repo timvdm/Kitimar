@@ -61,6 +61,7 @@ if(UNIX)
     target_compile_options(KitimarOptions INTERFACE
         -march=native
         -mtune=native
+        -pedantic
     )
 
     target_compile_options(KitimarWarnings INTERFACE

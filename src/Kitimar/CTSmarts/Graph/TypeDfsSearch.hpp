@@ -4,9 +4,6 @@
 
 #include <ctll/list.hpp>
 
-//#include <array>
-//#include <concepts>
-
 namespace Kitimar::CTSmarts {
 
     namespace impl {
@@ -22,7 +19,7 @@ namespace Kitimar::CTSmarts {
                 if constexpr (ctll::exists_in(Number<edgeIndex>{}, visitedEdges)) {
                     return typeDfsSearch<SourceIndex, AdjIndex + 1>(smarts, incidentList, visitor, state, visitedVertices, visitedEdges);
                 } else {
-                    constexpr auto edge = incidentList.edges.data[edgeIndex];
+                    constexpr auto edge = get<edgeIndex>(incidentList.edges.data);
                     constexpr auto targetIndex = edge.source == SourceIndex ? edge.target : edge.source;
                     constexpr auto isNewComponent = !ctll::exists_in(Number<SourceIndex>{}, visitedVertices);
                     constexpr auto isClosure = ctll::exists_in(Number<targetIndex>{}, visitedVertices);

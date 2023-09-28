@@ -18,10 +18,13 @@ set(CTSmarts_HDRS
     Util/CtllSort.hpp
     Parser/Grammar.hpp
     Parser/Actions.hpp
+    Graph/DfsBond.hpp
     Graph/ValueEdgeList.hpp
     Graph/TypeEdgeList.hpp
-    Graph/VertexDegree.hpp
-    Graph/IncidentList.hpp
+    Graph/ValueVertexDegree.hpp
+    Graph/TypeVertexDegree.hpp
+    Graph/ValueIncidentList.hpp
+    Graph/TypeIncidentList.hpp
     Graph/DfsSearchEventType.hpp
     Graph/ValueDfsSearch.hpp
     Graph/TypeDfsSearch.hpp
@@ -29,8 +32,10 @@ set(CTSmarts_HDRS
     Graph/TypeDfsSearchEvents.hpp
     Graph/ValueDfsEdgeList.hpp
     Graph/TypeDfsEdgeList.hpp
-    Graph/CycleMembership.hpp
-    Graph/DfsBondList.hpp
+    Graph/ValueCycleMembership.hpp
+    Graph/TypeCycleMembership.hpp
+    Graph/ValueDfsBondList.hpp
+    Graph/TypeDfsBondList.hpp
     Filter/UnconditionalFilter.hpp
     Filter/NumAtomBondFilter.hpp
     Filter/ElementFilter.hpp

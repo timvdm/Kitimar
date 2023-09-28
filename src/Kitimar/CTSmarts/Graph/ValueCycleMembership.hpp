@@ -8,11 +8,11 @@ namespace Kitimar::CTSmarts {
     namespace impl {
 
         template<typename SmartsT, typename IncidentListT>
-        struct CycleMembershipVisitor
+        struct ValueCycleMembershipVisitor
         {
 
-            consteval CycleMembershipVisitor() noexcept {}
-            consteval CycleMembershipVisitor(SmartsT, IncidentListT) noexcept {}
+            consteval ValueCycleMembershipVisitor() noexcept {}
+            consteval ValueCycleMembershipVisitor(SmartsT, IncidentListT) noexcept {}
 
             constexpr void visit(int edge, int source, int target, bool isNewComponent, bool isClosure) noexcept
             {
@@ -44,9 +44,9 @@ namespace Kitimar::CTSmarts {
             int depth = 0;
         };
 
-        consteval auto makeCycleMembership(auto smarts, auto incidentList) noexcept
+        consteval auto makeValueCycleMembership(auto smarts, auto incidentList) noexcept
         {
-            CycleMembershipVisitor visitor{smarts, incidentList};
+            ValueCycleMembershipVisitor visitor{smarts, incidentList};
             valueDfsSearch(smarts, incidentList, visitor);
             return std::make_tuple(visitor.vertices, visitor.edges);
         }
@@ -54,14 +54,14 @@ namespace Kitimar::CTSmarts {
     } // namespace impl
 
     template<typename SmartsT, typename EdgeListT>
-    struct CycleMembership
+    struct ValueCycleMembership
     {
-        static constexpr inline auto data = impl::makeCycleMembership(SmartsT{}, EdgeListT{});
+        static constexpr inline auto data = impl::makeValueCycleMembership(SmartsT{}, EdgeListT{});
         static constexpr inline auto vertices = std::get<0>(data);
         static constexpr inline auto edges = std::get<1>(data);
 
-        consteval CycleMembership() noexcept {}
-        consteval CycleMembership(SmartsT, EdgeListT) noexcept {}
+        consteval ValueCycleMembership() noexcept {}
+        consteval ValueCycleMembership(SmartsT, EdgeListT) noexcept {}
     };
 
 } // namespace Kitimar::CTSmarts

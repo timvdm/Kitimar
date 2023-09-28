@@ -1,16 +1,21 @@
 #pragma once
 
 #include "Graph/ValueEdgeList.hpp"
-#include "Graph/VertexDegree.hpp"
-#include "Graph/IncidentList.hpp"
+#include "Graph/TypeEdgeList.hpp"
+#include "Graph/ValueVertexDegree.hpp"
+#include "Graph/TypeVertexDegree.hpp"
+#include "Graph/ValueIncidentList.hpp"
+#include "Graph/TypeIncidentList.hpp"
 #include "Graph/ValueDfsSearch.hpp"
 #include "Graph/TypeDfsSearch.hpp"
 #include "Graph/ValueDfsSearchEvents.hpp"
 #include "Graph/TypeDfsSearchEvents.hpp"
 #include "Graph/ValueDfsEdgeList.hpp"
 #include "Graph/TypeDfsEdgeList.hpp"
-#include "Graph/CycleMembership.hpp"
-#include "Graph/DfsBondList.hpp"
+#include "Graph/ValueCycleMembership.hpp"
+#include "Graph/TypeCycleMembership.hpp"
+#include "Graph/ValueDfsBondList.hpp"
+#include "Graph/TypeDfsBondList.hpp"
 
 #include "Optimizer/OptimizeExpression.hpp"
 #include "Optimizer/AtomFrequency.hpp"
@@ -76,7 +81,7 @@ namespace Kitimar::CTSmarts {
     constexpr auto getCentralAtom(auto smarts)
     {
         auto edgeList = ValueEdgeList(smarts); // FIXME
-        auto vertexDegree = VertexDegree(smarts, edgeList);
+        auto vertexDegree = ValueVertexDegree(smarts, edgeList);
 
         if constexpr (smarts.numAtoms < 3 || smarts.numAtoms != smarts.numBonds + 1)
             return -1;

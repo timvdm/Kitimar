@@ -8,7 +8,7 @@ namespace Kitimar::CTSmarts {
     namespace impl {
 
         template<typename SmartsT, typename EdgeListT, typename VertexDegreeT>
-        consteval auto makeIncidentList(SmartsT, EdgeListT, VertexDegreeT) noexcept
+        consteval auto makeValueIncidentList(SmartsT, EdgeListT, VertexDegreeT) noexcept
         {
             constexpr std::size_t stride = *std::ranges::max_element(VertexDegreeT::data);
             std::array<int, SmartsT::numAtoms * stride> incident = {};
@@ -31,10 +31,10 @@ namespace Kitimar::CTSmarts {
     } // namespace impl
 
     template<typename SmartsT, typename EdgeListT, typename VertexDegreeT>
-    struct IncidentList
+    struct ValueIncidentList
     {
         // store adjacent (or incident) bond indices for each vertex
-        static constexpr inline auto data = impl::makeIncidentList(SmartsT{}, EdgeListT{}, VertexDegreeT{});
+        static constexpr inline auto data = impl::makeValueIncidentList(SmartsT{}, EdgeListT{}, VertexDegreeT{});
         static constexpr inline auto edges = EdgeListT{};
         static constexpr inline auto degrees = VertexDegreeT{};
         static constexpr inline auto stride = *std::ranges::max_element(VertexDegreeT::data);
@@ -44,8 +44,8 @@ namespace Kitimar::CTSmarts {
             return data[stride * VertexIndex + IncidentIndex];
         }
 
-        consteval IncidentList() noexcept {}
-        consteval IncidentList(SmartsT, EdgeListT, VertexDegreeT) noexcept {}
+        consteval ValueIncidentList() noexcept {}
+        consteval ValueIncidentList(SmartsT, EdgeListT, VertexDegreeT) noexcept {}
     };
 
 } // namespace Kitimar::CTSmarts

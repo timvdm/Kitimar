@@ -7,7 +7,7 @@ namespace Kitimar::CTSmarts {
     namespace impl {
 
         template<typename SmartsT, typename EdgeListT>
-        consteval auto makeVertexDegree(SmartsT, EdgeListT) noexcept
+        consteval auto makeValueVertexDegree(SmartsT, EdgeListT) noexcept
         {
             std::array<int, SmartsT::numAtoms> degrees = {};
             for (const auto &edge : EdgeListT::data) {
@@ -20,12 +20,12 @@ namespace Kitimar::CTSmarts {
     } // namespace impl
 
     template<typename SmartsT, typename EdgeListT>
-    struct VertexDegree
+    struct ValueVertexDegree
     {
-        static constexpr inline auto data = impl::makeVertexDegree(SmartsT{}, EdgeListT{});
+        static constexpr inline auto data = impl::makeValueVertexDegree(SmartsT{}, EdgeListT{});
 
-        consteval VertexDegree() noexcept {}
-        consteval VertexDegree(SmartsT, EdgeListT) noexcept {}
+        consteval ValueVertexDegree() noexcept {}
+        consteval ValueVertexDegree(SmartsT, EdgeListT) noexcept {}
     };
 
 } // namespace Kitimar::CTSmarts
