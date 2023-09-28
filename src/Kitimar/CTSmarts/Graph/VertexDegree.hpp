@@ -6,10 +6,11 @@ namespace Kitimar::CTSmarts {
 
     namespace impl {
 
-        consteval auto makeVertexDegree(auto smarts, auto edgeList) noexcept
+        template<typename SmartsT, typename EdgeListT>
+        consteval auto makeVertexDegree(SmartsT, EdgeListT) noexcept
         {
-            std::array<int, smarts.numAtoms> degrees = {};
-            for (const auto &edge : edgeList.data) {
+            std::array<int, SmartsT::numAtoms> degrees = {};
+            for (const auto &edge : EdgeListT::data) {
                 ++degrees[edge.source];
                 ++degrees[edge.target];
             }
