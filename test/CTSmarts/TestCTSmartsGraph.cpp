@@ -150,10 +150,9 @@ TEST_CASE("ValueDfsSearch")
 {
     auto smarts = Smarts<"*1**12**2*">{};
 
-    auto edges = ValueEdgeList{smarts};
-    auto degrees = ValueVertexDegree{smarts, edges};
-    auto incidentList = ValueIncidentList{smarts, edges, degrees};
-
+    constexpr auto edges = ValueEdgeList{smarts};
+    constexpr auto degrees = ValueVertexDegree{smarts, edges};
+    constexpr auto incidentList = ValueIncidentList{smarts, edges, degrees};
     constexpr auto e = ValueDfsSearchEvents{smarts, incidentList}.events;
 
     static_assert(e[ 0] == ValueDfsSearchEvent{DfsSearchEventType::VisitVertex, 0, true});
@@ -190,10 +189,9 @@ TEST_CASE("TypeDfsSearch")
 {
     auto smarts = Smarts<"*1**12**2*">{};
 
-    auto edges = TypeEdgeList{smarts};
-    auto degrees = TypeVertexDegree{smarts, edges};
-    auto incidentList = TypeIncidentList{smarts, edges, degrees};
-
+    constexpr auto edges = TypeEdgeList{smarts};
+    constexpr auto degrees = TypeVertexDegree{smarts, edges};
+    constexpr auto incidentList = TypeIncidentList{smarts, edges, degrees};
     constexpr auto e = TypeDfsSearchEvents{smarts, incidentList}.events;
 
     static_assert(std::is_same_v< decltype(get< 0>(e)), TypeDfsSearchEvent<DfsSearchEventType::VisitVertex, 0, true> >);
@@ -234,10 +232,9 @@ TEST_CASE("ValueDfsEdgeList")
 {
     auto smarts = Smarts<"*1*(*)*1">{};
 
-    auto edges = ValueEdgeList{smarts};
-    auto degrees = ValueVertexDegree{smarts, edges};
-    auto incidentList = ValueIncidentList{smarts, edges, degrees};
-
+    constexpr auto edges = ValueEdgeList{smarts};
+    constexpr auto degrees = ValueVertexDegree{smarts, edges};
+    constexpr auto incidentList = ValueIncidentList{smarts, edges, degrees};
     constexpr auto dfsEdges = ValueDfsEdgeList{smarts, incidentList}.data;
 
     static_assert(dfsEdges.size() == 4);
@@ -253,10 +250,9 @@ TEST_CASE("TypeDfsEdgeList")
 {
     auto smarts = Smarts<"*1*(*)*1">{};
 
-    auto edges = TypeEdgeList{smarts};
-    auto degrees = TypeVertexDegree{smarts, edges};
-    auto incidentList = TypeIncidentList{smarts, edges, degrees};
-
+    constexpr auto edges = TypeEdgeList{smarts};
+    constexpr auto degrees = TypeVertexDegree{smarts, edges};
+    constexpr auto incidentList = TypeIncidentList{smarts, edges, degrees};
     constexpr auto dfsEdges = TypeDfsEdgeList{smarts, incidentList}.data;
 
     static_assert(ctll::size(dfsEdges) == 4);
@@ -276,10 +272,9 @@ TEST_CASE("ValueCyclemembership")
 {
     auto smarts = Smarts<"**1*(*)*1*">{};
 
-    auto edges = ValueEdgeList{smarts};
-    auto degrees = ValueVertexDegree{smarts, edges};
-    auto incidentList = ValueIncidentList{smarts, edges, degrees};
-
+    constexpr auto edges = ValueEdgeList{smarts};
+    constexpr auto degrees = ValueVertexDegree{smarts, edges};
+    constexpr auto incidentList = ValueIncidentList{smarts, edges, degrees};
     constexpr auto cycleMembership = ValueCycleMembership{smarts, incidentList}.data;
     constexpr auto v = std::get<0>(cycleMembership);
     constexpr auto e = std::get<1>(cycleMembership);
@@ -305,9 +300,9 @@ TEST_CASE("TypeCyclemembership")
 {
     auto smarts = Smarts<"**1*(*)*1*">{};
 
-    auto edges = TypeEdgeList{smarts};
-    auto degrees = TypeVertexDegree{smarts, edges};
-    auto incidentList = TypeIncidentList{smarts, edges, degrees};
+    constexpr auto edges = TypeEdgeList{smarts};
+    constexpr auto degrees = TypeVertexDegree{smarts, edges};
+    constexpr auto incidentList = TypeIncidentList{smarts, edges, degrees};
 
     constexpr auto cycleMembership = TypeCycleMembership{smarts, incidentList}.data;
     constexpr auto v = std::get<0>(cycleMembership);
@@ -339,15 +334,13 @@ TEST_CASE("ValueDfsBondList")
 {
     auto smarts = Smarts<"*1*(*)*1">{};
 
-    auto edges = ValueEdgeList{smarts};
-    auto degrees = ValueVertexDegree{smarts, edges};
-    auto incidentList = ValueIncidentList{smarts, edges, degrees};
-    auto dfsEdges = ValueDfsEdgeList{smarts, incidentList};
-    auto cycleMembership = ValueCycleMembership{smarts, incidentList};
+    constexpr auto edges = ValueEdgeList{smarts};
+    constexpr auto degrees = ValueVertexDegree{smarts, edges};
+    constexpr auto incidentList = ValueIncidentList{smarts, edges, degrees};
+    constexpr auto dfsEdges = ValueDfsEdgeList{smarts, incidentList};
+    constexpr auto cycleMembership = ValueCycleMembership{smarts, incidentList};
 
     constexpr auto dfsBonds = ValueDfsBondList{smarts, dfsEdges, cycleMembership}.data;
-
-    //identify_type<decltype(get<0>(dfsBonds))>{};
 
     using Atom0 = Atom<0, AnyAtom>;
     using Atom1 = Atom<1, AnyAtom>;
@@ -367,15 +360,13 @@ TEST_CASE("TypeDfsBondList")
 {
     auto smarts = Smarts<"*1*(*)*1">{};
 
-    auto edges = TypeEdgeList{smarts};
-    auto degrees = TypeVertexDegree{smarts, edges};
-    auto incidentList = TypeIncidentList{smarts, edges, degrees};
-    auto dfsEdges = TypeDfsEdgeList{smarts, incidentList};
-    auto cycleMembership = TypeCycleMembership{smarts, incidentList};
+    constexpr auto edges = TypeEdgeList{smarts};
+    constexpr auto degrees = TypeVertexDegree{smarts, edges};
+    constexpr auto incidentList = TypeIncidentList{smarts, edges, degrees};
+    constexpr auto dfsEdges = TypeDfsEdgeList{smarts, incidentList};
+    constexpr auto cycleMembership = TypeCycleMembership{smarts, incidentList};
 
     constexpr auto dfsBonds = TypeDfsBondList{smarts, dfsEdges, cycleMembership}.data;
-
-    //identify_type<decltype(get<0>(dfsBonds))>{};
 
     using Atom0 = Atom<0, AnyAtom>;
     using Atom1 = Atom<1, AnyAtom>;
@@ -388,56 +379,3 @@ TEST_CASE("TypeDfsBondList")
     static_assert(std::is_same_v< decltype(get<2>(dfsBonds)), DfsBond<Atom1, Atom3, ImplicitBond, true, false> >);
     static_assert(std::is_same_v< decltype(get<3>(dfsBonds)), DfsBond<Atom3, Atom0, ImplicitBond, true, true> >);
 }
-
-//
-// OptimizeIncidentList
-//
-
-#ifdef KITIMAR_VALUE_BASED
-
-TEST_CASE("OptimizeIncidentList")
-{
-    auto smarts = Smarts<"CN(O)F">{};
-
-    constexpr auto edgeList = ValueEdgeList{smarts};
-    constexpr auto vertexDegree = ValueVertexDegree{smarts, edgeList};
-    constexpr auto incidentList = ValueIncidentList{smarts, edgeList, vertexDegree};
-    constexpr auto atomFreq = AtomFrequency{smarts};
-    constexpr auto optimizeIncidentList = OptimizeIncidentList{smarts, incidentList, atomFreq, std::false_type{}};
-
-    static_assert(optimizeIncidentList.data.size() == 4 * 3);
-    static_assert(optimizeIncidentList.data[0] == 0);
-    static_assert(optimizeIncidentList.data[3] == 2);
-    static_assert(optimizeIncidentList.data[4] == 1);
-    static_assert(optimizeIncidentList.data[5] == 0);
-    static_assert(optimizeIncidentList.data[6] == 1);
-    static_assert(optimizeIncidentList.data[9] == 2);
-}
-
-TEST_CASE("OptimizeIncidentList<SeedBond>")
-{
-    auto smarts = Smarts<"C(C)S">{};
-
-    constexpr auto edgeList = ValueEdgeList{smarts};
-    constexpr auto vertexDegree = ValueVertexDegree{smarts, edgeList};
-    constexpr auto incidentList = ValueIncidentList{smarts, edgeList, vertexDegree};
-    constexpr auto atomFreq = AtomFrequency{smarts};
-
-    // no seed bond
-    constexpr auto optimizeIncidentList1 = OptimizeIncidentList{smarts, incidentList, atomFreq, std::false_type{}};
-    static_assert(optimizeIncidentList1.data.size() == 3 * 2);
-    static_assert(optimizeIncidentList1.data[0] == 1);
-    static_assert(optimizeIncidentList1.data[1] == 0);
-    static_assert(optimizeIncidentList1.data[2] == 0);
-    static_assert(optimizeIncidentList1.data[4] == 1);
-
-    // seed bond
-    constexpr auto optimizeIncidentList2 = OptimizeIncidentList{smarts, incidentList, atomFreq, std::true_type{}};
-    static_assert(optimizeIncidentList2.data.size() == 3 * 2);
-    static_assert(optimizeIncidentList2.data[0] == 0);
-    static_assert(optimizeIncidentList2.data[1] == 1);
-    static_assert(optimizeIncidentList2.data[2] == 0);
-    static_assert(optimizeIncidentList2.data[4] == 1);
-}
-
-#endif // KITIMAR_VALUE_BASED
