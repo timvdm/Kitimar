@@ -83,15 +83,17 @@ namespace Kitimar::CTLayout {
 
         if constexpr (std::is_same_v<VectorT, T>)
             return 0;
-        assert(data);
-        if constexpr (!contains(VectorT{}, T{}))
-            return sizeOf(VectorT{}, data);
-        else if constexpr (isFixedSize(VectorT::type))
-            return sizeof(Length) + offset(VectorT::type, T{}) + index * sizeOf(VectorT::type);
         else {
-            auto length = data.template read<Length>();
-            auto off = elementOffset<Length>(data, length, index);
-            return off + offset(VectorT::type, T{}, data + off, indexes...);
+            assert(data);
+            if constexpr (!contains(VectorT{}, T{}))
+                return sizeOf(VectorT{}, data);
+            else if constexpr (isFixedSize(VectorT::type))
+                return sizeof(Length) + offset(VectorT::type, T{}) + index * sizeOf(VectorT::type);
+            else {
+                auto length = data.template read<Length>();
+                auto off = elementOffset<Length>(data, length, index);
+                return off + offset(VectorT::type, T{}, data + off, indexes...);
+            }
         }
     }
 

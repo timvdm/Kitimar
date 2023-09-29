@@ -51,7 +51,8 @@ namespace Kitimar::CTLayout {
     {
         if constexpr (contains(ValueT{}, T{}))
             return 0;
-        return sizeOf(ValueT{});
+        else
+            return sizeOf(ValueT{});
     }
 
     // ValueObject

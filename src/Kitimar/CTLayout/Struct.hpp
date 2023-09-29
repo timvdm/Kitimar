@@ -157,9 +157,9 @@ namespace Kitimar::CTLayout {
     {
         if constexpr (std::is_same_v<StructT, T>)
             return 0;
-        if constexpr (isFixedSize(StructT{})) {
+        else if constexpr (isFixedSize(StructT{}))
             return offset(StructT::members, T{});
-        } else {
+        else {
             assert(data);
             if constexpr (!contains(StructT{}, T{}))
                 return sizeOf(StructT{}, data);
