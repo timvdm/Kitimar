@@ -22,7 +22,12 @@ namespace Kitimar::CTSmarts {
     template<SeedType T>
     using SeedTypeTag = std::integral_constant<SeedType, T>;
 
-#if _MSC_FULL_VER < 193732824 // MSVC 19.37.32824
+
+#if !defined(_MSC_VER) || _MSC_FULL_VER >= 193732824
+#define KITIMAR_VALUE_BASED
+#endif
+
+#ifdef KITIMAR_VALUE_BASED
 
     struct NoOptimizer
     {
@@ -103,6 +108,6 @@ namespace Kitimar::CTSmarts {
     };
     */
 
-#endif
+#endif // KITIMAR_VALUE_BASED
 
 }
