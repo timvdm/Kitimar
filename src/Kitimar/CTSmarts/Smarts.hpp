@@ -46,7 +46,7 @@ namespace Kitimar::CTSmarts {
             return -1;
         } else {
             auto cls = ctll::front(classes);
-            if (cls.n == N)
+            if constexpr (cls.n == N)
                 return cls.atomIndex;
             return captureIndex<N>(ctll::pop_front(classes));
         }
@@ -88,21 +88,23 @@ namespace Kitimar::CTSmarts {
 
         if constexpr (smarts.numAtoms < 3 || smarts.numAtoms != smarts.numBonds + 1)
             return -1;
-        auto centralAtom = -1;
-        for (std::size_t i = 0; i < smarts.numAtoms; ++i) {
-            switch (vertexDegree.data[i]) {
-                case 0:
-                    return -1;
-                case 1:
-                    continue;
-                default:
-                    if (centralAtom != -1)
+        else {
+            auto centralAtom = -1;
+            for (std::size_t i = 0; i < smarts.numAtoms; ++i) {
+                switch (vertexDegree.data[i]) {
+                    case 0:
                         return -1;
-                    centralAtom = i;
-                    break;
+                    case 1:
+                        continue;
+                    default:
+                        if (centralAtom != -1)
+                            return -1;
+                        centralAtom = i;
+                        break;
+                }
             }
+            return centralAtom;
         }
-        return centralAtom;
     }
 
 

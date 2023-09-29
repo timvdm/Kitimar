@@ -53,7 +53,7 @@ struct IndexTypeTestCase : TypeTestCase<MolFactory, SMARTS, Expected>
 template<uint32_t ...Index>
 struct TestMap
 {
-    static constexpr inline bool found = sizeof...(Index);
+    static constexpr inline bool found = sizeof...(Index) > 0;
     static constexpr inline std::array<uint32_t, sizeof...(Index)> map = {Index...};
 };
 

@@ -133,7 +133,7 @@ namespace Kitimar::CTLayout {
             {
                 std::ifstream ifs{filename.data(), std::ios_base::binary | std::ios_base::in};
                 assert(ifs);
-                auto size = std::filesystem::file_size(filename);
+                auto size = static_cast<std::size_t>(std::filesystem::file_size(filename));
                 m_data = std::make_shared<std::vector<std::byte>>();//(size);
                 m_data->reserve(size);
                 std::istreambuf_iterator<char> it{ifs}, end;

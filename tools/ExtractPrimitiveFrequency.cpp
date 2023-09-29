@@ -254,7 +254,7 @@ void writePrimitiveFrequencyData(std::ostream &os, auto primitives, const std::a
     }
 }
 
-void writePrimitiveFrequencyDataFile(std::ostream &os, std::string_view filename, const PrimitiveFequency &freq)
+void writePrimitiveFrequencyDataFile(std::ostream &os, const PrimitiveFequency &freq)
 {
     os << freq.numMolecules << '\t' << freq.numAtoms << '\t' << freq.numBonds << '\n';
     writePrimitiveFrequencyData(os, freq.atomPrimitives, freq.atomFrequency());
@@ -284,7 +284,7 @@ int main(int argc, char **argv)
     if (output == "code")
         writePrimitiveFrequencyCodeFile(std::cout, filename, freq);
     else if (output == "data")
-        writePrimitiveFrequencyDataFile(std::cout, filename, freq);
+        writePrimitiveFrequencyDataFile(std::cout, freq);
     else {
         std::cerr << "Invalid output type: " << output << std::endl;
         return -1;

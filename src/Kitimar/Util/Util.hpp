@@ -89,7 +89,7 @@ namespace Kitimar::Util {
     {
         std::ifstream ifs{path.data(), std::ios_base::binary | std::ios_base::in};
         assert(ifs);
-        auto size = std::filesystem::file_size(path);
+        auto size = static_cast<std::size_t>(std::filesystem::file_size(path));
         std::vector<std::byte> data;
         data.reserve(size);
         std::istreambuf_iterator<char> it{ifs}, end;

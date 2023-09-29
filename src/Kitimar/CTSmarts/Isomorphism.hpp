@@ -242,7 +242,7 @@ namespace Kitimar::CTSmarts {
 
 
             template<typename Arg, typename ...Args>
-            void debug(Arg &&arg, Args &&...args)
+            void debug([[maybe_unused]] Arg &&arg, [[maybe_unused]] Args &&...args)
             {
                 #ifdef KITIMAR_WITH_IOSTREAM
                 if constexpr (ISOMORPHISM_DEBUG) {
@@ -433,8 +433,7 @@ namespace Kitimar::CTSmarts {
 
                         m_map.reset(numAtoms);
 
-                        auto queryBond = ctll::front(query.bonds);
-                        auto queryAtom = queryBond.source;
+                        auto queryAtom = ctll::front(query.bonds).source;
 
                         for (auto atom : get_atoms(mol)) {
                             if (startAtom != -1)

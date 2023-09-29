@@ -40,15 +40,17 @@ void test_capture_impl(auto &mol, const auto &tuple)
 // capture(mol)
 //
 
+constexpr auto nullIndex = static_cast<uint32_t>(-1);
+
 using FindCases = std::tuple<
     //
     // CC(=O)[O-]
     //
     // single atom
-    ValueTestCase<MockAcetateAnion, "C", 0>,
-    ValueTestCase<MockAcetateAnion, "O", 2>,
+    ValueTestCase<MockAcetateAnion, "C", 0U>,
+    ValueTestCase<MockAcetateAnion, "O", 2U>,
 
-    ValueTestCase<MockAcetateAnion, "N", -1>,
+    ValueTestCase<MockAcetateAnion, "N", nullIndex>,
 
     // single bond
     ValueTestCase<MockAcetateAnion, "CC", 0>,
@@ -69,7 +71,7 @@ using FindCases = std::tuple<
     ValueTestCase<MockAcetateAnion, "O=[C:1]", 1>,
     ValueTestCase<MockAcetateAnion, "O[C:1]", 1>,
 
-    ValueTestCase<MockAcetateAnion, "C#C", -1>,
+    ValueTestCase<MockAcetateAnion, "C#C", nullIndex>,
 
     // general case
     ValueTestCase<MockAcetateAnion, "CCO", 0>,
@@ -84,7 +86,7 @@ using FindCases = std::tuple<
     ValueTestCase<MockAcetateAnion, "CC(=[O:1])O", 2>,
     ValueTestCase<MockAcetateAnion, "CC(=O)[O:1]", 3>,
 
-    ValueTestCase<MockAcetateAnion, "CC(=O)N", -1>
+    ValueTestCase<MockAcetateAnion, "CC(=O)N", nullIndex>
 >;
 
 
@@ -93,7 +95,7 @@ void test_find()
 {
     CASE_INFO("find");
     auto mol = Case::template mol<Mol>();
-    CHECK(ctse::find<Case::smarts>(mol) == (Case::expected == -1 ? null_atom(mol) : get_atom(mol, Case::expected)));
+    CHECK(ctse::find<Case::smarts>(mol) == (Case::expected == nullIndex ? null_atom(mol) : get_atom(mol, Case::expected)));
 }
 
 TEMPLATE_LIST_TEST_CASE("find", "", FindCases)

@@ -215,18 +215,18 @@ namespace OpenBabel {
         return mol.GetAtom(index + 1);
     }
 
-    inline auto get_index(const OpenBabel::OBMol &mol, OpenBabel::OBAtom *atom)
+    inline auto get_index(const OpenBabel::OBMol&, OpenBabel::OBAtom *atom)
     {
         assert(atom);
         return atom->GetIndex();
     }
 
-    inline auto get_degree(const OpenBabel::OBMol &mol, OpenBabel::OBAtom *atom)
+    inline auto get_degree(const OpenBabel::OBMol&, OpenBabel::OBAtom *atom)
     {
         return atom->GetExplicitDegree();
     }
 
-    inline OpenBabel::OBAtom* null_atom(const OpenBabel::OBMol &mol)
+    inline OpenBabel::OBAtom* null_atom(const OpenBabel::OBMol&)
     {
         return nullptr;
     }
@@ -251,32 +251,32 @@ namespace OpenBabel {
         return mol.GetBond(index);
     }
 
-    inline auto get_index(const OpenBabel::OBMol &mol, OpenBabel::OBBond *bond)
+    inline auto get_index(const OpenBabel::OBMol&, OpenBabel::OBBond *bond)
     {
         assert(bond);
         return bond->GetIdx();
     }
 
-    inline auto get_source(const OpenBabel::OBMol &mol, OpenBabel::OBBond *bond)
+    inline auto get_source(const OpenBabel::OBMol&, OpenBabel::OBBond *bond)
     {
         assert(bond);
         return bond->GetBeginAtom();
     }
 
-    inline auto get_target(const OpenBabel::OBMol &mol, OpenBabel::OBBond *bond)
+    inline auto get_target(const OpenBabel::OBMol&, OpenBabel::OBBond *bond)
     {
         assert(bond);
         return bond->GetEndAtom();
     }
 
-    inline OpenBabel::OBBond* null_bond(const OpenBabel::OBMol &mol)
+    inline OpenBabel::OBBond* null_bond(const OpenBabel::OBMol&)
     {
         return nullptr;
     }
 
     // IncidentBondList
 
-    inline auto get_bonds(const OpenBabel::OBMol &mol, OpenBabel::OBAtom *atom)
+    inline auto get_bonds(const OpenBabel::OBMol&, OpenBabel::OBAtom *atom)
     {
         assert(atom);
         return std::ranges::subrange(atom->BeginBonds(), atom->EndBonds());
@@ -292,7 +292,7 @@ namespace OpenBabel {
 
     // ElementLayer
 
-    inline auto get_element(const OpenBabel::OBMol &mol, OpenBabel::OBAtom *atom)
+    inline auto get_element(const OpenBabel::OBMol&, OpenBabel::OBAtom *atom)
     {
         assert(atom);
         return atom->GetAtomicNum();
@@ -300,7 +300,7 @@ namespace OpenBabel {
 
     // IsotopeLayer
 
-    inline auto get_isotope(const OpenBabel::OBMol &mol, OpenBabel::OBAtom *atom)
+    inline auto get_isotope(const OpenBabel::OBMol&, OpenBabel::OBAtom *atom)
     {
         assert(atom);
         return atom->GetIsotope();
@@ -308,7 +308,7 @@ namespace OpenBabel {
 
     // ChargeLayer
 
-    inline auto get_charge(const OpenBabel::OBMol &mol, OpenBabel::OBAtom *atom)
+    inline auto get_charge(const OpenBabel::OBMol&, OpenBabel::OBAtom *atom)
     {
         assert(atom);
         return atom->GetFormalCharge();
@@ -316,14 +316,14 @@ namespace OpenBabel {
 
     // ValenceLayer
 
-    inline auto get_valence(const OpenBabel::OBMol &mol, OpenBabel::OBAtom *atom)
+    inline auto get_valence(const OpenBabel::OBMol&, OpenBabel::OBAtom *atom)
     {
         return atom->GetTotalValence();
     }
 
     // BonderOrderLayer
 
-    inline auto get_order(const OpenBabel::OBMol &mol, OpenBabel::OBBond *bond)
+    inline auto get_order(const OpenBabel::OBMol&, OpenBabel::OBBond *bond)
     {
         assert(bond);
         return bond->GetBondOrder();
@@ -331,7 +331,7 @@ namespace OpenBabel {
 
     // ImplicitHydrogenLayer
 
-    inline auto get_implicit_hydrogens(const OpenBabel::OBMol &mol, OpenBabel::OBAtom *atom)
+    inline auto get_implicit_hydrogens(const OpenBabel::OBMol&, OpenBabel::OBAtom *atom)
     {
         return atom->GetImplicitHCount();
     }
@@ -348,24 +348,24 @@ namespace OpenBabel {
 
     // RingLayer
 
-    inline auto is_ring_atom(const OpenBabel::OBMol &mol, OpenBabel::OBAtom *atom)
+    inline auto is_ring_atom(const OpenBabel::OBMol&, OpenBabel::OBAtom *atom)
     {
         return atom->IsInRing();
     }
 
-    inline auto is_ring_bond(const OpenBabel::OBMol &mol, OpenBabel::OBBond *bond)
+    inline auto is_ring_bond(const OpenBabel::OBMol&, OpenBabel::OBBond *bond)
     {
         return bond->IsInRing();
     }
 
     // AromaticLayer
 
-    inline auto is_aromatic_atom(const OpenBabel::OBMol &mol, OpenBabel::OBAtom *atom)
+    inline auto is_aromatic_atom(const OpenBabel::OBMol&, OpenBabel::OBAtom *atom)
     {
         return atom->IsAromatic();
     }
 
-    inline auto is_aromatic_bond(const OpenBabel::OBMol &mol, OpenBabel::OBBond *bond)
+    inline auto is_aromatic_bond(const OpenBabel::OBMol&, OpenBabel::OBBond *bond)
     {
         return bond->IsAromatic();
     }
@@ -373,19 +373,19 @@ namespace OpenBabel {
     // RingSetLayer
 
     // is the atom part of a ring with the specified size
-    inline auto is_in_ring_size(const OpenBabel::OBMol &mol, OpenBabel::OBAtom *atom, int ringSize)
+    inline auto is_in_ring_size(const OpenBabel::OBMol&, OpenBabel::OBAtom *atom, int ringSize)
     {
         return atom->IsInRingSize(ringSize);
     }
 
     // number of rings the atom is part of (depends on used ring set!)
-    inline auto get_ring_count(const OpenBabel::OBMol &mol, OpenBabel::OBAtom *atom)
+    inline auto get_ring_count(const OpenBabel::OBMol&, OpenBabel::OBAtom *atom)
     {
         return atom->MemberOfRingCount();
     }
 
     // number of ring bonds around the atom
-    inline auto get_ring_degree(const OpenBabel::OBMol &mol, OpenBabel::OBAtom *atom)
+    inline auto get_ring_degree(const OpenBabel::OBMol&, OpenBabel::OBAtom *atom)
     {
         return atom->CountRingBonds();
     }
