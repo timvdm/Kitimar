@@ -17,9 +17,7 @@
 #include "Graph/ValueDfsBondList.hpp"
 #include "Graph/TypeDfsBondList.hpp"
 
-#include "Optimizer/OptimizeExpression.hpp"
-#include "Optimizer/AtomFrequency.hpp"
-#include "Optimizer/OptimizeIncidentList.hpp"
+#include "Optimizer/Optimizer.hpp"
 
 #include "Util/Util.hpp"
 #include "Parser/Actions.hpp"
@@ -80,8 +78,13 @@ namespace Kitimar::CTSmarts {
 
     constexpr auto getCentralAtom(auto smarts)
     {
-        auto edgeList = ValueEdgeList(smarts); // FIXME
+        #ifdef KITIMAR_VALUE_BASED
+        auto edgeList = ValueEdgeList(smarts);
         auto vertexDegree = ValueVertexDegree(smarts, edgeList);
+        #else
+        auto edgeList = TypeEdgeList(smarts);
+        auto vertexDegree = TypeVertexDegree(smarts, edgeList);
+        #endif
 
         if constexpr (smarts.numAtoms < 3 || smarts.numAtoms != smarts.numBonds + 1)
             return -1;

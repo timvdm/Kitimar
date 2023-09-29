@@ -1,5 +1,9 @@
 #pragma once
 
+#include "AtomFrequency.hpp"
+#include "OptimizeIncidentList.hpp"
+#include "OptimizeExpression.hpp"
+
 
 namespace Kitimar::CTSmarts {
 
