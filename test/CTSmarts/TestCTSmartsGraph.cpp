@@ -10,6 +10,8 @@ using namespace Kitimar::CTSmarts;
 // EdgeList
 //
 
+#ifdef KITIMAR_VALUE_BASED
+
 TEST_CASE("ValueEdgeList")
 {
     auto smarts = Smarts<"*1*(*)*1">{};
@@ -22,6 +24,8 @@ TEST_CASE("ValueEdgeList")
     static_assert(edges[2] == ValueEdge{2, 1, 3});
     static_assert(edges[3] == ValueEdge{3, 3, 0});
 }
+
+#endif // KITIMAR_VALUE_BASED
 
 TEST_CASE("TypeEdgeList")
 {
@@ -48,6 +52,8 @@ TEST_CASE("TypeEdgeList")
 // VertexDegree
 //
 
+#ifdef KITIMAR_VALUE_BASED
+
 TEST_CASE("ValueVertexDegree")
 {
     auto smarts = Smarts<"**(*)**">{};
@@ -62,6 +68,8 @@ TEST_CASE("ValueVertexDegree")
     static_assert(degrees[3] == 2);
     static_assert(degrees[4] == 1);
 }
+
+#endif // KITIMAR_VALUE_BASED
 
 TEST_CASE("TypeVertexDegree")
 {
@@ -81,6 +89,8 @@ TEST_CASE("TypeVertexDegree")
 //
 // IncidentList
 //
+
+#ifdef KITIMAR_VALUE_BASED
 
 TEST_CASE("ValueIncidentList")
 {
@@ -104,6 +114,8 @@ TEST_CASE("ValueIncidentList")
     static_assert(incidentList.data[10] == -1);
     static_assert(incidentList.data[11] == -1);
 }
+
+#endif // KITIMAR_VALUE_BASED
 
 TEST_CASE("TypeIncidentList")
 {
@@ -131,6 +143,8 @@ TEST_CASE("TypeIncidentList")
 //
 // DfsSearch
 //
+
+#ifdef KITIMAR_VALUE_BASED
 
 TEST_CASE("ValueDfsSearch")
 {
@@ -169,6 +183,8 @@ TEST_CASE("ValueDfsSearch")
     static_assert(e[24] == ValueDfsSearchEvent{DfsSearchEventType::BacktrackEdge, 0, false});
     static_assert(e[25] == ValueDfsSearchEvent{DfsSearchEventType::BacktrackVertex, 0, true});
 }
+
+#endif // KITIMAR_VALUE_BASED
 
 TEST_CASE("TypeDfsSearch")
 {
@@ -212,6 +228,8 @@ TEST_CASE("TypeDfsSearch")
 // DfsEdgeList
 //
 
+#ifdef KITIMAR_VALUE_BASED
+
 TEST_CASE("ValueDfsEdgeList")
 {
     auto smarts = Smarts<"*1*(*)*1">{};
@@ -228,6 +246,8 @@ TEST_CASE("ValueDfsEdgeList")
     static_assert(dfsEdges[2] == ValueDfsEdge{2, 1, 3, false});
     static_assert(dfsEdges[3] == ValueDfsEdge{3, 3, 0, true});
 }
+
+#endif // KITIMAR_VALUE_BASED
 
 TEST_CASE("TypeDfsEdgeList")
 {
@@ -249,6 +269,8 @@ TEST_CASE("TypeDfsEdgeList")
 //
 // Cyclemembership
 //
+
+#ifdef KITIMAR_VALUE_BASED
 
 TEST_CASE("ValueCyclemembership")
 {
@@ -276,6 +298,8 @@ TEST_CASE("ValueCyclemembership")
     static_assert(e[4] == true);
     static_assert(e[5] == false);
 }
+
+#endif // KITIMAR_VALUE_BASED
 
 TEST_CASE("TypeCyclemembership")
 {
@@ -309,6 +333,8 @@ TEST_CASE("TypeCyclemembership")
 // DfsBondList
 //
 
+#ifdef KITIMAR_VALUE_BASED
+
 TEST_CASE("ValueDfsBondList")
 {
     auto smarts = Smarts<"*1*(*)*1">{};
@@ -335,6 +361,7 @@ TEST_CASE("ValueDfsBondList")
     static_assert(std::is_same_v< decltype(get<3>(dfsBonds)), DfsBond<Atom3, Atom0, ImplicitBond, true, true> >);
 }
 
+#endif // KITIMAR_VALUE_BASED
 
 TEST_CASE("TypeDfsBondList")
 {
@@ -362,11 +389,11 @@ TEST_CASE("TypeDfsBondList")
     static_assert(std::is_same_v< decltype(get<3>(dfsBonds)), DfsBond<Atom3, Atom0, ImplicitBond, true, true> >);
 }
 
-
-
 //
 // OptimizeIncidentList
 //
+
+#ifdef KITIMAR_VALUE_BASED
 
 TEST_CASE("OptimizeIncidentList")
 {
@@ -413,3 +440,4 @@ TEST_CASE("OptimizeIncidentList<SeedBond>")
     static_assert(optimizeIncidentList2.data[4] == 1);
 }
 
+#endif // KITIMAR_VALUE_BASED
