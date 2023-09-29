@@ -42,7 +42,7 @@ namespace Kitimar::CTLayout {
     // sizeOf
 
     template<typename T, typename Source = PtrSource>
-    constexpr std::size_t sizeOf(Value<T>, Source data = {}) noexcept { return sizeof(T); }
+    constexpr std::size_t sizeOf(Value<T>, Source = {}) noexcept { return sizeof(T); }
 
     // offset
 

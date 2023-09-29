@@ -7,7 +7,7 @@ using namespace Kitimar;
 using namespace Kitimar::CTSmarts;
 
 //
-//
+// AtomFrequency
 //
 
 TEST_CASE("AtomFequency")

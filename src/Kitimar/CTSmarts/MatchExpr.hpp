@@ -51,7 +51,7 @@ namespace Kitimar::CTSmarts {
     // Atoms
     //
 
-    constexpr bool matchAtomExpr(const auto &mol, const auto &atom, AnyAtom)
+    constexpr bool matchAtomExpr(const auto&, const auto&, AnyAtom)
     {
         return true;
     }
@@ -183,7 +183,7 @@ namespace Kitimar::CTSmarts {
         return get_order(mol, bond) == 1 || is_aromatic_bond(mol, bond);
     }
 
-    constexpr bool matchBondExpr(const auto &mol, const auto &bond, AnyBond)
+    constexpr bool matchBondExpr(const auto&, const auto&, AnyBond)
     {
         return true;
     }

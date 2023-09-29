@@ -19,7 +19,7 @@ namespace Kitimar::CTSmarts {
             consteval ValueDfsEdgeListVisitor() noexcept {}
             consteval ValueDfsEdgeListVisitor(SmartsT) noexcept {}
 
-            constexpr void visit(int edge, int source, int target, bool isNewComponent, bool isClosure) noexcept
+            constexpr void visit(int edge, int source, int target, [[maybe_unused]] bool isNewComponent, bool isClosure) noexcept
             {
                 edges[nextEdgeIndex++] = ValueDfsEdge{{edge, source, target}, isClosure};
             }

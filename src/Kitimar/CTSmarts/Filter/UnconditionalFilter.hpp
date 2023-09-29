@@ -4,7 +4,7 @@ namespace Kitimar::CTSmarts {
 
     struct UnconditionalFilter
     {
-        static consteval bool enable(auto smarts) noexcept
+        static consteval bool enable([[maybe_unused]] auto smarts) noexcept
         {
             return true;
         }

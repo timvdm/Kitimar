@@ -400,7 +400,7 @@ namespace Kitimar::CTSmarts {
 
         // pop_char
         template <auto V, auto C, typename ... Ts, typename Bonds, typename Params, typename Parent>
-        static constexpr auto apply(SmartsGrammar::pop_char, ctll::term<V> term, SmartsContext<ctll::list<Char<C>, Ts...>, Bonds, Params, Parent> ctx)
+        static constexpr auto apply(SmartsGrammar::pop_char, ctll::term<V>, SmartsContext<ctll::list<Char<C>, Ts...>, Bonds, Params, Parent> ctx)
         {
             return SmartsContext{ctll::list<Ts...>(), ctx.bonds, ctx.params, ctx.parent};
         }
@@ -415,7 +415,7 @@ namespace Kitimar::CTSmarts {
 
         // push_number
         template <auto V, auto N, typename ... Ts, typename Bonds, typename Params, typename Parent>
-        static constexpr auto apply(SmartsGrammar::push_number, ctll::term<V> term, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params, Parent> ctx)
+        static constexpr auto apply(SmartsGrammar::push_number, ctll::term<V>, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params, Parent> ctx)
         {
             return SmartsContext{ctll::list<Number<10 * N + V - '0'>, Ts...>(), ctx.bonds, ctx.params, ctx.parent};
         }
@@ -542,7 +542,7 @@ namespace Kitimar::CTSmarts {
 
 
         template <auto V, typename Context>
-        static constexpr auto apply(SmartsGrammar::next_atom, ctll::term<V> term, Context ctx)
+        static constexpr auto apply(SmartsGrammar::next_atom, ctll::term<V>, Context ctx)
         {
             auto expr = makeAtomAST(ctll::rotate(ctx.params.atomExpr));
             auto atom = Atom<ctll::size(ctx.atoms), decltype(expr)>{};
@@ -564,21 +564,21 @@ namespace Kitimar::CTSmarts {
 
         // make_any_atom
         template <auto V, typename Context>
-        static constexpr auto apply(SmartsGrammar::make_any_atom, ctll::term<V> term, Context ctx)
+        static constexpr auto apply(SmartsGrammar::make_any_atom, ctll::term<V>, Context ctx)
         {
             return pushAtomExpr(ctx, ctx.atoms, AnyAtom());
         }
 
         // make_any_aliphatic
         template <auto V, typename Context>
-        static constexpr auto apply(SmartsGrammar::make_any_aliphatic, ctll::term<V> term, Context ctx)
+        static constexpr auto apply(SmartsGrammar::make_any_aliphatic, ctll::term<V>, Context ctx)
         {
             return pushAtomExpr(ctx, ctx.atoms, AnyAliphatic());
         }
 
         // make_any_aromatic
         template <auto V, typename Context>
-        static constexpr auto apply(SmartsGrammar::make_any_aromatic, ctll::term<V> term, Context ctx)
+        static constexpr auto apply(SmartsGrammar::make_any_aromatic, ctll::term<V>, Context ctx)
         {
             return pushAtomExpr(ctx, ctx.atoms, AnyAromatic());
         }
@@ -611,7 +611,7 @@ namespace Kitimar::CTSmarts {
 
         // make_isotope
         template <auto V, auto N, typename ...Ts, typename Bonds, typename Params, typename Parent>
-        static constexpr auto apply(SmartsGrammar::make_isotope, ctll::term<V> term, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params, Parent> ctx)
+        static constexpr auto apply(SmartsGrammar::make_isotope, ctll::term<V>, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params, Parent> ctx)
         {
             return pushAtomExpr(ctx, ctll::list<Ts...>(), Isotope<N>());
         }
@@ -619,105 +619,105 @@ namespace Kitimar::CTSmarts {
 
         // make_element
         template <auto V, typename Context>
-        static constexpr auto apply(SmartsGrammar::make_element, ctll::term<V> term, Context ctx)
+        static constexpr auto apply(SmartsGrammar::make_element, ctll::term<V>, Context ctx)
         {
             return pushAtomExpr(ctx, ctx.atoms, Element<1>());
         }
         template <auto V, auto N, typename ...Ts, typename Bonds, typename Params, typename Parent>
-        static constexpr auto apply(SmartsGrammar::make_element, ctll::term<V> term, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params, Parent> ctx)
+        static constexpr auto apply(SmartsGrammar::make_element, ctll::term<V>, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params, Parent> ctx)
         {
             return pushAtomExpr(ctx, ctll::list<Ts...>(), Element<N>());
         }
 
         // make_degree
         template <auto V, typename Context>
-        static constexpr auto apply(SmartsGrammar::make_degree, ctll::term<V> term, Context ctx)
+        static constexpr auto apply(SmartsGrammar::make_degree, ctll::term<V>, Context ctx)
         {
             return pushAtomExpr(ctx, ctx.atoms, Degree<1>());
         }
         template <auto V, auto N, typename ...Ts, typename Bonds, typename Params, typename Parent>
-        static constexpr auto apply(SmartsGrammar::make_degree, ctll::term<V> term, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params, Parent> ctx)
+        static constexpr auto apply(SmartsGrammar::make_degree, ctll::term<V>, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params, Parent> ctx)
         {
             return pushAtomExpr(ctx, ctll::list<Ts...>(), Degree<N>());
         }
 
         // make_valence
         template <auto V, typename Context>
-        static constexpr auto apply(SmartsGrammar::make_valence, ctll::term<V> term, Context ctx)
+        static constexpr auto apply(SmartsGrammar::make_valence, ctll::term<V>, Context ctx)
         {
             return pushAtomExpr(ctx, ctx.atoms, Valence<1>());
         }
         template <auto V, auto N, typename ...Ts, typename Bonds, typename Params, typename Parent>
-        static constexpr auto apply(SmartsGrammar::make_valence, ctll::term<V> term, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params, Parent> ctx)
+        static constexpr auto apply(SmartsGrammar::make_valence, ctll::term<V>, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params, Parent> ctx)
         {
             return pushAtomExpr(ctx, ctll::list<Ts...>(), Valence<N>());
         }
 
         // make_connectivity
         template <auto V, typename Context>
-        static constexpr auto apply(SmartsGrammar::make_connectivity, ctll::term<V> term, Context ctx)
+        static constexpr auto apply(SmartsGrammar::make_connectivity, ctll::term<V>, Context ctx)
         {
             return pushAtomExpr(ctx, ctx.atoms, Connectivity<1>());
         }
         template <auto V, auto N, typename ...Ts, typename Bonds, typename Params, typename Parent>
-        static constexpr auto apply(SmartsGrammar::make_connectivity, ctll::term<V> term, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params, Parent> ctx)
+        static constexpr auto apply(SmartsGrammar::make_connectivity, ctll::term<V>, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params, Parent> ctx)
         {
             return pushAtomExpr(ctx, ctll::list<Ts...>(), Connectivity<N>());
         }
 
         // make_cyclic
         template <auto V, typename Context>
-        static constexpr auto apply(SmartsGrammar::make_cyclic, ctll::term<V> term, Context ctx)
+        static constexpr auto apply(SmartsGrammar::make_cyclic, ctll::term<V>, Context ctx)
         {
             return pushAtomExpr(ctx, ctx.atoms, Cyclic());
         }
 
         // make_acyclic
         template <auto V, typename Context>
-        static constexpr auto apply(SmartsGrammar::make_acyclic, ctll::term<V> term, Context ctx)
+        static constexpr auto apply(SmartsGrammar::make_acyclic, ctll::term<V>, Context ctx)
         {
             return pushAtomExpr(ctx, ctx.atoms, Acyclic());
         }
 
         // make_ring_count
         template <auto V, typename Context>
-        static constexpr auto apply(SmartsGrammar::make_ring_count, ctll::term<V> term, Context ctx)
+        static constexpr auto apply(SmartsGrammar::make_ring_count, ctll::term<V>, Context ctx)
         {
             return pushAtomExpr(ctx, ctx.atoms, RingCount<1>());
         }
         template <auto V, auto N, typename ...Ts, typename Bonds, typename Params, typename Parent>
-        static constexpr auto apply(SmartsGrammar::make_ring_count, ctll::term<V> term, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params, Parent> ctx)
+        static constexpr auto apply(SmartsGrammar::make_ring_count, ctll::term<V>, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params, Parent> ctx)
         {
             return pushAtomExpr(ctx, ctll::list<Ts...>(), RingCount<N>());
         }
 
         // make_ring_size
         template <auto V, typename Context>
-        static constexpr auto apply(SmartsGrammar::make_ring_size, ctll::term<V> term, Context ctx)
+        static constexpr auto apply(SmartsGrammar::make_ring_size, ctll::term<V>, Context ctx)
         {
             return pushAtomExpr(ctx, ctx.atoms, RingSize<1>());
         }
         template <auto V, auto N, typename ...Ts, typename Bonds, typename Params, typename Parent>
-        static constexpr auto apply(SmartsGrammar::make_ring_size, ctll::term<V> term, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params, Parent> ctx)
+        static constexpr auto apply(SmartsGrammar::make_ring_size, ctll::term<V>, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params, Parent> ctx)
         {
             return pushAtomExpr(ctx, ctll::list<Ts...>(), RingSize<N>());
         }
 
         // make_ring_connectivity
         template <auto V, typename Context>
-        static constexpr auto apply(SmartsGrammar::make_ring_connectivity, ctll::term<V> term, Context ctx)
+        static constexpr auto apply(SmartsGrammar::make_ring_connectivity, ctll::term<V>, Context ctx)
         {
             return pushAtomExpr(ctx, ctx.atoms, RingConnectivity<1>());
         }
         template <auto V, auto N, typename ...Ts, typename Bonds, typename Params, typename Parent>
-        static constexpr auto apply(SmartsGrammar::make_ring_connectivity, ctll::term<V> term, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params, Parent> ctx)
+        static constexpr auto apply(SmartsGrammar::make_ring_connectivity, ctll::term<V>, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params, Parent> ctx)
         {
             return pushAtomExpr(ctx, ctll::list<Ts...>(), RingConnectivity<N>());
         }
 
         // make_class
         template <auto V, auto N, typename ...Ts, typename Bonds, typename Params, typename Parent>
-        static constexpr auto apply(SmartsGrammar::make_class, ctll::term<V> term, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params, Parent> ctx)
+        static constexpr auto apply(SmartsGrammar::make_class, ctll::term<V>, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params, Parent> ctx)
         {
             auto cls = ctll::push_front(ClassHelper<N, ctx.params.nextIndex()>(), ctx.params.classes);
             return SmartsContext{ctll::list<Ts...>(), ctx.bonds, ctx.params.setClasses(cls), ctx.parent};
@@ -725,14 +725,14 @@ namespace Kitimar::CTSmarts {
 
         // make_has_impl_h
         template <auto V, typename Context>
-        static constexpr auto apply(SmartsGrammar::make_has_impl_h, ctll::term<V> term, Context ctx)
+        static constexpr auto apply(SmartsGrammar::make_has_impl_h, ctll::term<V>, Context ctx)
         {
             return pushAtomExpr(ctx, ctx.atoms, HasImplicitH{});
         }
 
         // make_impl_h
         template <auto V, typename Context>
-        static constexpr auto apply(SmartsGrammar::make_impl_h, ctll::term<V> term, Context ctx)
+        static constexpr auto apply(SmartsGrammar::make_impl_h, ctll::term<V>, Context ctx)
         {
             constexpr auto value = V == 'h' ? 1 : V - '0';
             return pushAtomExpr(ctx, ctx.atoms, ImplicitH<value>());
@@ -799,7 +799,7 @@ namespace Kitimar::CTSmarts {
 
         // make_total_h
         template <auto V, typename Context>
-        static constexpr auto apply(SmartsGrammar::make_total_h, ctll::term<V> term, Context ctx)
+        static constexpr auto apply(SmartsGrammar::make_total_h, ctll::term<V>, Context ctx)
         {
             if constexpr (V == 'H')
                 // Will be replaced by TotalH later if needed
@@ -810,7 +810,7 @@ namespace Kitimar::CTSmarts {
 
         // start_charge
         template <auto V, typename Context>
-        static constexpr auto apply(SmartsGrammar::start_charge, ctll::term<V> term, Context ctx)
+        static constexpr auto apply(SmartsGrammar::start_charge, ctll::term<V>, Context ctx)
         {
             constexpr auto value = V == '+' ? 1 : -1;
             auto atoms = ctll::push_front(Charge<value>{}, ctx.atoms);
@@ -827,21 +827,21 @@ namespace Kitimar::CTSmarts {
 
         // increment_charge
         template <auto V, typename Context>
-        static constexpr auto apply(SmartsGrammar::increment_charge, ctll::term<V> term, Context ctx)
+        static constexpr auto apply(SmartsGrammar::increment_charge, ctll::term<V>, Context ctx)
         {
             return add_charge<1>(ctx);
         }
 
         // decrement_charge
         template <auto V, typename Context>
-        static constexpr auto apply(SmartsGrammar::decrement_charge, ctll::term<V> term, Context ctx)
+        static constexpr auto apply(SmartsGrammar::decrement_charge, ctll::term<V>, Context ctx)
         {
             return add_charge<-1>(ctx);
         }
 
         // make_charge
         template <auto V, typename Context>
-        static constexpr auto apply(SmartsGrammar::make_charge, ctll::term<V> term, Context ctx)
+        static constexpr auto apply(SmartsGrammar::make_charge, ctll::term<V>, Context ctx)
         {
             auto [charge, atoms] = ctll::pop_and_get_front(ctx.atoms);
             constexpr bool isDigit = V >= '0' && V <= '9';
@@ -865,7 +865,7 @@ namespace Kitimar::CTSmarts {
 
         // make_atom_not
         template <auto V, typename Context>
-        static constexpr auto apply(SmartsGrammar::make_atom_not, ctll::term<V> term, Context ctx)
+        static constexpr auto apply(SmartsGrammar::make_atom_not, ctll::term<V>, Context ctx)
         {
             auto atomExpr = pushExpr(ctx.params.atomExpr, NotTag());
             return SmartsContext{ctx.atoms, ctx.bonds, ctx.params.setAtomExpr(atomExpr), ctx.parent};
@@ -879,28 +879,28 @@ namespace Kitimar::CTSmarts {
 
         // make_atom_and_high
         template <auto V, typename Context>
-        static constexpr auto apply(SmartsGrammar::make_atom_and_high, ctll::term<V> term, Context ctx)
+        static constexpr auto apply(SmartsGrammar::make_atom_and_high, ctll::term<V>, Context ctx)
         {
             return makeAtomOp(ctx, AndHighTag());
         }
 
         // make_atom_or
         template <auto V, typename Context>
-        static constexpr auto apply(SmartsGrammar::make_atom_or, ctll::term<V> term, Context ctx)
+        static constexpr auto apply(SmartsGrammar::make_atom_or, ctll::term<V>, Context ctx)
         {
             return makeAtomOp(ctx, OrTag());
         }
 
         // set_atom_and_low
         template <auto V, typename Context>
-        static constexpr auto apply(SmartsGrammar::make_atom_and_low, ctll::term<V> term, Context ctx)
+        static constexpr auto apply(SmartsGrammar::make_atom_and_low, ctll::term<V>, Context ctx)
         {
             return makeAtomOp(ctx, AndLowTag());
         }
 
         // make_bond_not
         template <auto V, typename Context>
-        static constexpr auto apply(SmartsGrammar::make_bond_not, ctll::term<V> term, Context ctx)
+        static constexpr auto apply(SmartsGrammar::make_bond_not, ctll::term<V>, Context ctx)
         {
             auto bondExpr = pushExpr(ctx.params.bondExpr, NotTag());
             return SmartsContext{ctx.atoms, ctx.bonds, ctx.params.setBondExpr(bondExpr), ctx.parent};
@@ -914,21 +914,21 @@ namespace Kitimar::CTSmarts {
 
         // make_bond_and_high
         template <auto V, typename Context>
-        static constexpr auto apply(SmartsGrammar::make_bond_and_high, ctll::term<V> term, Context ctx)
+        static constexpr auto apply(SmartsGrammar::make_bond_and_high, ctll::term<V>, Context ctx)
         {
             return makeBondOp(ctx, AndHighTag());
         }
 
         // make_bond_or
         template <auto V, typename Context>
-        static constexpr auto apply(SmartsGrammar::make_bond_or, ctll::term<V> term, Context ctx)
+        static constexpr auto apply(SmartsGrammar::make_bond_or, ctll::term<V>, Context ctx)
         {
             return makeBondOp(ctx, OrTag());
         }
 
         // set_bond_and_low
         template <auto V, typename Context>
-        static constexpr auto apply(SmartsGrammar::make_bond_and_low, ctll::term<V> term, Context ctx)
+        static constexpr auto apply(SmartsGrammar::make_bond_and_low, ctll::term<V>, Context ctx)
         {
             return makeBondOp(ctx, AndLowTag());
         }
@@ -939,21 +939,21 @@ namespace Kitimar::CTSmarts {
 
         // push_prev
         template <auto V, typename Context>
-        static constexpr auto apply(SmartsGrammar::push_prev, ctll::term<V> term, Context ctx)
+        static constexpr auto apply(SmartsGrammar::push_prev, ctll::term<V>, Context ctx)
         {
             return SmartsContext{ctx.atoms, ctx.bonds, ctx.params.pushPrevIndex(), ctx.parent};
         }
 
         // pop_prev
         template <auto V, typename Context>
-        static constexpr auto apply(SmartsGrammar::pop_prev, ctll::term<V> term, Context ctx)
+        static constexpr auto apply(SmartsGrammar::pop_prev, ctll::term<V>, Context ctx)
         {
             return SmartsContext{ctx.atoms, ctx.bonds, ctx.params.popPrevIndex(), ctx.parent};
         }
 
         // reset_prev
         template <auto V, typename Context>
-        static constexpr auto apply(SmartsGrammar::reset_prev, ctll::term<V> term, Context ctx)
+        static constexpr auto apply(SmartsGrammar::reset_prev, ctll::term<V>, Context ctx)
         {
             return SmartsContext{ctx.atoms, ctx.bonds, ctx.params.popPrevIndex(), ctx.parent};
         }
@@ -963,13 +963,13 @@ namespace Kitimar::CTSmarts {
         //
 
         template <auto V, typename Context>
-        static constexpr auto apply(SmartsGrammar::push_recursive, ctll::term<V> term, Context ctx)
+        static constexpr auto apply(SmartsGrammar::push_recursive, ctll::term<V>, Context ctx)
         {
             return SmartsContext{{}, {}, {}, ctx};
         }
 
         template <auto V, typename Context>
-        static constexpr auto apply(SmartsGrammar::pop_recursive, ctll::term<V> term, Context ctx)
+        static constexpr auto apply(SmartsGrammar::pop_recursive, ctll::term<V>, Context ctx)
         {
             auto expr = BasicSmarts{ctll::rotate(Context::atoms), ctll::rotate(Context::bonds), Context::params.classes};
             return pushAtomExpr(ctx.parent, ctx.parent.atoms, expr);
@@ -995,7 +995,7 @@ namespace Kitimar::CTSmarts {
             return pushBondExpr(ctx, ctx.atoms, bondPrimitive(term));
         }
         template <auto V, auto C, typename ...Ts, typename Bonds, typename Params, typename Parent>
-        static constexpr auto apply(SmartsGrammar::make_bond_primitive, ctll::term<V> term, SmartsContext<ctll::list<Char<C>, Ts...>, Bonds, Params, Parent> ctx)
+        static constexpr auto apply(SmartsGrammar::make_bond_primitive, ctll::term<V>, SmartsContext<ctll::list<Char<C>, Ts...>, Bonds, Params, Parent> ctx)
         {
             static_assert(!ctll::empty(ctx.params.prevIndex));
             if constexpr (V == '?') {
@@ -1065,13 +1065,13 @@ namespace Kitimar::CTSmarts {
         }
 
         template <auto V, typename Context>
-        static constexpr auto apply(SmartsGrammar::handle_ring_bond, ctll::term<V> term, Context ctx)
+        static constexpr auto apply(SmartsGrammar::handle_ring_bond, ctll::term<V>, Context ctx)
         {
             return handleRingBond<V - '0'>(ctx, ctx.atoms);
         }
 
         template <auto V, auto N, typename ...Ts, typename Bonds, typename Params, typename Parent>
-        static constexpr auto apply(SmartsGrammar::handle_ring_bond, ctll::term<V> term, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params, Parent> ctx)
+        static constexpr auto apply(SmartsGrammar::handle_ring_bond, ctll::term<V>, SmartsContext<ctll::list<Number<N>, Ts...>, Bonds, Params, Parent> ctx)
         {
             return handleRingBond<10 * N + V - '0'>(ctx, ctll::list<Ts...>());
         }
@@ -1081,7 +1081,7 @@ namespace Kitimar::CTSmarts {
         //
 
         template <auto V, typename Context>
-        static constexpr auto apply(SmartsGrammar::error_empty_bracket, ctll::term<V> term, Context ctx)
+        static constexpr auto apply(SmartsGrammar::error_empty_bracket, ctll::term<V>, Context ctx)
         {
             return SmartsContext{ctx.atoms, ctx.bonds, ctx.params.setError(EmptyBracketAtomTag()), ctx.parent};
         }

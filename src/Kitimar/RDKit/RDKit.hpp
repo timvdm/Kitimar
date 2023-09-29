@@ -55,10 +55,10 @@ namespace Kitimar {
             auto molecules()
             {
                 return std::views::iota(0) |
-                        std::views::take_while([this] (auto i) {
+                        std::views::take_while([this] (auto) {
                             return !m_atEnd;
                         }) |
-                        std::views::transform([this] (auto i) {
+                        std::views::transform([this] (auto) {
                             return read();
                         });
             }
@@ -117,10 +117,10 @@ namespace Kitimar {
             auto molecules()
             {
                 return std::views::iota(0) |
-                        std::views::take_while([this] (auto i) {
+                        std::views::take_while([this] (auto) {
                             return !m_atEnd;
                         }) |
-                        std::views::transform([this] (auto i) {
+                        std::views::transform([this] (auto) {
                             return read();
                         });
             }
@@ -251,18 +251,18 @@ namespace RDKit {
         return mol.getAtomWithIdx(index);
     }
 
-    inline auto get_index(const RDKit::ROMol &mol, const RDKit::Atom *atom)
+    inline auto get_index(const RDKit::ROMol&, const RDKit::Atom *atom)
     {
         assert(atom);
         return atom->getIdx();
     }
 
-    inline auto get_degree(const RDKit::ROMol &mol, const RDKit::Atom *atom)
+    inline auto get_degree(const RDKit::ROMol&, const RDKit::Atom *atom)
     {
         return atom->getDegree();
     }
 
-    inline const RDKit::Atom* null_atom(const RDKit::ROMol &mol)
+    inline const RDKit::Atom* null_atom(const RDKit::ROMol&)
     {
         return nullptr;
     }
@@ -290,25 +290,25 @@ namespace RDKit {
         return mol.getBondWithIdx(index);
     }
 
-    inline auto get_index(const RDKit::ROMol &mol, const RDKit::Bond *bond)
+    inline auto get_index(const RDKit::ROMol&, const RDKit::Bond *bond)
     {
         assert(bond);
         return bond->getIdx();
     }
 
-    inline auto get_source(const RDKit::ROMol &mol, const RDKit::Bond *bond)
+    inline auto get_source(const RDKit::ROMol&, const RDKit::Bond *bond)
     {
         assert(bond);
         return bond->getBeginAtom();
     }
 
-    inline auto get_target(const RDKit::ROMol &mol, const RDKit::Bond *bond)
+    inline auto get_target(const RDKit::ROMol&, const RDKit::Bond *bond)
     {
         assert(bond);
         return bond->getEndAtom();
     }
 
-    inline const RDKit::Bond* null_bond(const RDKit::ROMol &mol)
+    inline const RDKit::Bond* null_bond(const RDKit::ROMol&)
     {
         return nullptr;
     }
@@ -324,7 +324,7 @@ namespace RDKit {
         });
     }
 
-    inline auto get_nbr(const RDKit::ROMol &mol, const RDKit::Bond *bond, const RDKit::Atom *atom) noexcept
+    inline auto get_nbr(const RDKit::ROMol&, const RDKit::Bond *bond, const RDKit::Atom *atom) noexcept
     {
         return atom->getIdx() == bond->getBeginAtomIdx() ? bond->getEndAtom() : bond->getBeginAtom();
     }
@@ -341,7 +341,7 @@ namespace RDKit {
 
     // ElementLayer
 
-    inline auto get_element(const RDKit::ROMol &mol, const RDKit::Atom *atom)
+    inline auto get_element(const RDKit::ROMol&, const RDKit::Atom *atom)
     {
         assert(atom);
         return atom->getAtomicNum();
@@ -349,7 +349,7 @@ namespace RDKit {
 
     // IsotopeLayer
 
-    inline auto get_isotope(const RDKit::ROMol &mol, const RDKit::Atom *atom)
+    inline auto get_isotope(const RDKit::ROMol&, const RDKit::Atom *atom)
     {
         assert(atom);
         return atom->getIsotope();
@@ -357,7 +357,7 @@ namespace RDKit {
 
     // ChargeLayer
 
-    inline auto get_charge(const RDKit::ROMol &mol, const RDKit::Atom *atom)
+    inline auto get_charge(const RDKit::ROMol&, const RDKit::Atom *atom)
     {
         assert(atom);
         return atom->getFormalCharge();
@@ -365,14 +365,14 @@ namespace RDKit {
 
     // ValenceLayer
 
-    inline auto get_valence(const RDKit::ROMol &mol, const RDKit::Atom *atom)
+    inline auto get_valence(const RDKit::ROMol&, const RDKit::Atom *atom)
     {
         return atom->getTotalValence();
     }
 
     // BonderOrderLayer
 
-    inline auto get_order(const RDKit::ROMol &mol, const RDKit::Bond *bond)
+    inline auto get_order(const RDKit::ROMol&, const RDKit::Bond *bond)
     {
         assert(bond);
         switch (bond->getBondType()) {
@@ -387,7 +387,7 @@ namespace RDKit {
 
     // ImplicitHydrogenLayer
 
-    inline auto get_implicit_hydrogens(const RDKit::ROMol &mol, const RDKit::Atom *atom)
+    inline auto get_implicit_hydrogens(const RDKit::ROMol&, const RDKit::Atom *atom)
     {
         return atom->getNumExplicitHs() + atom->getImplicitValence();
     }
@@ -419,12 +419,12 @@ namespace RDKit {
 
     // AromaticLayer
 
-    inline auto is_aromatic_atom(const RDKit::ROMol &mol, const RDKit::Atom *atom)
+    inline auto is_aromatic_atom(const RDKit::ROMol&, const RDKit::Atom *atom)
     {
         return atom->getIsAromatic();
     }
 
-    inline auto is_aromatic_bond(const RDKit::ROMol &mol, const RDKit::Bond *bond)
+    inline auto is_aromatic_bond(const RDKit::ROMol&, const RDKit::Bond *bond)
     {
         switch (bond->getBondType()) {
             case RDKit::Bond::SINGLE:

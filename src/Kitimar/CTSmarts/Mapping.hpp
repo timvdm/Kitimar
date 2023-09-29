@@ -84,7 +84,7 @@ namespace Kitimar::CTSmarts {
                 m_map[queryAtomIndex] = atomIndex;
             }
 
-            constexpr void remove(int queryAtomIndex, auto atomIndex) noexcept
+            constexpr void remove(int queryAtomIndex, [[maybe_unused]] auto atomIndex) noexcept
             {
                 m_map[queryAtomIndex] = invalidIndex;
             }

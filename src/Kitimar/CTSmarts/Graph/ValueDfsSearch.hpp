@@ -48,9 +48,10 @@ namespace Kitimar::CTSmarts {
 
     struct ValueDFSVisitorBase
     {
-        constexpr void visit(int edge, int source, int target, bool isNewComponent, bool isClosure) noexcept {}
-        constexpr void backtrack(int edge, int target, bool isClosure) noexcept {}
-        constexpr void backtrack(int source) noexcept {}
+        constexpr void visit([[maybe_unused]] int edge, [[maybe_unused]] int source, [[maybe_unused]] int target,
+            [[maybe_unused]] bool isNewComponent, [[maybe_unused]] bool isClosure) noexcept {}
+        constexpr void backtrack([[maybe_unused]]int edge, [[maybe_unused]] int target, [[maybe_unused]] bool isClosure) noexcept {}
+        constexpr void backtrack([[maybe_unused]] int source) noexcept {}
     };
 
     template<int SourceIndex = 0>

@@ -33,7 +33,7 @@ namespace Kitimar::Util {
         }
 
         static inline AnyToStringMap anyToStringMap = {
-            { std::type_index(typeid(void)), [] (const std::any &value) { return std::string{}; } },
+            { std::type_index(typeid(void)), [] (const std::any&) { return std::string{}; } },
             { std::type_index(typeid(int)), anyIntegralToString<int>() },
             { std::type_index(typeid(unsigned long)), anyIntegralToString<unsigned long>() }
         };

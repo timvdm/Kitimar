@@ -80,7 +80,7 @@ namespace Kitimar::CTSmarts {
             return matchAtomExpr(mol, atom, get<0>(smarts.atoms).expr);
         }
 
-        constexpr bool singleBondMatchHelper(auto smarts, const auto &mol, const auto &bond, const auto &source, const auto &target)
+        constexpr bool singleBondMatchHelper(auto smarts, const auto &mol, const auto &source, const auto &target)
         {
             return matchAtomExpr(mol, source, get<0>(smarts.atoms).expr) && matchAtomExpr(mol, target, get<1>(smarts.atoms).expr);
         }
@@ -94,9 +94,9 @@ namespace Kitimar::CTSmarts {
             auto target = get_target(mol, bond);
             if (!matchBondExpr(mol, bond, get<0>(smarts.bonds).expr))
                 return 0;
-            if (singleBondMatchHelper(smarts, mol, bond, source, target))
+            if (singleBondMatchHelper(smarts, mol, source, target))
                 return 1;
-            if (singleBondMatchHelper(smarts, mol, bond, target, source))
+            if (singleBondMatchHelper(smarts, mol, target, source))
                 return 2;
             return 0;
         }
@@ -108,9 +108,9 @@ namespace Kitimar::CTSmarts {
             if (!matchBondExpr(mol, bond, get<0>(smarts.bonds).expr))
                 return 0;
             auto n = 0;
-            if (singleBondMatchHelper(smarts, mol, bond, source, target))
+            if (singleBondMatchHelper(smarts, mol, source, target))
                 ++n;
-            if (singleBondMatchHelper(smarts, mol, bond, target, source))
+            if (singleBondMatchHelper(smarts, mol, target, source))
                 ++n;
             return n;
         }
@@ -123,10 +123,10 @@ namespace Kitimar::CTSmarts {
             if (!matchBondExpr(mol, bond, get<0>(smarts.bonds).expr))
                 return std::make_tuple(false, Map{});
 
-            if (singleBondMatchHelper(smarts, mol, bond, source, target))
+            if (singleBondMatchHelper(smarts, mol, source, target))
                 return std::make_tuple(true, Map{get_index(mol, get_source(mol, bond)),
                                                  get_index(mol, get_target(mol, bond))});
-            if (singleBondMatchHelper(smarts, mol, bond, target, source))
+            if (singleBondMatchHelper(smarts, mol, target, source))
                 return std::make_tuple(true, Map{get_index(mol, get_target(mol, bond)),
                                                  get_index(mol, get_source(mol, bond))});
 
@@ -140,10 +140,10 @@ namespace Kitimar::CTSmarts {
             auto target = get_target(mol, bond);
             if (!matchBondExpr(mol, bond, get<0>(smarts.bonds).expr))
                 return;
-            if (singleBondMatchHelper(smarts, mol, bond, source, target))
+            if (singleBondMatchHelper(smarts, mol, source, target))
                 maps.push_back({get_index(mol, get_source(mol, bond)),
                                 get_index(mol, get_target(mol, bond))});
-            if (singleBondMatchHelper(smarts, mol, bond, target, source))
+            if (singleBondMatchHelper(smarts, mol, target, source))
                 maps.push_back({get_index(mol, get_target(mol, bond)),
                                 get_index(mol, get_source(mol, bond))});
         }
@@ -187,7 +187,7 @@ namespace Kitimar::CTSmarts {
             if (!matchBondExpr(mol, bond, get<0>(smarts.bonds).expr))
                 return;
 
-            if (singleBondMatchHelper(smarts, mol, bond, source, target)) {
+            if (singleBondMatchHelper(smarts, mol, source, target)) {
                 auto map = IndexMap{get_index(mol, get_source(mol, bond)),
                                     get_index(mol, get_target(mol, bond))};
                 maps.push_back(impl::toCapture(mol, smarts, captureSet, true, map));
@@ -195,7 +195,7 @@ namespace Kitimar::CTSmarts {
                     return;
             }
 
-            if (singleBondMatchHelper(smarts, mol, bond, target, source)) {
+            if (singleBondMatchHelper(smarts, mol, target, source)) {
                 auto map = IndexMap{get_index(mol, get_target(mol, bond)),
                                     get_index(mol, get_source(mol, bond))};
                 maps.push_back(impl::toCapture(mol, smarts, captureSet, true, map));

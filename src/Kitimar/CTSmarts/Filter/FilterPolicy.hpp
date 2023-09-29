@@ -21,7 +21,7 @@ namespace Kitimar::CTSmarts {
         }
 
         template<typename ...Filter>
-        constexpr bool rejectMolecule(auto smarts, Molecule::Molecule auto &mol, ctll::list<Filter...> filters) noexcept
+        constexpr bool rejectMolecule(auto smarts, Molecule::Molecule auto &mol, ctll::list<Filter...>) noexcept
         {
             return (Filter::reject(smarts, mol) || ...);
         }

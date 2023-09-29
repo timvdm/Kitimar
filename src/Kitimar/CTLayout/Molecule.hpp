@@ -174,19 +174,19 @@ namespace Kitimar::CTLayout {
         return std::views::iota(static_cast<decltype(num_bonds(mol))>(0), num_bonds(mol));
     }
 
-    constexpr auto get_atom(const auto &mol, auto index) noexcept
+    constexpr auto get_atom([[maybe_unused]] const auto &mol, auto index) noexcept
     {
         assert(index < num_atoms(mol));
         return index;
     }
 
-    constexpr auto get_bond(const auto &mol, auto index) noexcept
+    constexpr auto get_bond([[maybe_unused]] const auto &mol, auto index) noexcept
     {
         assert(index < num_bonds(mol));
         return index;
     }
 
-    constexpr auto get_index(const auto &mol, auto index) noexcept
+    constexpr auto get_index(const auto&, auto index) noexcept
     {
         return index;
     }
@@ -296,7 +296,7 @@ namespace Kitimar::CTLayout {
     }
 
     template<typename MolObj>
-    constexpr auto null_atom(const MolObj &mol) noexcept
+    constexpr auto null_atom(const MolObj&) noexcept
     {
         return -1;
     }
@@ -370,7 +370,7 @@ namespace Kitimar::CTLayout {
     */
 
     template<typename MolObj>
-    constexpr auto null_bond(const MolObj &mol) noexcept
+    constexpr auto null_bond(const MolObj&) noexcept
     {
         return -1;
     }

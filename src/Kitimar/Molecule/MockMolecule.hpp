@@ -82,7 +82,7 @@ namespace Kitimar::Molecule {
 
 
     template<MockMolecule Mol>
-    inline auto addMockAtom(Mol &mol, uint32_t index,
+    inline auto addMockAtom(Mol &mol, uint32_t,
                             uint8_t element, uint8_t isotope, int8_t charge,
                             uint8_t degree, uint8_t implicitHydrogens, uint8_t explicitHydrogens,
                             bool cyclic, bool aromatic)
@@ -92,7 +92,7 @@ namespace Kitimar::Molecule {
     }
 
     template<MockMolecule Mol>
-    inline auto addMockBond(Mol &mol, uint32_t index,
+    inline auto addMockBond(Mol &mol, uint32_t,
                             uint32_t source, uint32_t target,uint8_t order,
                             bool cyclic, bool aromatic)
     {
@@ -149,7 +149,7 @@ namespace Kitimar::Molecule {
     }
 
     template<MockMolecule Mol>
-    inline auto get_index(const Mol &mol, typename Mol::Atom atom) noexcept
+    inline auto get_index(const Mol&, typename Mol::Atom atom) noexcept
     {
         if constexpr (std::is_same_v<Mol, MockIndexMolecule>)
             return atom;
@@ -158,7 +158,7 @@ namespace Kitimar::Molecule {
     }
 
     template<MockMolecule Mol>
-    inline auto get_index(const Mol &mol, typename Mol::Bond bond) noexcept
+    inline auto get_index(const Mol&, typename Mol::Bond bond) noexcept
     {
         if constexpr (std::is_same_v<Mol, MockIndexMolecule>)
             return bond;
@@ -166,7 +166,7 @@ namespace Kitimar::Molecule {
             return bond.index;
     }
 
-    inline auto get_index(const MockIndexMolecule &mol, uint32_t index) noexcept
+    inline auto get_index(const MockIndexMolecule&, uint32_t index) noexcept
     {
         return index;
     }
@@ -258,7 +258,7 @@ namespace Kitimar::Molecule {
     }
 
     template<MockMolecule Mol>
-    inline Mol::Atom null_atom(const Mol &mol) noexcept
+    inline Mol::Atom null_atom(const Mol&) noexcept
     {
         if constexpr (std::is_same_v<Mol, MockIndexMolecule>)
             return std::numeric_limits<uint32_t>::max();
@@ -306,7 +306,7 @@ namespace Kitimar::Molecule {
     }
 
     template<MockMolecule Mol>
-    inline Mol::Bond null_bond(const Mol &mol) noexcept
+    inline Mol::Bond null_bond(const Mol&) noexcept
     {
         if constexpr (std::is_same_v<Mol, MockIndexMolecule>)
             return std::numeric_limits<uint32_t>::max();

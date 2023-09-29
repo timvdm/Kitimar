@@ -100,7 +100,7 @@ namespace Kitimar::CTSmarts {
                 auto sourceIndex = get_index(mol, source);
                 auto targetIndex = get_index(mol, target);
 
-                auto sourceCallback = [this, targetIndex] (const auto &map) {
+                auto sourceCallback = [this, targetIndex] (const auto&) {
                     if (m_map.contains(1, targetIndex))
                         setDone(true);
                 };
@@ -108,7 +108,7 @@ namespace Kitimar::CTSmarts {
                 if (isDone() && m_map.contains(1, targetIndex))
                     return true;
 
-                auto targetCallback = [this, sourceIndex] (const auto &map) {
+                auto targetCallback = [this, sourceIndex] (const auto&) {
                     if (m_map.contains(1, sourceIndex))
                         setDone(true);
                 };
@@ -121,7 +121,7 @@ namespace Kitimar::CTSmarts {
             auto count(const Mol &mol, int startAtom = -1)
             {
                 auto n = 0;
-                auto cb = [&n] (const auto &array) { ++n; };
+                auto cb = [&n] (const auto&) { ++n; };
                 matchDfs(mol, cb, startAtom);
                 return n;
             }
@@ -142,12 +142,12 @@ namespace Kitimar::CTSmarts {
                 auto targetIndex = get_index(mol, target);
 
                 auto n = 0;
-                auto sourceCallback = [this, targetIndex, &n] (const auto &map) {
+                auto sourceCallback = [this, targetIndex, &n] (const auto&) {
                     if (m_map.contains(1, targetIndex))
                         ++n;
                 };
                 matchDfs(mol, sourceCallback, sourceIndex);
-                auto targetCallback = [this, sourceIndex, &n] (const auto &map) {
+                auto targetCallback = [this, sourceIndex, &n] (const auto&) {
                     if (m_map.contains(1, sourceIndex))
                         ++n;
                 };
@@ -178,7 +178,7 @@ namespace Kitimar::CTSmarts {
                 auto sourceIndex = get_index(mol, source);
                 auto targetIndex = get_index(mol, target);
 
-                auto sourceCallback = [this, targetIndex] (const auto &map) {
+                auto sourceCallback = [this, targetIndex] (const auto&) {
                     if (m_map.contains(1, targetIndex))
                         setDone(true);
                 };
@@ -186,7 +186,7 @@ namespace Kitimar::CTSmarts {
                 if (isDone() && m_map.contains(1, targetIndex))
                     return std::make_tuple(true, m_map.map());
 
-                auto targetCallback = [this, sourceIndex] (const auto &map) {
+                auto targetCallback = [this, sourceIndex] (const auto&) {
                     if (m_map.contains(1, sourceIndex))
                         setDone(true);
                 };
@@ -225,12 +225,12 @@ namespace Kitimar::CTSmarts {
                 auto targetIndex = get_index(mol, target);
 
                 Maps maps;
-                auto sourceCallback = [this, targetIndex, &maps] (const auto &map) {
+                auto sourceCallback = [this, targetIndex, &maps] (const auto&) {
                     if (m_map.contains(1, targetIndex))
                         maps.push_back(m_map.map());
                 };
                 matchDfs(mol, sourceCallback, sourceIndex);
-                auto targetCallback = [this, sourceIndex, &maps] (const auto &map) {
+                auto targetCallback = [this, sourceIndex, &maps] (const auto&) {
                     if (m_map.contains(1, sourceIndex))
                         maps.push_back(m_map.map());
                 };
@@ -262,7 +262,7 @@ namespace Kitimar::CTSmarts {
                 return matchAtomExpr(mol, atom, queryAtom.expr);
             }
 
-            bool matchBond(const Mol &mol, const auto &bond, int queryBondIndex, auto queryBond) const noexcept
+            bool matchBond(const Mol &mol, const auto &bond, auto queryBond) const noexcept
             {
                 if constexpr (queryBond.isCyclic)
                     if (!is_ring_bond(mol, bond))
@@ -395,7 +395,7 @@ namespace Kitimar::CTSmarts {
                             }
 
                             // match bond
-                            if (!matchBond(mol, bond, queryBondIndex, queryBond)) {
+                            if (!matchBond(mol, bond, queryBond)) {
                                 debug("    bond does not match");
                                 continue;
                             }

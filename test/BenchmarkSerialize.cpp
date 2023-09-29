@@ -168,7 +168,7 @@ Benchmark countMatchesKitimarMemoryMapped()
 {
     Util::Timer timer;
     auto n = 0;
-    matchesKitimarMemoryMapped<SMARTS, Layout>([&n] (auto &mol, bool match) { if (match) ++n; });
+    matchesKitimarMemoryMapped<SMARTS, Layout>([&n] (auto&, bool match) { if (match) ++n; });
     return {"Kitimar MemoryMapped " + Util::typeName(Layout{}), n, timer.elapsed()};
 }
 

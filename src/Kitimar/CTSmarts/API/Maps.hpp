@@ -64,7 +64,7 @@ namespace Kitimar::CTSmarts {
     // ctse::maps_atom<"SMARTS">(mol, atom, ctse::[Unique, All]) -> std::vector<std::array<int, N>>
 
     template<ctll::fixed_string SMARTS, typename Config = DefaultConfig, SearchType M = SearchType::Unique, Molecule::Molecule Mol>
-    constexpr auto maps_atom(const Mol &mol, const auto &atom, SearchTypeTag<M> SearchType = {})
+    constexpr auto maps_atom(const Mol &mol, const auto &atom, SearchTypeTag<M> = {})
     {
         auto smarts = Config::transformSmarts(Smarts<SMARTS>{});
         static_assert(M != SearchType::Single && !smarts.isSingleAtom,
@@ -88,7 +88,7 @@ namespace Kitimar::CTSmarts {
     // ctse::maps_bond<"SMARTS">(mol, bond, ctse::[Unique, All]) -> std::vector<std::array<int, N>>
 
     template<ctll::fixed_string SMARTS, typename Config = DefaultConfig, SearchType M = SearchType::Unique, Molecule::Molecule Mol>
-    constexpr auto maps_bond(const Mol &mol, const auto &bond, SearchTypeTag<M> SearchType = {})
+    constexpr auto maps_bond(const Mol &mol, const auto &bond, SearchTypeTag<M> = {})
     {
         auto smarts = Config::transformSmarts(Smarts<SMARTS>{});
         static_assert(M != SearchType::Single && !smarts.isSingleAtom /*&& !smarts.isSingleBond*/,

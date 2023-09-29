@@ -65,7 +65,7 @@ if(UNIX)
     )
 
     target_compile_options(KitimarWarnings INTERFACE
-        -Wno-unused-parameter
+        #-Wno-unused-parameter
         #-Wno-sign-compare
         #-Wno-unused-but-set-variable
         #-Wno-missing-field-initializers

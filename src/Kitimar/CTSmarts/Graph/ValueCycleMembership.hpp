@@ -14,7 +14,7 @@ namespace Kitimar::CTSmarts {
             consteval ValueCycleMembershipVisitor() noexcept {}
             consteval ValueCycleMembershipVisitor(SmartsT, IncidentListT) noexcept {}
 
-            constexpr void visit(int edge, int source, int target, bool isNewComponent, bool isClosure) noexcept
+            constexpr void visit(int edge, [[maybe_unused]] int source, int target, [[maybe_unused]] bool isNewComponent, bool isClosure) noexcept
             {
                 path[depth++] = edge;
 
@@ -31,12 +31,12 @@ namespace Kitimar::CTSmarts {
                 }
             }
 
-            constexpr void backtrack(int edge, int target, bool isClosure) noexcept
+            constexpr void backtrack([[maybe_unused]] int edge, [[maybe_unused]] int target, [[maybe_unused]] bool isClosure) noexcept
             {
                 --depth;
             }
 
-            constexpr void backtrack(int source) noexcept {}
+            constexpr void backtrack([[maybe_unused]] int source) noexcept {}
 
             std::array<int, SmartsT::numBonds> path = {};
             std::array<bool, SmartsT::numAtoms> vertices = {};
