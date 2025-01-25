@@ -20,7 +20,7 @@ Kitimar is a container project for CTSmarts providing utilities for development,
 
 ## CTSmarts: C++ compile-time SMARTS expressions
 
-`CTSmarts` provides fast compile-time SMARTS expressions with support for matching, counting, mapping and capturing.
+`CTSmarts` provides fast compile-time [SMARTS expressions](https://en.wikipedia.org/wiki/SMILES_arbitrary_target_specification) with support for matching, counting, mapping and capturing.
 
 The SMARTS expressions are parsed at compile-time resulting in a minimal amount of assembly code and need for dynamically alocated data structures at run-time.
 
@@ -457,7 +457,7 @@ null_bond(mol)              -> Bond;  // e.g. nullptr, -1, ...
 | Util          | Utility functions                         | fmt                 |
 | CTLayout      | Compile time serialized data structures   | Util, Molecule, mio |
 | OpenBabel     | Molecule interface for OpenBabel          | Molecule, OpenBabel |
-| RDKit         | Molecule interface for OpenBabel          | Molecule, RDKit     |
+| RDKit         | Molecule interface for RDKit              | Molecule, RDKit     |
 
 ## Thanks
 
